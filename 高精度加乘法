@@ -1,0 +1,74 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+
+//高精度乘法 
+string mul(string a,string b)
+{
+	int n = a.size();
+	int m = b.size();
+	vector<int>res(n+m,0);
+	
+	for(int i = n-1;i>=0;i--)
+	{
+		for(int j = m-1;j>= 0;j--)
+		{
+			int t = (a[i] - '0') * (b[j] - '0') + res[i+j+1];//加上上一轮进位的数 ;
+			res[i+j+1] = t%10;//竖式计算实际的数 
+			res[i+j] += t/10; //进位的数 
+		}
+	}
+	string ans;
+	//去除前导0 
+	for(int x : res)
+	{
+		//当ans为空，x为0不能添加，但当x 不为0，ans添加，之后x是否为0无所谓 
+		if(!(ans.empty() && x == 0) )
+		{
+			ans += x + '0';
+		}
+	}
+	return ans.empty() ? "0" : ans;	
+}
+
+//高精度加法
+string add(string a,string b)
+{
+	string res = "";
+	int i = a.size() - 1;
+	int j = b.size() - 1;
+	int carry = 0;	
+	while(i >= 0 || j>= 0 || carry)
+	{
+		int sum = carry;
+		if(i >= 0)
+		{
+			sum += a[i--] - '0';
+		}
+		if(j >= 0)
+		{
+			sum += b[j--] - '0';
+		}
+		//粘贴上字符串 
+		res = char(sum % 10 + '0') + res;
+		carry = sum / 10;
+	}
+	
+	return res;
+} 
+
+
+int main()
+{
+	
+	string a;
+	string b;
+	cin>>a>>b;
+	string s = mul(a,b);
+	cout<<s;
+	
+	
+	
+	
+	return 0;
+}
