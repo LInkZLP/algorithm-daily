@@ -1,0 +1,56 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+
+/*
+时间计算原理
+最短时间：
+
+每个士兵可以选择离自己较近的一端离开
+
+对于位置x的士兵，离左端距离为x，离右端距离为L+1-x
+
+取两者的最小值：min(x, L+1-x)
+
+所有士兵都选择最近的端点，取这些时间的最大值(确保所有士兵都可以通过）
+--------------------------------------
+最长时间：
+
+最左边和最右边的士兵决定了最长时间
+
+最左边的士兵（vec[0]）走到右端：L+1-vec[0]
+
+最右边的士兵（vec[n-1]）走到左端：vec[n-1]
+
+取这两者的最大值
+*/
+int main()
+{
+	int n;
+	int l;
+	cin>>l>>n;
+	vector<int>vec(n);
+	if(n == 0)
+	{
+		cout<<"0 0"<<endl;
+	}
+	else
+	{
+		for(int i = 0;i<n;i++)
+		{
+			cin>>vec[i];
+		}
+		sort(vec.begin(),vec.end());
+		int max_t = 0;
+		int min_t = 0;
+		for(int i = 0;i<n;i++)
+		{
+			min_t =max(min(l + 1 - vec[i],vec[i]),min_t);
+		}
+		max_t = max(l + 1 - vec[0],vec[n-1]);
+		cout<<min_t<<" "<<max_t;
+	}
+	
+	
+	return  0;
+}
