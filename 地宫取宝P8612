@@ -1,0 +1,78 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+
+long long ans = 0;
+long long maxn = 1e9+7;
+vector<vector<int>>v(55,vector<int>(55,0));
+long long dp[55][55][15][25];
+int n;
+int m;
+int k;
+//由于maxw取值和数组存储索引不同，所以在dp里面要+1
+long long dfs(int x,int y,int bag,int maxw)
+{
+	
+	if(x == n && y == m)
+	{
+		long long res = 0;
+		if(bag == k)
+		{
+			res = (res + 1) % maxn;
+		}
+		if(v[x][y] > maxw && bag+1 == k)
+		{
+			res = (res + 1) % maxn;
+		}
+		return res;
+	}
+	if(bag>k)
+	{
+		return 0;
+	}
+	if(dp[x][y][bag][maxw+1] !=-1)
+	{
+		return dp[x][y][bag][maxw+1];
+	}
+	long long res = 0;
+//只要x<n或者y<m就继续
+	if( x < n )
+	{
+		if(v[x][y] > maxw && bag < k)
+		{
+			res = (dfs(x+1,y,bag+1,v[x][y]) + res) % maxn;
+		}
+		res = (dfs(x+1,y,bag,maxw) + res) % maxn;
+	}
+	if (y < m)
+	{
+		if(v[x][y] > maxw && bag < k)
+		{
+			res = (dfs(x,y+1,bag+1,v[x][y]) + res) % maxn;
+		}
+		res = (dfs(x,y+1,bag,maxw) + res) % maxn;
+	}
+	return dp[x][y][bag][maxw+1] = res;
+}
+
+int main()
+{
+	
+	cin>>n>>m>>k;
+	
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 1;j<=m;j++)
+		{
+			cin>>v[i][j];
+		}
+	}
+	memset(dp,-1,sizeof(dp));
+//memset初始化，数组名（地址），初始化数值，每个单元占据的字节
+	ans = dfs(1,1,0,-1);
+//初始maxw为-1，因为宝物价值可以为0
+	cout<<ans;
+	
+	return 0;
+}
+
