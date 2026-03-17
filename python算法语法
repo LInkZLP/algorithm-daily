@@ -1,0 +1,246 @@
+Python算法竞赛常用语法速查
+一、输入输出
+1. 基础输入
+python
+# 单个整数
+n = int(input())
+
+# 一行多个整数
+arr = list(map(int, input().split()))
+
+# 多个变量
+a, b, c = map(int, input().split())
+
+# 字符串输入
+s = input().strip()  # .strip()去掉首尾空格
+--------------------------------------------------------------------------------------------------------------------------
+2. 多行输入
+python
+# 读取n行
+n = int(input())
+grid = []
+for _ in range(n):
+    row = list(map(int, input().split()))
+    grid.append(row)
+
+# 或者一行搞定
+grid = [list(map(int, input().split())) for _ in range(n)]
+
+# 读取直到文件结尾
+import sys
+data = sys.stdin.read().split()
+# 或者
+for line in sys.stdin:
+    arr = list(map(int, line.split()))
+---------------------------------------------------------------------------------------------------
+3. 快速输出
+python
+# 输出列表
+print(' '.join(map(str, arr)))
+
+# 多行输出用列表收集
+res = []
+res.append(str(ans))
+print('\n'.join(res))
+
+# 格式化输出
+print(f"Case #{i}: {ans}")
+---------------------------------------------------------------------------------------------------------------------------
+二、列表操作
+1. 创建列表
+python
+# 固定长度
+arr = [0] * n                    # [0,0,0,...]
+arr = [i for i in range(n)]      # [0,1,2,...]
+arr = [i*i for i in range(n)]    # [0,1,4,9,...]
+
+# 随机列表
+import random
+arr = random.sample(range(100), n)  # 不重复随机
+--------------------------------------------------------------------
+2. 常用方法
+python
+arr = [3,1,4,1,5]
+
+# 增删
+arr.append(9)           # 末尾加 [3,1,4,1,5,9]
+arr.insert(2, 100)      # 位置2插入 [3,1,100,4,1,5,9]
+arr.pop()               # 删除最后一个
+arr.pop(2)              # 删除位置2
+arr.remove(1)           # 删除第一个1
+
+# 查找
+arr.index(4)            # 返回4的位置
+arr.count(1)            # 1出现的次数
+4 in arr                # True/False
+
+# 排序
+arr.sort()              # 升序 [1,1,3,4,5]
+arr.sort(reverse=True)  # 降序 [5,4,3,1,1]
+sorted(arr)             # 返回新列表，原列表不变
+
+# 反转
+arr.reverse()           # 原地反转
+arr[::-1]               # 返回新列表
+3. 切片
+python
+arr = [0,1,2,3,4,5,6,7,8,9]
+
+arr[:3]      # [0,1,2] 前3个
+arr[3:6]     # [3,4,5] 3到5
+arr[-3:]     # [7,8,9] 后3个
+arr[::2]     # [0,2,4,6,8] 每隔一个
+arr[::-1]    # [9,8,7,6,5,4,3,2,1,0] 反转
+------------------------------------------------------------------------------------------------------------------------------------------------
+三、字符串操作
+python
+s = "hello world"
+
+# 分割
+words = s.split()        # ['hello', 'world']
+parts = s.split('o')     # ['hell', ' w', 'rld']
+
+# 连接
+s2 = '-'.join(['a','b','c'])  # 'a-b-c'
+
+# 查找
+s.find('o')        # 4 返回位置
+s.count('l')       # 3 出现次数
+'hello' in s       # True
+
+# 修改
+s.upper()          # 'HELLO WORLD'
+s.lower()          # 'hello world'
+s.replace('o', '0')  # 'hell0 w0rld'
+
+# 判断
+s.isdigit()        # 是否全是数字
+s.isalpha()        # 是否全是字母
+s.startswith('he') # True
+四、字典（最重要！）
+python
+# 创建
+d = {}
+d = {'a':1, 'b':2}
+d = dict(a=1, b=2)
+
+# 增删改查
+d['c'] = 3          # 添加/修改
+d.get('a', 0)       # 取'a'的值，没有返回0
+d.pop('a')          # 删除并返回值
+d.keys()            # 所有键
+d.values()          # 所有值
+d.items()           # 所有(键,值)对
+
+# 遍历
+for k in d:
+    print(k, d[k])
+
+for k, v in d.items():
+    print(k, v)
+
+# 默认字典（超好用）
+from collections import defaultdict
+d = defaultdict(int)    # 默认值是0
+d = defaultdict(list)   # 默认值是[]
+五、集合
+python
+# 创建
+s = set()
+s = {1,2,3}
+s = set([1,2,2,3])  # {1,2,3} 自动去重
+
+# 操作
+s.add(4)            # 添加
+s.remove(2)         # 删除（没有会报错）
+s.discard(2)        # 删除（没有也不报错）
+1 in s              # True/False
+
+# 集合运算
+a = {1,2,3}
+b = {2,3,4}
+a & b  # {2,3} 交集
+a | b  # {1,2,3,4} 并集
+a - b  # {1} 差集
+六、常用库函数
+python
+# 数学
+max(arr)            # 最大值
+min(arr)            # 最小值
+sum(arr)            # 求和
+abs(x)              # 绝对值
+pow(x, y)           # x的y次方
+
+# 枚举（带索引）
+for i, v in enumerate(arr):
+    print(i, v)
+
+# 压缩（同时遍历多个列表）
+for a, b in zip(list1, list2):
+    print(a, b)
+
+# 排序（复杂情况）
+arr.sort(key=lambda x: x[1])  # 按第二个元素排序
+sorted(arr, key=lambda x: -x) # 降序
+七、队列和栈
+python
+# 栈（用列表）
+stack = []
+stack.append(1)     # 入栈
+stack.append(2)
+top = stack[-1]     # 看栈顶
+stack.pop()         # 出栈
+
+# 队列（用deque）
+from collections import deque
+q = deque()
+q.append(1)         # 入队
+q.append(2)
+front = q[0]        # 看队首
+q.popleft()         # 出队
+八、常用技巧
+python
+# 交换变量
+a, b = b, a
+
+# 条件表达式
+x = a if condition else b
+
+# 列表推导式
+squares = [x*x for x in range(10)]
+even = [x for x in arr if x % 2 == 0]
+
+# 三目运算
+max_val = a if a > b else b
+
+# 多重赋值
+a, b, *rest = [1,2,3,4,5]  # a=1, b=2, rest=[3,4,5]
+九、算法常用模板
+python
+# 前缀和
+pre = [0] * (n + 1)
+for i in range(n):
+    pre[i+1] = pre[i] + arr[i]
+# 区间[l,r]和 = pre[r+1] - pre[l]
+
+# 计数
+from collections import Counter
+cnt = Counter(arr)
+most_common = cnt.most_common(1)[0]
+
+# 排序加索引
+arr = [(val, idx) for idx, val in enumerate(arr)]
+arr.sort()
+十、注意事项
+python
+# 1. 别这么写二维数组
+dp = [[0]*n]*m  # 错误！所有行是同一个引用
+dp = [[0]*n for _ in range(m)]  # 正确
+
+# 2. 复制列表
+arr2 = arr[:]  # 深拷贝
+arr2 = arr.copy()  # 也可以
+
+# 3. 大输入用sys.stdin
+import sys
+data = sys.stdin.read().split()
