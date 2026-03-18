@@ -1,0 +1,76 @@
+核心思路
+初始化：起点到自身的距离为 0，到其他顶点的距离为无穷大。
+用优先队列（小顶堆）维护「当前未确定最短路径的顶点」，每次取出距离最小的顶点 u。
+遍历 u 的所有邻边（u→v），尝试更新 v 的最短距离：dist[v] = min(dist[v], dist[u] + 边权)。
+重复步骤 2-3，直到所有顶点处理完毕。
+
+
+#include <bits/stdc++.h>
+
+using namespace std;
+//node结构体需要重载>，否则优先队列greater<node>无法排序
+struct node{
+	int id;
+	int w;
+	bool operator>(const node& other) const {
+        return w > other.w;
+    }
+};
+// 2. 优先队列改用pair：first存距离，second存顶点id（pair默认按first排序）
+//priority_queue<pair<int, int>, vector<pair<int, int>>, greater<pair<int, int>>> pq;
+// int cur_dist = pq.top().first;
+// int u = pq.top().second;
+int n;
+int m;
+vector<vector<node>>v(2501);
+vector<bool>visited(2501,false);
+vector<int>dist(2501,INT_MAX);
+void mindist(int sta)
+{
+	dist[sta] = 0;
+	priority_queue<node, vector<node>, greater<node>> pq;
+	pq.push({sta,0});
+	while(!pq.empty())
+	{
+		node r = pq.top();
+		pq.pop();
+		if(visited[r.id])
+		{
+			continue;
+		}
+		visited[r.id] = true;
+		for(int i = 0;i<v[r.id].size();i++)
+		{
+			int ner = v[r.id][i].id;
+			int we = v[r.id][i].w;
+			if(dist[ner] > dist[r.id] + we)
+			{
+				dist[ner] = dist[r.id] + we;
+				pq.push({ner,dist[ner]});
+			}
+			
+		}
+		
+	}
+	return;
+}
+
+int main()
+{
+	int sta;
+	int end;
+	cin>>n>>m>>sta>>end;;
+	for(int i = 1;i<=m;i++)
+	{
+		int a;
+		int b;
+		int w;
+		cin>>a>>b>>w;
+		v[a].push_back({b,w});
+		v[b].push_back({a,w});
+	}
+	mindist(sta);
+	cout<<dist[end];
+	
+	return 0;
+ } 
