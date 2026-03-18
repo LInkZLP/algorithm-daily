@@ -1,0 +1,83 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+// 边的结构体（不用重载任何运算符！）
+struct node {
+    int id;  // 邻接顶点编号
+    int w;   // 边权
+};
+
+int n, m;
+vector<vector<node>> v(21);    // 邻接表（和之前一致）
+vector<int> dist(21, INT_MAX); // 起点到各顶点的距离
+vector<bool> in_queue(21, false); // 标记顶点是否在队列中（避免重复入队）
+vector<int> cnt(21, 0);        // 统计顶点入队次数（检测负环）
+
+// SPFA核心函数：返回是否存在负环
+bool spfa(int sta) {
+    // 初始化
+    dist[sta] = 0;
+    queue<int> q; // 普通队列，只存顶点编号（不用存距离！）
+    q.push(sta);
+    in_queue[sta] = true;
+    cnt[sta]++;
+
+    while (!q.empty()) {
+        int u = q.front(); // 取出队首顶点
+        q.pop();
+        in_queue[u] = false; // 标记为不在队列中
+
+        // 遍历u的所有邻边
+        for (auto& e : v[u]) {
+            int neighbor = e.id;
+            int weight = e.w;
+
+            // 松弛操作：更新最短距离
+            if (dist[u] != INT_MAX && dist[neighbor] > dist[u] + weight) {
+                dist[neighbor] = dist[u] + weight;
+
+                // 如果邻接顶点不在队列中，入队
+                if (!in_queue[neighbor]) {
+                    q.push(neighbor);
+                    in_queue[neighbor] = true;
+                    cnt[neighbor]++; // 入队次数+1
+
+                    // 检测负环：入队次数≥顶点数，说明存在负环
+                    if (cnt[neighbor] >= n) {
+                        return true; // 有负环
+                    }
+                }
+            }
+        }
+    }
+    return false; // 无负环
+}
+
+int main() {
+    cin >> n >> m;
+    for (int i = 1; i <= m; i++) {
+        int a, b, w;
+        cin >> a >> b >> w;
+        v[a].push_back({b, w});
+        v[b].push_back({a, w}); // 无向图双向加边
+    }
+
+    int sta = 1;
+    bool has_negative_cycle = spfa(sta);
+
+    // 输出结果
+    if (has_negative_cycle) {
+        cout << "图中存在负环，无最短路径！" << endl;
+    } else {
+        cout << "起点" << sta << "到各顶点的最短路径：" << endl;
+        for (int i = 1; i <= n; i++) {
+            if (dist[i] == INT_MAX) {
+                cout << i << ": can't" << endl;
+            } else {
+                cout << i << ": " << dist[i] << endl;
+            }
+        }
+    }
+
+    return 0;
+}
