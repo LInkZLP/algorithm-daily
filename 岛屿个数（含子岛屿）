@@ -1,0 +1,106 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+//核心在于是否能想到利用内海，不要强求是否是环以及环内还是环外 
+//若内海能连接到外海，说明它周围的岛屿可以连接到外海，不是子岛屿  
+struct xy{
+	int x;
+	int y;
+};
+int n;
+int t;
+int m;
+int dx[] = {0,0,-1,1};
+int dy[] = {1,-1,0,0};
+int dx2[] = {0,0,-1,1,1,-1,-1,1};
+int dy2[] = {-1,1,0,0,1,-1,1,-1} ;
+void bfs(vector<vector<bool>>&visited,vector<vector<char>>&v,int &ans,int x1,int x2,vector<vector<bool>>&visited2)
+{
+	queue<xy>q;
+	q.push({x1,x2});
+	bool k = false;
+	xy sta = {x1,x2};
+	while(!q.empty())
+	{
+		xy r = q.front();
+		visited[r.x][r.y] = true;
+		q.pop();
+		for(int i = 0;i<4;i++)
+		{
+			int nx = r.x + dx[i];
+			int ny = r.y + dy[i];
+			if(nx<=n && nx >=1 && ny <=m && ny>=1 && !visited[nx][ny])
+			{
+				visited[nx][ny] = true;
+				if(v[nx][ny] == '1')
+				{
+					q.push({nx,ny});
+				}
+			}
+			//附近海域满足条件 
+			if(nx >=0 &&nx < 55 && ny >= 0&& ny < 55 &&visited2[nx][ny])
+			{
+				k = true;
+			}
+		}
+	}
+	if(k)
+	{
+		ans++;
+	}
+	return;
+}
+
+int main()
+{
+	
+	cin>>t;
+	while(t--)
+	{
+		cin>>n>>m;
+		vector<vector<char>>v(55,vector<char>(55,'0'));
+		//要初始化海域！！！！ 
+		vector<vector<bool>>visited(55,vector<bool>(55,false));
+		vector<vector<bool>>visited2(55,vector<bool>(55,false));
+		queue<xy>qn;
+		qn.push({0,0});
+		visited2[0][0] = true;
+		for(int i = 1;i<=n;i++)
+		{
+			for(int j = 1;j<=m;j++)
+			{
+				cin>>v[i][j];
+			}
+		}
+		int ans = 0;
+		//处理内海与外海连接问题 
+		while(!qn.empty())
+		{
+			xy r = qn.front();
+			qn.pop();
+			for(int i = 0;i<8;i++)
+			{
+				int nx = dx2[i]+ r.x;
+				int ny = dy2[i] + r.y;
+				if( nx >= 0 && nx < 55 && ny >=0 && ny<55 && !visited2[nx][ny] && v[nx][ny] == '0')
+				{
+					visited2[nx][ny] = true;
+					qn.push({nx,ny});
+				}
+			}
+		}
+		for(int i = 1;i<=n;i++)
+		{
+			for(int j = 1;j<=m;j++)
+			{
+				if(v[i][j] == '1' && !visited[i][j])
+				{
+					bfs(visited,v,ans,i,j,visited2);
+				}
+			}
+		}
+		cout<<ans<<endl;
+	}
+	
+	return 0;
+}
