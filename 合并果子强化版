@@ -1,0 +1,73 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+const long long maxn = 10000001;
+//快速读取
+void read(long long &x){ 
+	long long f=1;x=0;char s=getchar();
+	while(s<'0'||s>'9'){if(s=='-')f=-1;s=getchar();}
+	while(s>='0'&&s<='9'){x=x*10+s-'0';s=getchar();}
+	x*=f;
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+	queue<long long>q1;
+	queue<long long>q2;
+//两堆，分别存放结果和初始
+	long long n;
+	read(n);
+	vector<int>cnt(100001);
+//桶排序
+	for(long long i = 1;i<=n;i++)
+	{
+		long long r;
+		read(r);
+		cnt[r]++;
+	}
+	if(n == 1)
+	{
+		cout<<0<<endl;
+		return 0; 
+	}	
+	for(long long i = 1;i<=100000;i++)
+	{
+		for(long long j = 1;j<=cnt[i];j++)
+		{
+			q1.push(i);
+		}
+	}
+	long long ans = 0;
+//取q1的情况 ：q2为空 或者 q1在非空的情况 q1堆顶小于q2堆顶
+	for(long long i = 1;i<n;i++)
+	{
+		long long x;
+		long long y;
+		if(q2.empty()||(!q1.empty()&&q1.front()<q2.front()))
+		{
+			x = q1.front();
+			q1.pop();
+		}
+		else
+		{
+			x = q2.front();
+			q2.pop();
+		}
+		if(q2.empty()||(!q1.empty()&&q1.front()<q2.front()))
+		{
+			y = q1.front();
+			q1.pop();
+		}
+		else
+		{
+			y = q2.front();
+			q2.pop();
+		}
+		
+		ans += x+y;
+		q2.push(x+y);
+	}
+	cout<<ans<<endl;
+	return 0;
+}
