@@ -1,0 +1,58 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+int main()
+{
+	int n;
+	int m;
+	cin>>n;
+	m = n;
+	vector<vector<int> > vec(n+1,vector<int> (m+1 ,0));
+	vector<vector<int> > presum(n+1,vector<int>(m+1,0));
+	
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 1;j<=m;j++)
+		{
+			cin>>vec[i][j]; 
+			
+		} 
+	}
+
+	presum[1][1] = vec[1][1];
+	int maxs = INT_MIN;
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 1;j<=m;j++)
+		{
+			presum[i][j] = presum[i-1][j] + presum[i][j-1] - presum[i-1][j-1] + vec[i][j];
+		}
+	}
+	
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 1;j<=n;j++)
+		{
+			for(int t = 1;t<=n;t++)
+			{
+				for(int k = 1;k<=n;k++)
+				{
+					if(i > t || k < j)
+					{
+						continue;
+					}
+					else
+					{
+						maxs = max(maxs,presum[t][k] + presum[i-1][j-1] - presum[i - 1][k] -presum[t][j-1]);
+					}
+				}
+			}
+		}
+	}
+	
+	
+	
+	cout<<maxs;
+	
+	return 0;
+}
