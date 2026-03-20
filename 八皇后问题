@@ -1,0 +1,60 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+
+//对于一条从右上到左下的对角线，其上的棋子坐标应满足x+y为一定值；
+//对于一条从左上到右下的对角线，其上的棋子坐标应满足x-y为一定值，
+//为了避免负数的产生，代码中用x-y+n来储存数字
+int ans[14];
+int n;
+long long sum = 0;
+int check[3][28] = {0};
+//check从三个方面检查，一个是自身位置（0行为i列），两个是 /和\方向 
+void dfs(int line)
+{
+	if(line > n)
+	{
+		sum++;
+		if(sum > 3)
+		{
+			return;
+		}
+		else
+		{
+			for(int i = 1;i<=n;i++)
+			{
+				cout<<ans[i]<<" ";
+			}
+			cout<<endl;
+			return;
+		}
+	}
+	//i是处理纵列 
+	for(int i = 1;i<=n;i++)
+	{
+		if((!check[0][i]) && (!check[1][line+i]) && (!check[2][line - i + n]))
+		{
+			ans[line] = i;
+			check[0][i] = 1;
+			check[1][line + i] = 1;
+			check[2][line - i + n] = 1;
+			dfs(line+1);
+			//一定要重置，无论是否成功，为了下一次 
+			check[0][i] = 0;
+			check[1][line + i] = 0;
+			check[2][line - i + n] = 0;
+		}
+	}
+	
+	
+}
+
+int main()
+{
+	cin>>n;
+	dfs(1);
+	
+	cout<<sum;
+	
+	return 0;
+}
