@@ -1,0 +1,120 @@
+//离散化在并查集的应用
+//我们知道并查集需要初始化，也就是自己是自己的根节点，但数字太大会有浪费，所以需要并查集将每个数字映射到新的数组
+//1.vector<long long>mapping = temp;映射关系表
+//2.	sort(mapping.begin(),mapping.end());
+		  mapping.erase(unique(mapping.begin(),mapping.end()) ,mapping.end())
+排序和去重
+//3.for(int l = 0;l<arr.size();l++)
+		{
+			arr[l].i = lower_bound(mapping.begin(),mapping.end(),arr[l].i) - mapping.begin();
+			arr[l].j = lower_bound(mapping.begin(),mapping.end(),arr[l].j) - mapping.begin();
+		}
+得到映射之后原来的数在新的数组中的索引
+//
+
+#include <bits/stdc++.h>
+
+using namespace std;
+
+struct s{
+	long long i;
+	long long j;
+	int y;
+};
+
+bool cmp(s t1,s t2)
+{
+	return t1.y>t2.y;
+}
+void Initial(vector<int>&v)
+{
+	int n = v.size();
+	for(int i = 0;i<n;i++)
+	{
+		v[i] = i;
+	}
+}
+ 
+int Find(int x,vector<int>&v)
+{
+	if(v[x] ==x )
+	{
+		return v[x];
+	}
+	return v[x] = Find(v[x],v);
+} 
+
+void Union(int x,int y ,vector<int>&v)
+{
+	int r1 = Find(x,v);
+	int r2 = Find(y,v);
+	if(r1 != r2)
+	{
+		v[r1] = r2;
+	}
+	return ;
+ }
+
+int main()
+{
+	int t;
+	cin>>t;
+	for(int k = 0;k<t;k++)
+	{
+		int n;
+		cin>>n;
+		unordered_map<long long,int>m;
+		vector<long long>temp;
+		vector<s>arr;
+		int cnt = 0;
+		for(int l = 0;l<n;l++)
+		{
+			long long i;
+			long long j;
+			int e;
+			cin>>i>>j>>e;
+			temp.push_back(i);
+			temp.push_back(j);
+			arr.push_back({i,j,e});
+		}
+		//离散化 
+		vector<long long>mapping = temp;
+		sort(mapping.begin(),mapping.end());
+		mapping.erase(unique(mapping.begin(),mapping.end()) ,mapping.end());
+		int h = mapping.size() ;
+		vector<int>v(h);
+		Initial(v);
+		int key =1;
+		for(int l = 0;l<arr.size();l++)
+		{
+			arr[l].i = lower_bound(mapping.begin(),mapping.end(),arr[l].i) - mapping.begin();
+			arr[l].j = lower_bound(mapping.begin(),mapping.end(),arr[l].j) - mapping.begin();
+		}
+		//排序，先把相等的都处理完，这样后面只需要找矛盾就行; 
+		sort(arr.begin(),arr.end(),cmp);
+		for(int l = 0;l<arr.size();l++)
+		{
+			int r1 = Find((int)arr[l].i,v);
+			int r2 = Find((int)arr[l].j,v);
+			if(arr[l].y == 1)
+			{
+				Union(r1,r2,v);
+			}
+			else if(arr[l].y == 0)
+			{
+				if(r1 == r2)
+				{
+					cout<<"NO"<<endl;
+					key = 0;
+					break;
+				}
+			}
+		}
+		if(key)
+		{
+			cout<<"YES"<<endl;
+		}
+	}
+
+	return 0;
+ } 
