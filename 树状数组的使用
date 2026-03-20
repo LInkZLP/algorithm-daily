@@ -1,0 +1,67 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+struct node{
+	int h;
+	vector<int>ch;
+};
+//最最关键的是谁是根节点？还是说谁都可以是根节点？这里是1是根节点（使用哈希表来查找谁是根节点），树状数组都是从根节点出发的
+const int maxn = 6001;
+vector<node>v(maxn);
+int dp[maxn][2];
+vector<bool>visited(maxn,false);
+void dfs(int a)
+{
+	if(visited[a])
+	{
+		return;
+	}
+	visited[a] = true;
+	dp[a][0] = 0;
+	dp[a][1] = v[a].h;
+	for(int i = 0; i < v[a].ch.size();i++)
+	{
+		int t = v[a].ch[i];
+		dfs(t);
+		dp[a][0] += max(dp[t][0],dp[t][1]);
+		dp[a][1] += dp[t][0];
+	}
+	
+	return;
+}
+int main()
+{
+	int n;
+	cin>>n;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i].h;
+	}
+	unordered_map<int,int>m;
+	for(int i = 1;i<n;i++)
+	{
+		int a;
+		int b;
+		cin>>a>>b;
+		m[a]++;
+		v[b].ch.push_back(a);
+	}
+	int r = 1;
+	for(int i = 1;i<=n;i++)
+	{
+		if(m.find(i) == m.end())
+		{
+			r = i;
+			break;
+		}
+	}
+	dfs(r);
+	int ans = -1111;
+	for(int i = 1;i<=n;i++)
+	{
+		ans = max(ans,dp[i][0]);
+		ans = max(ans,dp[i][1]);
+	}
+	cout<<ans<<endl;
+	return 0;
+}
