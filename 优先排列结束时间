@@ -1,0 +1,63 @@
+#include <stdio.h>
+#include <stdlib.h>
+//先排列结束时间
+//优先排列结束时间，是为了最大化剩余时间的长度，从而容纳更多的后续活动。
+/*为什么这样能得到全局最优解？
+
+假设我们已经有一个最优解的活动集合，其中第一个活动是A。如果存在另一个活动B，它比A更早结束，那么：
+
+B的开始时间一定不晚于A的开始时间（因为B更早结束）
+
+把A换成B，后面的活动依然可以正常进行（因为B结束得更早，留给后面的时间更多）
+
+替换后，活动数量不变，但剩余时间更多了
+
+这说明：存在一个最优解，它的第一个活动就是所有活动中结束最早的。
+
+依此类推，第二个活动也应该是剩余活动中结束最早的……最终得到：按结束时间排序后贪心选择，一定能得到最优解。
+*/
+
+struct arr_time{
+	int sta;
+	int end;
+};
+
+typedef struct arr_time AT;
+
+int compare_sort(const void*a,const void *b)
+{
+	AT* p1 = (AT*)a;
+	AT *p2 = (AT*)b;
+	return (p1 -> end) - (p2 -> end);
+}
+int main()
+{
+	int n;
+	scanf("%d",&n);
+	AT * arr = (AT*)malloc(sizeof(AT) * n);
+	
+	int i;
+	for(i = 0;i<n;i++)
+	{
+		scanf("%d %d",&arr[i].sta,&arr[i].end);
+	}
+	
+	qsort(arr,n,sizeof(AT),compare_sort);
+	
+	int cnt = 1;
+	int k =0;
+	for(i = 1;i<n;i++)
+	{
+		if(arr[i].sta >= arr[k].end)
+		{
+			k = i;
+			cnt++;
+		}
+	}
+	
+	free(arr);
+	printf("%d",cnt);
+	
+	
+	return 0;
+ } 
