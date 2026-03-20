@@ -1,0 +1,51 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+//对于环形石子合并问题，可以将环拆成链，即把原数组复制一份接在后面，
+//然后对每个长度为 N 的区间分别进行直线型石子合并的 DP，最后取所有区间的最小值和最大值。 
+int main()
+{
+	int n;
+	cin>>n;
+	vector<long long>v(2*n+1);
+	vector<long long>pre(2*n+1);
+	vector<vector<long long>>dp(2*n+1,vector<long long>(2*n+1,0));
+	vector<vector<long long>>dp2(2*n+1,vector<long long>(2*n+1,0));
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+		v[i+n] = v[i];
+		//pre[i] = pre[i-1] + v[i];
+	}
+	for(int i = 1;i<=n*2;i++)
+	{
+		pre[i] = pre[i-1] + v[i];
+	}
+	for(int len = 2;len <= n;len++) // 枚举第一个区间长度 
+	{
+		for(int i = 1;i + len -1 <=2*n;i++)//初始位置以及结束位置 
+		{
+			int j = i + len -1;
+			dp[i][j] = LLONG_MAX;
+			
+			dp2[i][j] = LLONG_MIN;
+			for(int k = i;k<j;k++)//枚举分割点 
+			{
+				long long cost = dp[i][k] + dp[k+1][j] +pre[j]- pre[i-1];
+				long long cost2 = dp2[i][k] + dp2[k+1][j] + pre[j] - pre[i-1];
+				dp[i][j] = min(cost,dp[i][j]);	
+				dp2[i][j]= max(cost2,dp2[i][j]);
+			}
+		}
+	}
+	long long ans1 = LLONG_MAX;
+	long long ans2 = LLONG_MIN;
+	for(int i = 1;i<=n;i++)
+	{
+		ans1 = min(dp[i][i+n-1],ans1);
+		ans2 = max(dp2[i][i+n-1],ans2);
+	}
+	
+	cout<<ans1<<endl<<ans2<<endl;
+	return 0;
+ } 
