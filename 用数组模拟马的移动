@@ -1,0 +1,51 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+struct xy{
+	int x;
+	int y;
+};
+
+int main()
+{
+	int n;
+	int m;
+	int x;
+	int y;
+	xy sta;
+	cin>>n>>m>>sta.x>>sta.y;
+	vector<vector<long long> >visited(n+1,vector<long long>(m+1,-1));
+	visited[sta.x][sta.y] = 0;
+	queue<xy>q;
+	
+	q.push(sta);
+	int h1[] = {-2,-1,1,2,2,1,-1,-2};
+	int h2[] = {1,2,2,1,-1,-2,-2,-1};
+	while(!q.empty())	
+	{
+		xy t = q.front();
+		q.pop();
+		for(int i = 0;i<8;i++)
+		{
+			xy a;
+			a.x = t.x + h1[i];
+			a.y = t.y+ h2[i];
+			if(a.x >= 1 && a.x <= n&& a.y >= 1 && a.y<=m && visited[a.x][a.y] == -1)
+			{
+				visited[a.x][a.y] = visited[t.x][t.y] + 1;
+				q.push(a);
+			}
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 1;j<=m;j++)
+		{
+			cout<<visited[i][j]<<" ";
+		}
+		cout<<endl;
+	}
+	
+	
+	return 0;
+ } 
