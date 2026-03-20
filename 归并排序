@@ -1,0 +1,72 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+void merge(int mid,int arr[],int left,int right,int temp[])
+{
+	int i = left;
+	int j = mid+1;
+	int k = left;
+	//比较大小，生成新数组 
+	while(i<=mid && j<= right)
+	{
+		if(arr[i] > arr[j])
+		{
+			temp[k++] = arr[j++]; 
+		}
+		else
+		{
+			temp[k++] = arr[i++];
+		}
+	}
+	//拼接剩余有数组 
+	while(i<= mid)
+	{
+		temp[k++] = arr[i++];
+	}
+	while(j<= right)
+	{
+		temp[k++] = arr[j++];
+	}
+	//修改数组 
+		for(k = left;k<=right;k++)
+	{
+		arr[k] = temp[k];
+	}
+}
+//对数组空间细分 
+void mergesort(int arr[],int left,int right,int temp[])
+{
+	int mid = left+(right-left)/2;
+	//当右大于左才递归 
+	if(left >= right)
+	{
+		return;
+	}
+	mergesort(arr,left,mid,temp);
+	mergesort(arr,mid+1,right,temp);
+	merge(mid,arr,left,right,temp);
+}
+//实际上。这个是修改左右边界的值来进行排列，当左右的值相等时候才开始进行排序， 这个时候不会再次划分，回到上一步， 
+int main()
+{
+	int n;
+	scanf("%d",&n);
+	int *arr = (int *)malloc(sizeof(int )*n);
+	int *temp = (int *)malloc(sizeof(int )*n);
+	int i = 0;
+	for(i = 0;i<n;i++)
+	{
+		scanf("%d",&arr[i]);
+	}
+	mergesort(arr,0,n-1,temp);
+	for(i = 0;i<n;i++)
+	{
+		printf("%d\n",arr[i]);
+	}
+	
+	
+	free(arr);
+	free(temp);
+	
+	return 0;
+ } 
