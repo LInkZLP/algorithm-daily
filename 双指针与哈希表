@@ -1,0 +1,50 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+//1 2 3 1 5 6
+//当种类数量满足条件就开始收缩
+int main()
+{
+	int n;
+	int m;
+	cin>>n>>m;
+	vector<int >vec(n);
+	for(auto p = vec.begin();p!=vec.end();p++)
+	{
+		cin>>*p; 
+	}
+	unordered_map <int,int> hash;
+	int left = 0;
+	int right;
+	int p1 = 0;
+	int p2 = 0;
+	int Min_len = n+1;
+	for(right = 0;right < n;right++)
+	{
+		hash[vec[right]]++;
+		while(hash.size() >= m)
+		{
+			if(hash.size() == m)
+			{
+				int len = right - left +1;
+				if(len < Min_len)
+				{
+					Min_len = len;
+					p1 = left+1;
+					p2 = right+1;
+				}
+			}
+			hash[vec[left]]--;
+			if(hash[vec[left]] == 0)
+			{
+				hash.erase(vec[left]);
+			}
+			left++;
+		}
+	}
+	cout<<p1<<" "<<p2<<endl;
+	
+	
+	return 0;
+	
+}
