@@ -1,0 +1,48 @@
+#include<bits/stdc++.h>
+using namespace std;
+long long gcd(long long m,long long n)
+{
+	return (n == 0) ? m : gcd(n,m%n);
+}
+
+//如果这些数属于某个等差数列，那么该等差数列的公差 d一定是所有相邻差值的最大公约数。因为等差数列中任意两项的差都是公差的整数倍，所以相邻差值的最大公约数就是可能的最大公差。
+int main() {
+  	int n;
+  	cin>>n;
+  	vector<long long>v(n+1);
+  	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+		
+	}
+	long long g = 0;
+	sort(v.begin()+1,v.end());
+	for(int i = 2;i<=n;i++)
+	{
+		long long d = abs(v[i] - v[i-1]);
+		if(d != 0)
+		{
+			if(g == 0)
+			{
+				g = d;
+			}
+			else
+			{
+				g = gcd(g,d);
+			}
+		}
+	}
+	long long sum = 0;
+	if(g == 0)
+	{
+		cout<<n<<endl;
+		return 0;
+	}
+//	cout<<g<<endl;
+	for(int i = 2;i<=n;i++)
+	{
+		sum += abs(v[i] - v[i-1]) / g - 1;
+	}
+	cout<<sum+n<<endl;
+    return 0;
+}
