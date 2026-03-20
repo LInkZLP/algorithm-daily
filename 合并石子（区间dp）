@@ -1,0 +1,33 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+
+int main()
+{
+	int n;
+	cin>>n;
+	vector<long long>v(n+1);
+	vector<long long>pre(n+1);
+	vector<vector<long long>>dp(n+1,vector<long long>(n+1,0));
+	//dp[i][j] 为合并 i到 j 的石子所需要的最小代价 
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+		pre[i] = pre[i-1] + v[i];
+	}
+	for(int len = 2;len <= n;len++) // 枚举第一个区间长度 
+	{
+		for(int i = 1;i + len -1 <=n;i++)
+		{
+			int j = i + len -1;
+			dp[i][j] = LLONG_MAX;
+			for(int k = i;k<j;k++)//枚举分割点 
+			{
+				long long cost = dp[i][k] + dp[k+1][j] +pre[j]- pre[i-1];
+				dp[i][j] = min(cost,dp[i][j]);		
+			}
+		}
+	}
+	cout<<dp[1][n]<<endl;
+	return 0;
+ } 
