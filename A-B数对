@@ -1,0 +1,25 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+
+int main()
+{
+	int n;
+	long long c;
+	cin>>n>>c;
+	vector<long long>v(n+1);
+	long long cnt= 0 ;
+  //每次处理进过一个数，判断m里面是否又有他，结束后增加满足和他配对的数
+	unordered_map<long long,int>m;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+		m[v[i]]++;
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		cnt+=m[v[i]+c];
+	}
+	cout<<cnt;
+	return 0;
+}
