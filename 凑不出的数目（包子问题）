@@ -1,0 +1,84 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+// 欧几里得算法求最大公约数
+/*设所有数的最大公约数为 
+设所有数的最大公约数为 
+d>1。那么每个数都是 
+d 的倍数，任意组合后依然是 d 的倍数*/
+int gcd(int m, int n)
+{
+    return n != 0 ? gcd(n, m % n) : m;
+}
+
+const int maxn = 100005;
+
+// 检查所有数的最大公约数是否大于1
+// 如果所有数的gcd > 1，那么只能凑出它们的倍数，有无限多个数凑不出
+bool notCoprime(vector<int>& v, int n)
+{
+    int g = v[1];  // 从第一个数开始
+    for(int i = 2; i <= n; i++)
+    {
+        g = gcd(g, v[i]);  // 逐步求所有数的最大公约数
+        if(g == 1)  // 一旦gcd变成1，说明可以凑出所有足够大的数
+        {
+            return false;
+        }
+    }
+    return g > 1;  // 如果所有数的gcd > 1，返回true
+}
+
+int main()
+{
+    int n;
+    cin >> n;
+    vector<int> v(105);  // 存储输入的n个数（从索引1开始）
+    int sum = 0;         // 统计凑不出的数的个数
+    vector<int> dp(maxn); // dp数组，dp[i]=1表示数字i可以凑出来
+    int k1 = 0;          // 标记是否有奇数
+    
+    // 输入数据
+    for(int i = 1; i <= n; i++)
+    {
+        cin >> v[i];
+        if(v[i] & 1)  // 如果当前数是奇数
+        {
+            k1 = 1;   // 标记存在奇数
+        }
+    }
+    
+    dp[0] = 1;  // 0总是可以凑出来（什么都不选）
+    
+    // 判断是否为INF情况（有无限多个数凑不出）
+    // 情况1: 所有数都是偶数（k1==0），那么只能凑出偶数，所有奇数都凑不出 → INF
+    // 情况2: 所有数的最大公约数大于1（notCoprime返回true），只能凑出该公约数的倍数 → INF
+    if(k1 == 0 || notCoprime(v, n))
+    {
+        cout << "INF" << endl;
+    }
+    else
+    {
+        // 完全背包问题：dp[j]表示能否凑出j
+        for(int i = 1; i <= n; i++)  // 遍历每种面额
+        {
+            for(int j = v[i]; j < maxn; j++)  // 正序遍历（完全背包）
+            {
+                // 如果j-v[i]可以凑出来，那么j也可以凑出来
+                dp[j] = max(dp[j], dp[j - v[i]]);
+            }
+        }
+        
+        // 统计在1到maxn-1范围内有多少个数凑不出来
+        for(int i = 1; i < maxn; i++)
+        {
+            if(!dp[i])  // dp[i]==0表示凑不出来
+            {
+                sum++;
+            }
+        }
+        cout << sum << endl;
+    }
+    
+    return 0;
+}
