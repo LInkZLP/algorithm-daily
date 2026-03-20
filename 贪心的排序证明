@@ -1,0 +1,123 @@
+//一般贪心排序证明思路：假设原数组存在一个排序，使得第i项的数组满足条件，那么对应的si是最佳答案，若我们交换i和i-1，新的i'向对应的si不满足条件，就可以退出排序条件，这里的比较复杂。
+/*简化后 M = max{a(i-1) / bi,1/b(i-1)},交换后，N = max{ai / b(i-1), 1 / bi},
+始终满足 M < N下面进行分类讨论：
+P1:若 a(i-1) / bi > 1/b(i-1),a(i-1) * b(i-1) > bi,P1t1:若ai / (bi-1) > bi,又M<N，得到 a(i-1) * b(i-1) < ai * bi
+P1t2 : 若 ai / (bi-1) < 1/bi,有 M <=N得到 ai <1,不考虑特例情况取等，不符合条件
+p2 ： 若 a(i-1) / bi < 1/b(i-1),a(i-1) * b(i-1) < bi,P2t1 : 有M <N ，得到ai > 1显然成立
+P2t2，M < N 得到，直接从 MN表达式子发现 ai < 1不符合。
+综上，满足的排序条件为a(i-1) * b(i-1) < ai * bi
+*/
+
+#include <bits/stdc++.h>
+
+using namespace std;
+
+struct hand{
+	int left;
+	int right;
+};
+bool compare_g(hand a,hand b)
+{
+	return (a.left * a.right < b.left * b.right);
+}
+string mul(string sum_g,int right)
+{
+	string s1 = to_string(right);
+	int n = sum_g.size();
+	int m = s1.size();
+	vector<int>ret(n+m,0);
+	for(int i = n-1;i>=0;i--)
+	{
+		for(int j = m-1;j>=0;j--)
+		{
+			int t = (sum_g[i] - '0') * (s1[j] - '0') +ret[i+j+1];
+			ret[i+j+1] = t%10;
+			ret[i+j] += t/10;
+		}
+	}
+	string ans;
+	for(auto p = ret.begin();p!= ret.end();p++)
+	{
+		if(!(ans.empty() && (*p == 0)))
+		{
+			ans+=char(*p + '0');
+		}
+	}
+	
+	return ans.empty()? "0" : ans;
+}
+
+string div(string a,int b)
+{
+	string q;
+	long long r = 0;
+	for(auto p = a.begin();p!= a.end();p++)
+	{
+		r = r*10 + (*p) - '0';
+		q += r / b + '0';
+		r %= b;
+	}
+	while(q.size() > 1 && q[0] == '0')
+	{
+		q.erase(0,1);
+	}
+	return q;
+}
+bool compare_num(string a,string b)
+{
+	int n = a.size();
+	int m = b.size();
+	if(n > m)
+	{
+		return true;
+	}
+	else if( n < m)
+	{
+		return false;
+	}
+	else
+	{
+		for(int i = 0;i<n;i++)
+		{
+			if(a[i] > b[i])
+			{
+				return true;
+			}
+			else if(a[i] < b[i])
+			{
+				return false;
+			}
+			else
+			{
+				continue;
+			}
+		}
+		return true;
+	}
+	
+}
+int main()
+{
+	int n;
+	cin>>n;
+	vector<hand>vec(n+1);
+	for(int i = 0;i<n+1;i++)
+	{
+		cin>>vec[i].left>>vec[i].right;
+	}
+	sort(vec.begin()+1,vec.end(),compare_g);
+	string sum_g = to_string(vec[0].left);
+	string temp = "";
+	string max_g = "";
+	for(int i = 1;i<n+1;i++)
+	{
+		temp = div(sum_g,vec[i].right);
+		if(compare_num(temp,max_g))
+		{
+			max_g = temp;
+		}
+		sum_g = mul(sum_g,vec[i].left);
+	}
+	cout<<max_g;
+	return 0;
+}
