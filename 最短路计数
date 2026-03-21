@@ -1,0 +1,67 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+const int maxn = 1e6 +5; 
+vector<vector<int>>vec(maxn);
+vector<long long>dist(maxn,1e18);//这里不考虑使用visited数组，因为内存太大，事实上，visited数组是多余的，只需要判断dist是否修改过
+vector<long long>num(maxn);
+//vector<bool>visited(maxn);
+const int mo = 100003;
+void mindist(int sta)
+{
+	queue<int> pq;
+	pq.push(sta);
+	dist[sta] = 0;
+	num[sta] = 1;
+//	visited[sta] = true;
+	while(!pq.empty())
+	{
+		int r = pq.front();
+		pq.pop();
+		
+		for(int i = 0;i<vec[r].size();i++)
+		{
+			int next = vec[r][i];
+			if(dist[next]== 1e18)
+			{
+				pq.push(next);
+				//visited[next] = true;
+			}
+			if(dist[r] + 1 == dist[next])
+			{
+				num[next] = (num[next] + num[r]) % mo;
+			}
+			else if(dist[r] + 1 < dist[next])
+			{
+				num[next] = num[r];
+				dist[next] = dist[r] + 1;
+			}
+			
+		}
+	}
+	return;
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+	int n;
+	int m;
+	cin>>n>>m;
+	for(int i = 1;i<=m;i++)
+	{
+		int a;
+		int b;
+		cin>>a>>b;
+		vec[a].push_back(b);
+		vec[b].push_back(a);
+	}
+	mindist(1);	
+	for(int i = 1;i<=n;i++)
+	{
+		cout<<num[i]<<endl;
+	}
+	
+
+	return 0;
+ } 
