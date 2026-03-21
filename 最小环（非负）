@@ -1,0 +1,79 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+vector<vector<pair<long long,int>>>v(220);
+long long ans = LLONG_MAX;
+const long long INF = 1e18;
+int n;
+int m;
+void work()
+{
+	for(int u = 1;u<=n;u++) // 枚举所有节点。 
+	{
+		for(int i = 0;i < v[u].size();i++) // 枚举所有节点的子节点 
+		{
+			int next = v[u][i].second;//子节点索引 
+			int value = v[u][i].first;	//到子节点的权值 
+			vector<long long> dist(n + 1, INF); 
+			priority_queue<pair<long long,int>,vector<pair<long long,int>>,greater<pair<long long,int>>>pq;
+			dist[next] = 0;//子节点到自身的初始环值为0 ，只要能回到父节点u就说明U可以成最小环 
+			// 从 next 到 u 的最短距离（禁止使用边 (u,next)）
+			//dist是子节点到其他节点的距离 
+			pq.push({0,next});
+			while(!pq.empty())
+			{
+				int x = pq.top().second;
+				long long d = pq.top().first;
+				pq.pop();
+				if(d > dist[x])
+				{
+					continue;
+				}
+				for(int j = 0;j<v[x].size();j++)
+				{
+					int y = v[x][j].second;
+					long long w2 = v[x][j].first;
+					if(x == next && y == u)//不可以在当前为为next下回到父节点，成环最少三个节点 
+					{
+						continue;	
+					} 
+					if(dist[y] > dist[x] + w2)//是否添加 
+					{
+						dist[y] = dist[x] + w2;
+						pq.push({dist[y],y});
+					}
+				}
+			}
+			if(dist[u] != INF)//能否成环 
+			{
+				ans = min(ans,dist[u] + value);
+				//value是初始U到next的距离 
+			}
+		}
+	}
+}
+
+
+int main()
+{
+	cin>>n>>m;
+	for(int i = 1;i<=m;i++)
+	{
+		int a;
+		int b;
+		int w;
+		cin>>a>>b>>w;
+		v[a].push_back({w,b});//无向图 
+		v[b].push_back({w,a});
+	}
+	work();
+	if(ans == LLONG_MAX)
+	{
+		cout<<"No solution."<<endl;
+	}
+	else
+	{
+		cout<<ans<<endl;
+	}
+	return 0;
+}
