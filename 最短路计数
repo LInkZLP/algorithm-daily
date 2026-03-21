@@ -1,4 +1,7 @@
 #include <bits/stdc++.h>
+//本题BFS 代码	单源	无权图（或边权全为1）	无负权（实际上边权固定为1）	O(n + m)	无权图单源最短路径及计数
+//Dijkstra 算法	单源	带权图	边权非负	O((n+m) log n)（堆优化）	非负权单源最短路径
+//Floyd 算法	多源	带权图	可处理负权（但不能有负环）	O(n³)	所有点对之间的最短路径
 
 using namespace std;
 const int maxn = 1e6 +5; 
