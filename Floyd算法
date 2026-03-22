@@ -1,0 +1,59 @@
+#include <iostream>
+#include <vector>
+#include <climits>
+/*Dijkstra：通常实现不支持负权边（贪心策略会失效）。若图中存在负权边，需改用 Bellman‑Ford 或 SPFA。
+
+Floyd：可以处理负权边，但前提是图中没有负权环。如果存在负环，算法会检测到 dist[i][i] < 0，此时最短路径无定义。
+using namespace std;
+
+const int INF = INT_MAX / 2;  // 防止加法溢出
+*/
+// Floyd-Warshall 算法
+void floydWarshall(vector<vector<int>>& dist, int n) {
+    // 三重循环，k 为中间顶点
+    for (int k = 0; k < n; ++k) {
+        for (int i = 0; i < n; ++i) {
+            for (int j = 0; j < n; ++j) {
+                // 如果经过 k 的路径更短，则更新
+                if (dist[i][k] != INF && dist[k][j] != INF &&
+                    dist[i][k] + dist[k][j] < dist[i][j]) {
+                    dist[i][j] = dist[i][k] + dist[k][j];
+                }
+            }
+        }
+    }
+}
+
+int main() {
+    int n, m;  // n: 顶点数, m: 边数
+    cout << "请输入顶点数和边数: ";
+    cin >> n >> m;
+
+    // 初始化距离矩阵
+    vector<vector<int>> dist(n, vector<int>(n, INF));
+    for (int i = 0; i < n; ++i) dist[i][i] = 0;
+
+    cout << "请输入每条边的起点、终点和权值 (0-based):" << endl;
+    for (int i = 0; i < m; ++i) {
+        int u, v, w;
+        cin >> u >> v >> w;
+        dist[u][v] = w;
+        // 如果是无向图，加上 dist[v][u] = w;
+    }
+
+    floydWarshall(dist, n);
+
+    // 输出结果
+    cout << "所有点对最短距离:" << endl;
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            if (dist[i][j] == INF)
+                cout << "INF\t";
+            else
+                cout << dist[i][j] << "\t";
+        }
+        cout << endl;
+    }
+
+    return 0;
+}
