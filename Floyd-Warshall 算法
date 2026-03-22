@@ -1,0 +1,83 @@
+#include <bits/stdc++.h>
+//换句话说，Floyd 是一个按顺序添加中间节点的过程：每加入一个新顶点 k
+//，就用它来更新所有点对的距离。最终，当所有顶点都被加入后，dist[i][j] 就是全局最短路径。
+//本题是P1119
+//每个村庄 i 有一个重建完成时间 t[i]，且保证 t[0] ≤ t[1] ≤ … ≤ t[n-1]。即村庄编号顺序与重建时间顺序一致。
+//随着询问时间 t 的增加，允许作为中间节点的村庄集合只会逐渐扩大，不会缩小。
+using namespace std;
+int n;
+int m;
+int x;
+int y;
+vector<int>rebuild(205);
+int q;
+void work(vector<vector<int>>&dist,int k)
+{
+	for(int i = 0;i<n;i++)
+	{
+		for(int j = 0;j<n;j++)
+		{
+			if(dist[i][k] != INT_MAX && dist[k][j] != INT_MAX)	
+			{
+				if(dist[i][j] > dist[i][k] + dist[k][j])
+				{
+					dist[i][j] = dist[i][k] + dist[k][j];
+				}
+			}
+		}
+	}
+	return;
+}
+int main()
+{
+	cin>>n>>m;
+	for(int i = 0;i<n;i++)
+	{
+		cin>>rebuild[i];
+	}
+	vector<vector<int>>dist(205,vector<int>(205,INT_MAX));
+	for(int i = 0;i<n;i++)
+	{
+		dist[i][i] = 0;
+	}	
+	int last_k = 0;//last_k记录着当前最晚修复的节点
+	for(int i = 0;i<m;i++)
+	{
+		int a;
+		int b;
+		int c;
+		cin>>a>>b>>c;
+		dist[a][b] = c;
+		dist[b][a] = c;
+	}
+	cin>>q;
+	for(int i = 0;i<q;i++)
+	{
+		int a;
+		int b;
+		int t;
+		cin>>a>>b>>t;
+		if(rebuild[a] > t || rebuild[b] > t)
+		{
+			cout<<"-1"<<endl;
+			continue;
+		}
+		//vector<vector<int>>dist = temp;
+		while(last_k < n&& rebuild[last_k] <= t)//若rebuild[last_k] >= t说明这个最晚修复的节点已经在t前修复
+		{
+			work(dist,last_k);//在last_k 之前的节点已经遍历了,i 到 k 到j ,不会出现遗漏
+			last_k++;
+		}
+		if(dist[a][b] == INT_MAX)
+		{
+			cout<<"-1"<<endl;
+		}
+		else
+		{
+			cout<<dist[a][b]<<endl;
+		}
+	}
+	
+	
+	return 0;
+}
