@@ -46,7 +46,7 @@ void mindist(int sta)
 			if(dist[ner] > dist[r.id] + we)
 			{
 				dist[ner] = dist[r.id] + we;
-				pq.push({ner,dist[ner]});
+				pq.push({ner,dist[ner]});//仅在这个是更短时才入队。
 			}
 			
 		}
