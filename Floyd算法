@@ -8,6 +8,7 @@ using namespace std;
 
 const int INF = INT_MAX / 2;  // 防止加法溢出
 */
+//初始化自己到自己，添加自己到邻居
 // Floyd-Warshall 算法
 void floydWarshall(vector<vector<int>>& dist, int n) {
     // 三重循环，k 为中间顶点
