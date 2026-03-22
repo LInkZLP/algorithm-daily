@@ -1,0 +1,78 @@
+//不能创建图之后就直接从节点n出发到1，不仅是因为图是单向的，而且这个只能得到n到其他节点的距离，不能得到其他节点到1的最短距离
+//这个代码中第二次 Dijkstra 是从 n 出发计算到所有点的最短路径，但我们需要的是从所有点到 1 的最短路径。
+//由于边是有向的，从 n 出发不能得到其他点到 1 的最短路径。所以结果错误。
+//因为道路是单行的，所以从 1 到 i 的最短路径可能根本无法原路返回——那条路的反向可能根本不存在，
+//或者存在但更长。因此，必须分别计算去程（1→i）和回程（i→1）的最短时间，然后相加。
+//建立反向图是为了方便计算“从每个点回到起点”的最短路径，这并不改变原图的有向性。
+//原图依然保持单向道路，只是我们利用反向图绕过了需要从每个点出发跑一次 Dijkstra 的麻烦。
+//反向图不是无向图
+#include <bits/stdc++.h>
+
+using namespace std;
+int n;
+int m;
+int s = 1;
+const int maxn = 100001;
+
+void work(vector<vector<pair<long long,int>>>&v,vector<long long>&dist)
+{
+	priority_queue<pair<long long,int>,vector<pair<long long,int>>,greater<pair<long long,int>>>pq;
+	dist[s] = 0;
+	pq.push({0,s});
+	while(!pq.empty())
+	{
+		long long d = pq.top().first;
+		int t = pq.top().second;
+		pq.pop();
+		if(d > dist[t]) 	
+		{				
+			continue; 
+		}
+		for(int i = 0;i<v[t].size();i++)
+		{
+			int next = v[t][i].second;
+			long long x = v[t][i].first;
+			if(dist[next] > dist[t] + x)
+			{
+				dist[next] = dist[t] + x;
+				pq.push({dist[next],next});
+			}
+		}
+	}
+	return;
+}
+
+int main()
+{
+	cin>>n>>m;
+	vector<vector<pair<long long,int>>>v(maxn);
+	vector<vector<pair<long long,int>>>v2(maxn);//反向图
+	vector<long long>dist(maxn,INT_MAX);
+	vector<long long>dist2(maxn,INT_MAX);
+	for(int i = 1;i<=m;i++)
+	{
+		int a;
+		int b;
+		long long w;
+		cin>>a>>b>>w;
+		v[a].push_back({w,b});
+		v2[b].push_back({w,a});
+	}
+//注意原图和反向图是不一样的
+	work(v,dist);
+	work(v2,dist2);
+	long long sum = 0;
+	for(int i = 1;i<=n;i++)
+	{
+		sum += dist[i];
+		dist[i] = INT_MAX;
+	}
+//注意，第二次出发也是从起点开始的！！！，已经保证了v2没有v的路！！！
+	for(int i= 1;i<=n;i++)
+	{
+		sum+=dist2[i];
+	}
+	cout<<sum<<endl;
+	
+	return 0;
+ } 
