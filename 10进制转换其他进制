@@ -1,0 +1,36 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+string work(int x,long long t)
+{
+	string now ="";
+	while(t > 0)
+	{
+		int d = t % x;
+		if(d >= 10)
+		{
+			now += d - 10 + 'A';
+		}
+		else
+		{
+			now += d + '0';
+		}
+		t = t / x;
+	}
+	reverse(now.begin(),now.end());
+	return now;
+}
+
+int main()
+{
+	int x = 11;
+	long long t;
+	cin>>t;
+	while(x <= 36)
+	{
+		cout<<work(x,t)<<endl;
+		x++;
+	}
+
+	return 0;	
+ } 
