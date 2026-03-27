@@ -1,0 +1,29 @@
+#include <bitset>
+#include <iostream>
+
+int main() {
+    // 定义一个长度为 10 的 bitset，初始全 0
+    std::bitset<10> b;
+
+    // 设置第 3 位（从 0 开始计数）为 1
+    b.set(3);
+
+    // 测试第 3 位是否为 1
+    if (b.test(3)) std::cout << "bit 3 is set\n";
+
+    // 直接访问位
+    b[5] = 1;
+
+    // 统计 1 的个数
+    std::cout << "count of ones: " << b.count() << '\n';
+
+    // 按位或操作
+    std::bitset<10> other;
+    other.set(0);
+    b |= other;   // b 的第 0 位变为 1
+
+    // 输出整个 bitset（二进制字符串）
+    std::cout << b << '\n';
+
+    return 0;
+}
