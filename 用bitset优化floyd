@@ -1,0 +1,48 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+const int maxn = 2002;
+int n;
+long long sum = 0;
+
+bitset<maxn>reach[maxn];//定义了一个bitset类型的数组，reach[i][j]表示i到j是否可以 
+void work()
+{
+	for(int k = 1;k<=n;k++)
+	{
+		for(int i = 1;i<=n;i++)// i 和 k的先后遍历保证了全部节点都可以交流 
+		{
+			if(reach[i][k])
+			{
+				reach[i] |= reach[k];// |= 是复合赋值：将 reach[i] | reach[k] 的结果赋给 reach[i]
+			}
+		}
+	}
+	//在 Floyd 传递闭包中，如果 i 能到达 k（即 reach[i][k] == 1），那么 i 就能通过 k 到达所有 k 能到达的节点。
+	//因此需要把 reach[k] 中所有为 1 的位合并到 reach[i] 中。
+	//这正是 reach[i] |= reach[k] 完成的工作
+}
+int main()
+{
+	cin>>n;
+	for(int i = 1;i<=n;i++)
+	{
+		string t;
+		cin>>t;
+		for(int j = 0;j<n;j++)
+		{
+			if(t[j] == '1')
+			{
+				reach[i].set(j+1);	
+			}	
+		}
+		reach[i].set(i);
+	}
+	work();
+	for(int i = 1;i<=n;i++)
+	{
+		sum+=reach[i].count();
+	}
+	cout<<sum;
+	return 0;
+}
