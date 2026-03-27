@@ -1,6 +1,19 @@
 #include <bitset>
 #include <iostream>
+/*
+set(pos)：将第 pos 位设为 1（无参数则全部设为 1）
 
+reset(pos)：将第 pos 位设为 0
+
+test(pos)：返回第 pos 位的值
+
+count()：返回 1 的个数
+
+any()、none()：检查是否有 1 或全 0
+
+to_string()、to_ulong()、to_ullong()：转换为字符串或整数
+
+*/
 int main() {
     // 定义一个长度为 10 的 bitset，初始全 0
     std::bitset<10> b;
