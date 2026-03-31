@@ -1,0 +1,87 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+int n;
+int t;
+int m;
+const int maxn = 2001;
+///每绕一圈，负环值越来越小 ,一旦负环环节点出现次数大于n说明成环
+int main()
+{
+	cin>>t;
+	while(t--)
+	{
+		cin>>n>>m;;
+		vector<vector<pair<int,int>>>v(maxn);
+		vector<long long>dist(maxn,INT_MAX);//INT_MAX视为不可达 
+		vector<int>cnt(n+1,0);//检测入队次数
+		vector<bool>vis(n+1,false);
+		for(int i = 1;i<=m;i++)
+		{
+			int a;
+			int b;
+			int w;
+			cin>>a>>b>>w;
+			if(w >= 0)
+			{
+				v[a].push_back({b,w});
+				v[b].push_back({a,w});
+			}
+			else
+			{
+				v[a].push_back({b,w});
+			}
+		}
+		
+		queue<int>q;
+		q.push(1);
+		dist[1] = 0;
+		vis[1] = true;
+		bool pass = false;
+		while(!q.empty())
+		{
+			int r = q.front();
+			q.pop();
+			vis[r] = false;
+			if(dist[r] == INT_MAX)
+			{
+				continue;
+			}
+			for(int i = 0;i<v[r].size();i++)
+			{
+				int next = v[r][i].first;
+				int d = v[r][i].second;
+				if(dist[next] > dist[r] + d)
+				{
+					dist[next] = dist[r] + d;
+					if(!vis[next])
+					{
+						q.push(next);
+						cnt[next] ++;
+						vis[next] = true;
+						if(cnt[next] >=n)
+						{
+							pass = true;
+							break;
+						}
+					}
+				}
+			}
+			if(pass)
+			{
+				break;
+			}
+		}
+		if(pass)
+		{
+			cout<<"YES"<<endl;
+			continue;
+		}
+		cout<<"NO"<<endl;
+	}
+	
+	
+	
+	
+	return 0;
+}
