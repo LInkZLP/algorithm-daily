@@ -1,0 +1,91 @@
+#include <bits/stdc++.h>
+//这道题（小K的农场）属于差分约束系统。
+//差分约束就是给出一组形如 xu - xv <= w 的不等式，要求判断是否存在满足所有不等式的解（或求一组解）。
+//这里我们可以直接转化为单元最短路，虽然这里dist数组只能用来判断是否有负环
+//因为差分约束建出的图可能含有负权边，Dijkstra 无法处理
+using namespace std;
+const int maxn = 5001;
+int n;
+int m;
+vector<vector<pair<int,int>>>v(maxn);
+int main()
+{
+	cin>>n>>m;	
+	for(int i = 1;i<=m;i++)
+	{
+		int a;
+		int b;
+		int c;
+		int d;
+		cin>>d;
+		if(d == 1)
+		{
+			cin>>a>>b>>c;
+			v[a].push_back({b,-c});
+		}
+		else if(d==2)
+		{
+			cin>>a>>b>>c;
+			v[b].push_back({a,c });
+		}
+		else
+		{
+			cin>>a>>b;
+			v[a].push_back({b,0});
+			v[b].push_back({a,0});
+		}
+	}
+	//环或者check
+	vector<int>cnt(n+1,0);
+	//cnt[v] 表示从源点到顶点 v 的当前最短路径所包含的边数。
+	queue<int>q;
+	vector<bool>vis(n+1,true);
+	vector<long long>dist(n+1,0); 
+	for(int i = 1;i<=n;i++)//防止错过其他起点的负环 
+	{
+		q.push(i); 
+	}
+	bool pass = false;
+	while(!q.empty())
+	{
+		int r = q.front();
+		q.pop();
+		vis[r] = false;
+		for(int i = 0;i<v[r].size();i++)
+		{
+			int next = v[r][i].first;
+			int d = v[r][i].second;
+			if(dist[next] > dist[r] + d)
+			{
+				dist[next] = dist[r] + d;
+				cnt[next] = cnt[r] + 1;//无论是否在队列也要更新 
+				if(cnt[next] >= n)
+				{
+					pass = true;
+					break;
+				}
+				if(!vis[next])
+				{
+					q.push(next);
+					vis[next] = true;
+					
+		//cnt[next]++ 只是简单地把 cnt[next] 加 1，这并不意味着你记录了从源点到 next 的准确边数。
+		//cnt[next]可能会被多次更新，每次更新时它都会加 1，但这样无法反映出当前最短路径到底用了多少条边。 
+				}
+			}
+		}
+		if(pass)
+		{
+			break;
+		}
+	}
+	if(pass)
+	{
+		cout<<"No"<<endl;
+	}
+	else
+	{
+		cout<<"Yes"<<endl;
+	}
+	return 0;
+ } 
