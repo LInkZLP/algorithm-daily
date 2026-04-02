@@ -1,0 +1,63 @@
+#include <bits/stdc++.h>
+//寻找极差不超过k的最长子段
+using namespace std;
+
+int main()
+{
+	long long k;
+	int n;
+	cin>>k>>n;
+	vector<long long>vec(n);
+	for(int i = 0;i<n;i++)
+	{
+		cin>>vec[i];
+	}
+	int l = 0;
+	int r = 1;
+	int maxlen = 1;
+	deque<int>dqmax;
+	deque<int>dqmin;
+	dqmax.push_back(0);
+    dqmin.push_back(0);
+	while(r<n)
+	{
+		int i = r;
+		while(!dqmax.empty() && dqmax.front() <l)
+		{
+			dqmax.pop_front();
+		}
+		while(!dqmax.empty() && vec[dqmax.back()] <vec[i])
+		{
+			dqmax.pop_back();	
+		}	
+		while(!dqmin.empty() && dqmin.front() <l)
+		{
+			dqmin.pop_front();
+		}
+		while(!dqmin.empty() && vec[dqmin.back()] >vec[i])
+		{
+			dqmin.pop_back();	
+		}	
+		dqmax.push_back(r);
+		dqmin.push_back(r);//维护单调队列单调性
+		while(vec[dqmax.front()] - vec[dqmin.front()] >k)//开始收缩
+		{
+			l++;//维护小于k的性质
+			if(!dqmax.empty()&& dqmax.front() < l)
+			{
+				dqmax.pop_front();，
+			}
+			if(!dqmin.empty()&& dqmin.front() < l)
+			{
+				dqmin.pop_front();
+			}
+		}
+	
+		maxlen = max(r - l+1,maxlen);
+		r++;
+	}
+	
+	
+	cout<<maxlen;
+	return 0;
+}
