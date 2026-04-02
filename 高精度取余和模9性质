@@ -1,0 +1,31 @@
+#include <bits/stdc++.h>
+using namespace std;
+int q;
+
+int bigmod(const string n,int mod)
+{
+	int res = 0;
+	for(char c : n)
+	{
+		res = (res * 10 + (c-'0') )% mod;
+	}
+	return res;
+}
+//一个数除以 9 的余数等于它的各位数字之和除以 9 的余数。
+//整个拼接数字 ≡ (l + (l+1) + ... + r) mod 9。
+int main()
+{
+	cin>>q;
+	int mod = 9;
+	while(q--)
+	{
+		long long l = 0;
+		long long r = 0;
+		cin>>l>>r;
+		long long sum = (l+r) * (r-l+1)/2;
+		cout<<bigmod(to_string(sum),mod)<<endl;
+	}
+
+	
+	return 0;
+ } 
