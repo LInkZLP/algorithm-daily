@@ -1,0 +1,35 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+//对于一个整数数组，是否存在整数序列使ai * xi=s > 0并且s尽可能小
+int gcd(int m,int n)
+{
+	return n == 0? m : gcd(n,m%n);
+}
+//裴蜀定理
+//对于任意整数a,b，存在整数x,y使得ax+by = gcd(a,b)
+// 
+//S一定是 d 的整数倍
+int k;
+int main()
+{
+	cin>>k;
+	int g = 1;
+	for(int i = 1;i<=k;i++)
+	{
+		int a;
+		cin>>a;
+		a = a < 0? -a:a;
+		if(i == 1)
+		{
+			g = a;
+		}
+		else
+		{
+			g = gcd(a,g);
+		}
+	}
+	cout<<g<<endl;
+	
+	return 0;
+ } 
