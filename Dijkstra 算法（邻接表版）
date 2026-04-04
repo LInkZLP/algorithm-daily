@@ -47,6 +47,7 @@ void mindist(int sta)
 			{
 				dist[ner] = dist[r.id] + we;
 				pq.push({ner,dist[ner]});//仅在这个是更短时才入队。
+				//在 Dijkstra 算法中，“入队时标记”会破坏算法的正确性，因为它可能阻止更优的路径被处理。
 			}
 			
 		}
