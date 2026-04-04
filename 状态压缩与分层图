@@ -1,0 +1,91 @@
+#include<bits/stdc++.h>
+using namespace std;
+// dist[i][k] = dist[i][k+1] + 0
+//dist[i][k] = dist[i][k] + d
+#define pli pair<long long,int>
+int n;
+int m;
+int k;
+const int  maxn = 10001;
+vector<vector<pli>>v(maxn);
+vector<vector<long long>>dist(maxn,vector<long long>(11,INT_MAX));
+int sta;
+int end1;
+//偷懒不用重载运算符：状态压缩，将两个变量压缩成一个变量
+// id  = 节点编号 * （k+1） + 剩余次数 -> second
+// 还原 ：节点 = id / (k+1) (整数除法），剩余次数 = id % (k+1) 
+//Id状态安全，独立，唯一 
+//平时写二维数组 arr[a][b]，计算机在内存中也是用 arr[a * B + b] 来访问的。
+//所以这个技巧就是手动模拟了计算机底层处理二维数组的方式。
+//还能用在什么地方？
+//1. 分层图最短路
+
+//2. BFS 在网格上的扩展状态
+
+//3. 动态规划中的状态压缩迷宫中有钥匙和门，状态为 (x, y, 钥匙集合)。钥匙集合可以用位掩码（0~2^K-1），那么总状态数 = 行×列×2^K。编码 id = (x * 列 + y) * 2^K + mask。
+
+//4. 双指针/多指针问题:两个字符串的最长公共子序列，但需要额外记录一些信息（如已经匹配了几个特殊字符）。状态 (i, j, extra)，编码后可用一维数组优化空间。
+
+//5. 游戏 AI 的搜索状态,比如一个棋盘游戏，状态包括棋子位置、回合数、是否用过特殊技能等，编码后放入哈希集判重
+
+//6. 并查集处理多维坐标:比如你要合并三维网格中的相邻点，可以将 (x,y,z) 编码为 x * Y*Z + y * Z + z，然后使用一维并查集
+//7. 哈希缓存函数结果
+void work()
+{
+	priority_queue<pli,vector<pli>,greater<pli>>pq;
+	int id1 = sta * (k+1) + k;
+	pq.push({0,id1});
+	dist[sta][k] = 0;
+	//在 Dijkstra 算法中，“入队时标记”会破坏算法的正确性，因为它可能阻止更优的路径被处理。 
+	while(!pq.empty())
+	{
+		int id = pq.top().second;
+		int now = id /( k+1);
+		int c = id % (k+1);
+		pq.pop();
+		for(int i = 0;i<v[now].size();i++)
+		{
+			int next = v[now][i].second;
+			int d = v[now][i].first; 
+			if(dist[next][c] > dist[now][c] + d)
+			{
+				dist[next][c] = dist[now][c] + d;
+				int se = next * (k+1) + c;
+				pq.push({dist[next][c] ,se});
+			}
+			if(c == 0)
+			{
+				continue;
+			}
+			if(dist[next][c-1] >  dist[now][c])
+			{
+				dist[next][c-1] = dist[now][c];
+				int se = next * (k+1) + c-1;
+				pq.push({dist[next][c-1] ,se});
+			}
+		}
+		
+	}
+	return ;
+}
+int main()
+{
+	cin>>n>>m>>k>>sta>>end1;
+	for(int i = 1;i<=m;i++)
+	{
+		int a;
+		int b;
+		int c;
+		cin>>a>>b>>c;
+		v[a].push_back({c,b});
+		v[b].push_back({c,a});
+	}
+	long long ans = INT_MAX;
+	work();
+	for(int i = 0;i<=k;i++)
+	{
+		ans = min(ans,dist[end1][i]);
+	}
+	cout<<ans<<endl;
+	return 0;
+}
