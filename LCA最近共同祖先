@@ -1,0 +1,81 @@
+#include <bits/stdc++.h>
+
+using namespace std;
+const int maxn = 5e5 + 5;
+const int LOG = 20;
+vector<int>dep(maxn);
+vector<vector<int>>g(maxn);
+vector<vector<int>>up(maxn,vector<int>(LOG,0));
+//节点的2^i 级祖先是2^(i-1)级祖先的2 ^(i-1)级祖先 
+// DFS 预处理深度与倍增祖先
+void dfs(int u,int p)
+ {
+ 	up[u][0] = p;
+ 	for(int i = 1;i<LOG;i++)
+ 	{
+ 		up[u][i] = up[up[u][i-1]][i-1];
+	}
+	for(int v : g[u])
+	{
+		if(v == p)
+		{
+			continue;
+		}
+		dep[v] = dep[u] + 1;
+		dfs(v,u);
+	}
+ }
+ //求LCA 
+ int lca(int a,int b)
+ {
+ 	if(dep[a] < dep[b])
+ 	{
+ 		swap(a,b);
+	}
+	int diff  = dep[a] - dep[b];
+	for(int i = 0;i<LOG;i++)
+	{
+		if(diff & (1 << i)) // i 为二进制跳跃选择 
+		{
+			a = up[a][i];
+		}
+	}
+	if(a == b)
+	{
+		return a;
+	}
+ 	for(int i = LOG-1;i>=0;i--)
+ 	{
+ 		if(up[a][i] != up[b][i])
+ 		{
+ 			a = up[a][i];
+ 			b = up[b][i];
+		}
+	}
+	return up[a][0];
+ }
+int main()
+{
+	int n;
+	int m;
+	int root;
+	scanf("%d %d %d",&n,&m,&root);
+	for(int i = 1;i<n;i++)
+	{
+		int u;
+		int v;
+		scanf("%d %d",&u,&v);
+		g[u].push_back(v);
+		g[v].push_back(u);
+	}
+	dep[root] = 1;
+	dfs(root,root);
+	while(m--)
+	{
+		int a;
+		int b;
+		scanf("%d %d",&a,&b);
+		printf("%d\n",lca(a,b));
+	}
+	return 0;
+ } 
