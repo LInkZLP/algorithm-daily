@@ -1,0 +1,96 @@
+#include <bits/stdc++.h>
+using namespace std;
+#define pii pair<int,int>
+const int maxn = 1e5 + 5;   // 最大节点数
+const int LOG = 20;         // 倍增层数，2^20 > 1e5
+
+int n, k;
+vector<vector<pii>> v(maxn);        // 邻接表，存储 (边权, 目标节点)
+vector<vector<int>> up(maxn, vector<int>(LOG, 0)); // up[u][i]: u向上跳2^i步的祖先
+vector<int> dep(maxn);              // 节点深度
+vector<long long> g(maxn);          // g[u]: 根节点(1)到u的路径总长度
+
+// 深度优先搜索预处理深度、祖先、根距离
+void dfs(int u, int p) {
+    up[u][0] = p;                   // 向上跳1步（2^0）的父节点
+    for (int i = 1; i < LOG; ++i) {
+        // 2^i = 2^(i-1) + 2^(i-1)
+        up[u][i] = up[up[u][i-1]][i-1];
+    }
+    for (int i = 0; i < (int)v[u].size(); ++i) {
+        pii r = v[u][i];
+        int to = r.second, w = r.first;
+        if (to == p) continue;      // 跳过父节点
+        dep[to] = dep[u] + 1;       // 深度+1
+        g[to] = g[u] + w;           // 累计根距离
+        dfs(to, u);
+    }
+}
+
+// 倍增法求LCA
+int lca(int a, int b) {
+    if (dep[a] < dep[b]) swap(a, b);    // 保证a更深
+    int h = dep[a] - dep[b];            // 深度差
+    // 将a上移h步
+    for (int i = 0; i < LOG; ++i) {
+        if (h & (1 << i)) {
+            a = up[a][i];
+        }
+    }
+    if (a == b) return a;               // 其中一个就是LCA
+    // 一起向上跳，直到父节点相同
+    for (int i = LOG - 1; i >= 0; --i) {
+        if (up[a][i] != up[b][i]) {
+            a = up[a][i];
+            b = up[b][i];
+        }
+    }
+    return up[a][0];                    // 父节点即为LCA
+}
+
+int main() {
+    cin >> n >> k;
+    // 读入n-1条边
+    for (int i = 1; i <= n - 1; ++i) {
+        int a, b, c;
+        cin >> a >> b >> c;
+        v[a].push_back({c, b});
+        v[b].push_back({c, a});
+    }
+
+    vector<int> temp(k);                // 游览顺序序列
+    up[1][0] = 1;                       // 根节点1的父节点设为自己
+    dfs(1, 1);                          // 从根开始预处理
+
+    for (int i = 0; i < k; ++i) {
+        cin >> temp[i];
+    }
+
+    // adj[i] 表示从 temp[i] 到 temp[i+1] 的树上距离（路径长度）
+    // 注意：只有 k-1 段，但为了方便，我们声明大小为 k，只使用前 k-1 个
+    vector<long long> adj(k);
+    long long sum = 0;                  // 完整游览序列的总路径长度
+    for (int i = 0; i < k - 1; ++i) {
+        int p = lca(temp[i], temp[i+1]);
+        adj[i] = g[temp[i]] + g[temp[i+1]] - 2 * g[p];   // 距离公式
+        sum += adj[i];
+    }
+
+    // 对每个跳过的景点 i (0-indexed) 计算答案
+    for (int i = 0; i < k; ++i) {
+        long long ans = sum;            // 初始为总长度
+        if (i > 0) {
+            ans -= adj[i-1];            // 去掉前一段 (i-1 -> i)
+        }
+        if (i < k - 1) {
+            ans -= adj[i];              // 去掉后一段 (i -> i+1)
+        }
+        if (i > 0 && i < k - 1) {
+            // 添加新的一段 (i-1 -> i+1)
+            int p = lca(temp[i-1], temp[i+1]);
+            ans += g[temp[i-1]] + g[temp[i+1]] - 2 * g[p];
+        }
+        cout << ans << " ";
+    }
+    return 0;
+}
