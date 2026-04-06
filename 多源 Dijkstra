@@ -33,7 +33,7 @@ int main() {
         // dist[u] : 从任意特殊星球出发到 u 的最短距离
         // src[u]  : 离 u 最近的那个特殊星球的编号（即这条最短路径的源点）
         vector<long long> dist(maxn, LLONG_MAX);
-        vector<int> src(maxn, -1);
+        vector<int> src(maxn, -1);//从所有特殊星球出发，离 u 最近的那个特殊星球的编号
 
         // 优先队列，按距离从小到大
         priority_queue<pli, vector<pli>, greater<pli>> pq;
