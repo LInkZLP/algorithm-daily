@@ -1,0 +1,90 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+// pli: pair<long long, int>，用于优先队列，first 是距离，second 是节点编号
+#define pli pair<long long, int>
+
+const int maxn = 100001;   // 最大节点数
+
+int main() {
+    int t;
+    cin >> t;
+    while (t--) {
+        int n, m, k;
+        cin >> n >> m;
+
+        // 邻接表，graph1[u] 存储 (边权, 邻居)
+        vector<vector<pli>> graph1(maxn);
+
+        // 读入 m 条边
+        for (int i = 1; i <= m; i++) {
+            int x, y;
+            long long c;
+            cin >> x >> y >> c;
+            graph1[x].push_back({c, y});
+            graph1[y].push_back({c, x});
+        }
+
+        cin >> k;
+        vector<int> v(k);                 // 存储 k 个特殊星球编号
+        for (int i = 0; i < k; i++) cin >> v[i];
+
+        // ---------- 多源 Dijkstra ----------
+        // dist[u] : 从任意特殊星球出发到 u 的最短距离
+        // src[u]  : 离 u 最近的那个特殊星球的编号（即这条最短路径的源点）
+        vector<long long> dist(maxn, LLONG_MAX);
+        vector<int> src(maxn, -1);
+
+        // 优先队列，按距离从小到大
+        priority_queue<pli, vector<pli>, greater<pli>> pq;
+
+        // 初始化所有特殊星球：距离为 0，源点为自己，入队
+        for (int i = 0; i < k; i++) {
+            int s = v[i];
+            dist[s] = 0;
+            src[s] = s;
+            pq.push({0, s});
+        }
+
+        // 多源 Dijkstra 主循环
+        while (!pq.empty()) {
+            pli r = pq.top();
+            pq.pop();
+            long long curDist = r.first;   // 当前节点距离
+            int now = r.second;            // 当前节点编号
+
+            // 如果这个出队记录不是最新的，跳过
+            if (curDist != dist[now]) continue;
+
+            // 遍历邻居
+            for (int i = 0; i < graph1[now].size(); i++) {
+                int next = graph1[now][i].second;   // 邻居节点
+                long long w = graph1[now][i].first; // 边权
+                if (dist[next] > dist[now] + w) {
+                    dist[next] = dist[now] + w;
+                    src[next] = src[now];           // 继承源点编号
+                    pq.push({dist[next], next});
+                }
+            }
+        }
+
+        // ---------- 枚举所有边，寻找答案 ----------
+        // 对于每条边 (i, x1)，如果两端点最近的源点不同，
+        // 则 dist[i] + w + dist[x1] 就是一条连接这两个源点的路径长度。
+        // 所有这样的路径中的最小值即为答案。
+        long long ans = LLONG_MAX;
+        for (int i = 1; i <= n; i++) {
+            for (int j = 0; j < graph1[i].size(); j++) {
+                int x1 = graph1[i][j].second;   // 邻居
+                int w = graph1[i][j].first;     // 边权
+                // 确保两个端点的最近源点都存在且不同
+                if (src[i] != -1 && src[x1] != -1 && src[i] != src[x1]) {
+                    ans = min(ans, dist[i] + w + dist[x1]);
+                }
+            }
+        }
+
+        cout << ans << endl;
+    }
+    return 0;
+}
