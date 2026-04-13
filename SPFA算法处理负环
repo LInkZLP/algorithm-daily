@@ -57,7 +57,7 @@ int main()
 					if(!vis[next])
 					{
 						q.push(next);
-						cnt[next] ++;
+						cnt[next] = cnt[now]+1;
 						vis[next] = true;
 						if(cnt[next] >=n)
 						{
