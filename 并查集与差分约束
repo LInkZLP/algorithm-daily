@@ -1,0 +1,74 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+const int maxn = 2026;          // 最大节点数，n<100，开大一点安全
+vector<int> fa(maxn);           // 并查集父节点
+vector<long long> diff(maxn);   // 节点到父节点的差值（前缀和之差）
+int n, p, m;                    // n:月份数, p:数据组数, m:条件数
+
+// 初始化并查集，节点编号 0~n（共 n+1 个点，因为前缀和 pre[0] 到 pre[n]）
+void initail(int n) {
+    for (int i = 0; i <= n; i++) {
+        fa[i] = i;      // 每个点自成一集
+        diff[i] = 0;    // 到自身的差为 0
+    }
+}
+
+// 查找根节点，同时路径压缩并更新 diff[x] 为 x 到根节点的差值
+int find(int x) {
+    if (fa[x] != x) {
+        int r = fa[x];              // 记录原父节点
+        fa[x] = find(fa[x]);        // 递归找根，路径压缩
+        diff[x] += diff[r];         // 累加差值：现在 diff[x] = (x到原父) + (原父到根)
+    }
+    return fa[x];
+}
+
+// 合并操作，维护等式 pre[v] - pre[u] = w
+// 返回 true 表示合并成功或无冲突，false 表示冲突
+bool Union(int u, int v, long long w) {
+    int ru = find(u);   // u 的根
+    int rv = find(v);   // v 的根
+    if (ru == rv) {
+        // 已经在同一集合，检查是否满足条件
+        // 此时 diff[u] = pre[u] - pre[ru], diff[v] = pre[v] - pre[ru]
+        // 所以 pre[v] - pre[u] = diff[v] - diff[u]，必须等于 w
+        return (diff[v] - diff[u] == w);
+    }
+    // 合并两个集合，将 ru 的父节点设为 rv
+    // 需要确定 diff[ru] 的值，使得合并后仍满足 pre[v] - pre[u] = w
+    // 已知: pre[u] = pre[ru] + diff[u]
+    //      pre[v] = pre[rv] + diff[v]
+    // 希望合并后: pre[v] - pre[u] = w
+    // 代入得: (pre[rv] + diff[v]) - (pre[ru] + diff[u]) = w
+    // 整理: pre[ru] - pre[rv] = diff[v] - w - diff[u]
+    // 而 diff[ru] 定义为 pre[ru] - pre[rv]（因为 ru 的父亲设为 rv）
+    // 所以 diff[ru] = diff[v] - w - diff[u]
+    diff[ru] = diff[v] - w - diff[u];
+    fa[ru] = rv;        // 合并
+    return true;
+}
+
+int main() {
+    cin >> p;   // 数据组数
+    while (p--) {
+        cin >> n >> m;
+        initail(n);         // 初始化 0..n 节点
+        bool isok = true;   // 当前账本是否合法
+        for (int i = 1; i <= m; i++) {
+            int s, t;
+            long long w;
+            cin >> s >> t >> w;
+            int u = s - 1;   // 前缀和节点：pre[t] - pre[s-1] = w
+            if (!isok) {
+                // 已经发现矛盾，跳过后续判断，但需要继续读入剩余数据
+                continue;
+            }
+            if (!Union(u, t, w)) {
+                isok = false;   // 出现矛盾
+            }
+        }
+        cout << (isok ? "true" : "false") << endl;
+    }
+    return 0;
+}
