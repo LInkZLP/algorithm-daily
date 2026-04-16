@@ -1,0 +1,125 @@
+#include <bits/stdc++.h>
+#define pli pair<long long, int>
+using namespace std;
+
+const int maxn = 1005;
+int n, m, d;                         // n头牛，m个好基友约束，d个情敌约束
+vector<long long> dist(maxn, LLONG_MAX);   // 距离数组
+vector<vector<pli>> v(maxn);               // 邻接表
+vector<long long> cnt(maxn);               // 记录入队次数，用于负环检测
+
+// 最短路 + 负环检测（堆优化SPFA风格）
+// 返回值：true表示存在负环，false表示无负环
+bool work(int sta) {
+    vector<bool> vis(maxn, false);   // 标记是否在队列中（局部变量，每次调用独立）
+    dist[sta] = 0;
+    vis[sta] = true;
+    // 最小堆优先队列，保证每次取出当前距离最小的节点
+    priority_queue<pli, vector<pli>, greater<pli>> pq;
+    pq.push({0, sta});
+
+    while (!pq.empty()) {
+        pli r = pq.top(); pq.pop();
+        int now = r.second;
+        vis[now] = false;
+        if (dist[now] == LLONG_MAX) continue;
+
+        for (size_t i = 0; i < v[now].size(); ++i) {
+            int nxt = v[now][i].second;
+            long long w = v[now][i].first;
+            if (dist[nxt] > dist[now] + w) {
+                dist[nxt] = dist[now] + w;
+                cnt[nxt] = cnt[now] + 1;
+                // 负环检测：从源点到nxt的边数超过总点数，说明存在负环
+                if (cnt[nxt] >= n + 1) return true;
+                if (!vis[nxt]) {
+                    vis[nxt] = true;
+                    pq.push({dist[nxt], nxt});
+                }
+            }
+        }
+    }
+    return false;
+}
+
+int main() {
+    cin >> n >> m >> d;
+
+    // ========== 建图部分 ==========
+    // 1. 顺序约束：奶牛必须按编号顺序排队 -> x[i] <= x[i+1]
+    //    转化为 x[i] - x[i+1] <= 0，对应边 i+1 -> i，权值 0
+    for (int i = 1; i < n; ++i) {
+        v[i+1].push_back({0, i});
+    }
+
+    // 2. 好基友约束：x[b] - x[a] <= D -> 边 a -> b，权值 D
+    while (m--) {
+        int a, b, x;
+        cin >> a >> b >> x;
+        v[a].push_back({x, b});
+    }
+
+    // 3. 情敌约束：x[b] - x[a] >= D  ->  x[a] - x[b] <= -D -> 边 b -> a，权值 -D
+    while (d--) {
+        int a, b, x;
+        cin >> a >> b >> x;
+        v[b].push_back({-x, a});
+    }
+
+    /* ===== 疑问1：顺序约束是什么？ =====
+     * 答：保证编号小的牛位置 <= 编号大的牛位置，即 x1 <= x2 <= ... <= xn。
+     *     转化为 x[i] - x[i+1] <= 0，图中添加边 i+1 -> i 权0。
+     */
+
+    // ========== 第一次计算：从1出发求1->n的距离（假设无全局负环） ==========
+    long long de = 0;   // 保存候选答案
+    if (!work(1)) {
+        // work(1) 返回 false 表示从1出发未发现负环
+        de = dist[n];   // 此时 dist[n] 是在设 x1=0 时，xn 的最大值
+    } else {
+        // 从1出发就发现了负环，系统肯定无解
+        cout << -1 << endl;
+        return 0;
+    }
+
+    /* ===== 疑问2：如果不 work(1) 直接 work(0)，得到的 dist[n] 是什么？ =====
+     * 答：如果直接 work(0) 且无负环，dist[n] 是在设 x0=0 且所有 xi <= 0 条件下，
+     *     xn 的最大值（通常非正）。此时正确答案应为 dist[n] - dist[1]。
+     *     但本代码采用先以1为源点求距离，再用0检测负环的策略，避免了减法。
+     */
+
+    // ========== 第二次：添加超级源点0，检测整个图是否存在负环 ==========
+    // 重置 dist 和 cnt，因为 work(0) 会重新使用它们
+    dist.assign(maxn, LLONG_MAX);
+    cnt.assign(maxn, 0);
+    // 添加超级源点0到所有点的边，权0，确保能从0访问所有节点
+    for (int i = 1; i <= n; ++i) {
+        v[0].push_back({0, i});
+    }
+
+    /* ===== 疑问3：为什么还要超级源点0？直接用 work(1) 检测负环不行吗？ =====
+     * 答：work(1) 只能发现从1可达的负环。如果负环存在于从1不可达的子图（例如只涉及2,3），
+     *     work(1) 会误认为无负环，但实际上系统无解。超级源点0可以访问所有节点，
+     *     从而检测出整个图中的任何负环。
+     */
+
+    if (work(0)) {
+        // 全局存在负环 -> 系统无解
+        cout << -1 << endl;
+    } else {
+        // 全局无负环，之前保存的 de 就是有效答案
+        if (de == LLONG_MAX)
+            cout << -2 << endl;   // 1无法到达n，距离可以无穷大
+        else
+            cout << de << endl;
+    }
+
+    /* ===== 疑问4：先 work(1) 再 work(0) 的顺序正确吗？ =====
+     * 答：正确。因为如果 work(1) 发现了负环，直接输出 -1 无需后续；
+     *     如果 work(1) 未发现负环，则保存候选距离，再用 work(0) 检查剩余部分。
+     *     若 work(0) 也未发现负环，则候选距离就是最终答案；若 work(0) 发现负环，
+     *     说明存在不可达的负环，系统仍无解，输出 -1。这种顺序避免了二次建图。
+     */
+
+    return 0;
+}
