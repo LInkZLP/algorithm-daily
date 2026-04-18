@@ -1,0 +1,68 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int n, m, q;
+const long long INF = 1e9;          // 无穷大，大于最大可能权值和（边权≤1e5，最多50条边）
+long long dist[55][55][55];        // dist[k][i][j]：i→j 恰好 k 条边的最小总权
+double ans[55][55];                // 预处理的答案：最小密度
+
+int main() {
+    // 输入点数、边数
+    cin >> n >> m;
+
+    // 初始化 dist 为无穷大
+    for (int k = 0; k <= n; ++k)           // 边数从 0 到 n
+        for (int i = 1; i <= n; ++i)
+            for (int j = 1; j <= n; ++j)
+                dist[k][i][j] = INF;
+
+    // 读入边，初始化 k=1 的情况
+    while (m--) {
+        int a, b;
+        long long x;
+        cin >> a >> b >> x;
+        dist[1][a][b] = min(dist[1][a][b], x);   // 重边取最小
+    }
+
+    // DP：逐步增加边数
+    for (int k = 2; k <= n; ++k) {               // 枚举路径长度
+        for (int i = 1; i <= n; ++i) {           // 起点
+            for (int j = 1; j <= n; ++j) {       // 终点
+                long long best = INF;
+                // 枚举中间点 x
+                for (int x = 1; x <= n; ++x) {
+                    if (dist[k-1][i][x] < INF && dist[1][x][j] < INF) {
+                        best = min(best, dist[k-1][i][x] + dist[1][x][j]);
+                    }
+                }
+                dist[k][i][j] = best;
+            }
+        }
+    }
+
+    // 计算最小密度：枚举所有可能的边数 k
+    for (int i = 1; i <= n; ++i) {
+        for (int j = 1; j <= n; ++j) {
+            ans[i][j] = INF;               // 初始化为无穷大
+            for (int k = 1; k <= n; ++k) {
+                if (dist[k][i][j] < INF) {
+                    double density = 1.0 * dist[k][i][j] / k;
+                    ans[i][j] = min(ans[i][j], density);
+                }
+            }
+        }
+    }
+
+    // 回答询问
+    cin >> q;
+    while (q--) {
+        int a, b;
+        cin >> a >> b;
+        if (ans[a][b] == INF) {
+            cout << "OMG!" << endl;       // 不可达
+        } else {
+            printf("%.3lf\n", ans[a][b]); // 保留三位小数输出
+        }
+    }
+    return 0;
+}
