@@ -1,0 +1,57 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n, m;
+long long dist[55][55];          // dist[i][j]：从 i 到 j 的最少秒数（初始为LLONG_MAX）
+bool g[55][55][64];              // g[i][j][k]：是否存在从 i 到 j 长度为 2^k 的路径
+
+void work() {
+    // 第一步：倍增预处理所有 2^k 步可达性
+    for (int k = 1; k <= 63; ++k) {               // k 最大到 63，因为 2^63 > maxlongint
+        for (int i = 1; i <= n; ++i) {
+            for (int j = 1; j <= n; ++j) {
+                for (int t = 1; t <= n; ++t) {    // 枚举中间点 t
+                    // 如果 i→t 有 2^(k-1) 步，且 t→j 有 2^(k-1) 步
+                    if (g[i][t][k-1] && g[t][j][k-1]) {
+                        g[i][j][k] = true;        // 则 i→j 有 2^k 步
+                        dist[i][j] = 1;           // 既然存在这样一条路径，就可以用 1 秒到达
+                    }
+                }
+            }
+        }
+    }
+
+    // 第二步：在新图上求最短路（边权均为1，这里用 Floyd）
+    for (int k = 1; k <= n; ++k) {                // 中间点
+        for (int i = 1; i <= n; ++i) {
+            if (dist[i][k] == LLONG_MAX) continue;
+            for (int j = 1; j <= n; ++j) {
+                if (dist[k][j] == LLONG_MAX) continue;
+                // 松弛操作：通过 k 中转，更新 i→j 的最少秒数
+                dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j]);
+            }
+        }
+    }
+}
+
+int main() {
+    cin >> n >> m;
+    // 初始化：所有 g 为 false，dist 为无穷大
+    for (int k = 1; k <= 63; ++k) {
+        for (int i = 1; i <= n; ++i) {
+            for (int j = 1; j <= n; ++j) {
+                g[i][j][k] = false;
+                dist[i][j] = LLONG_MAX;
+            }
+        }
+    }
+    // 读入原始边（长度为 1，即 2^0 步）
+    while (m--) {
+        int a, b;
+        cin >> a >> b;
+        dist[a][b] = 1;          // 可以直接用 1 秒到达
+        g[a][b][0] = true;       // 长度为 2^0 = 1 的路径存在
+    }
+    work();
+    cout << dist[1][n] << endl;  // 输出从 1 到 n 的最少秒数
+    return 0;
+}
