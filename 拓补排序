@@ -1,0 +1,71 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int n;
+const int maxn = 150;
+vector<vector<int>> v(maxn);   // 邻接表，v[i]存储节点i的所有后继节点
+vector<int> ans;               // 存储最终的拓扑序列
+vector<int> jp(maxn, 0);       // 入度数组，jp[i]表示节点i的当前入度
+
+// 拓扑排序（Kahn算法，基于BFS）
+void toposort()
+{
+    queue<int> q;
+    // 第一步：将所有入度为0的节点加入队列（这些节点没有前驱，可以最先输出）
+    for (int i = 1; i <= n; i++)
+    {
+        if (jp[i] == 0)
+        {
+            q.push(i);
+        }
+    }
+
+    // 第二步：不断从队列中取出节点，加入答案序列，并移除该节点发出的所有边
+    while (!q.empty())
+    {
+        int now = q.front();
+        q.pop();
+        ans.push_back(now);          // 当前节点可以输出
+
+        // 遍历当前节点的所有后继节点
+        for (int i = 0; i < v[now].size(); i++)
+        {
+            int next = v[now][i];
+            jp[next]--;              // 删除边 now->next，next的入度减1
+            if (jp[next] == 0)       // 如果入度变为0，说明其所有前驱都已处理，加入队列
+            {
+                q.push(next);
+            }
+        }
+    }
+    // 若最终ans.size() < n，说明图中存在环，但本题保证有解
+    return;
+}
+
+int main()
+{
+    // 输入节点总数
+    scanf("%d", &n);
+
+    // 构建图：对每个节点i，读入其后继列表，以0结尾
+    for (int i = 1; i <= n; i++)
+    {
+        int a;
+        // 不断读入整数，直到遇到0（输入结束标志）
+        while (scanf("%d", &a) == 1 && a != 0)
+        {
+            v[i].push_back(a);   // 添加有向边 i -> a
+            jp[a]++;             // 节点a的入度加1
+        }
+    }
+
+    // 执行拓扑排序
+    toposort();
+
+    // 输出结果（任意一种合法拓扑序列）
+    for (int i = 0; i < ans.size(); i++)
+    {
+        cout << ans[i] << " ";
+    }
+    return 0;
+}
