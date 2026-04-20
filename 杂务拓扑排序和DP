@@ -1,0 +1,59 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+const int maxn = 1e4+5;
+vector<vector<int>>v(maxn);
+vector<int>cost(maxn);
+vector<int>jd(maxn);
+vector<long long>fis(maxn);
+int main()
+{
+	cin>>n;
+	for(int i = 1;i<=n;i++)
+	{
+		int a;
+		int b;
+		cin>>a;
+		cin>>cost[a]>>b;
+		while(b!=0)
+		{
+			v[b].push_back({a});
+			cin>>b;
+			jd[a]++;
+		}	
+	}
+	queue<int>q;
+	long long ans = 0;
+	for(int i = 1;i<=n;i++)
+	{
+		if(jd[i] == 0)
+		{
+			q.push(i);
+			fis[i] = cost[i];
+		}
+	}
+	while(!q.empty())
+	{
+		int u = q.front();
+		q.pop();
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int next = v[u][i];
+			fis[next] = max(fis[next],fis[u]+cost[next]);
+			jd[next] --;
+			if(jd[next] == 0)
+			{
+				q.push(next);
+			}
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		ans = max(ans,fis[i]);
+	}
+	cout<<ans<<endl;
+	return 0;
+}
+
+ 
