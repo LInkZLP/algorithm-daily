@@ -1,0 +1,69 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+const int maxn = 5e3 + 5;   // 最大节点数
+const int mod = 80112002;   // 答案取模的模数
+
+int n, m;
+vector<int> jd(maxn);          // jd[i]：节点 i 的入度（有多少个节点指向 i）
+vector<int> cd(maxn);          // cd[i]：节点 i 的出度（i 指向多少个节点）
+vector<vector<int>> v(maxn);   // 邻接表，v[a] 存储 a 指向的所有后继节点
+vector<long long> len(maxn);   // len[i]：以 i 为终点的食物链数量（从生产者到 i 的路径数）
+
+int main() {
+    // 读入节点数 n 和边数 m
+    cin >> n >> m;
+
+    // 建图
+    while (m--) {
+        int a, b;
+        cin >> a >> b;
+        // 边 a -> b 表示 a 被 b 吃（能量从 a 流向 b）
+        v[a].push_back(b);   // a 的后继加入 b
+        jd[b]++;             // b 的入度加一
+        cd[a]++;             // a 的出度加一
+    }
+
+    queue<int> q;
+    // 初始化：所有入度为 0 的节点（生产者）入队，且以它们为终点的食物链数量为 1
+    for (int i = 1; i <= n; i++) {
+        if (jd[i] == 0) {
+            q.push(i);
+            len[i] = 1;   // 自己作为一条完整的食物链起点
+        }
+    }
+
+    long long ans = 0;
+
+    // 拓扑排序 + DP 计算路径数
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+
+        // 遍历 u 的所有后继节点
+        for (int i = 0; i < v[u].size(); i++) {
+            int nxt = v[u][i];
+
+            // 将 u 的路径数累加到 nxt 上（每一条到 u 的链都可以加上边 u->nxt 形成新链）
+            len[nxt] = (len[nxt] + len[u]) % mod;
+
+            // 减少 nxt 的入度，当入度为 0 时说明所有前驱都已处理完毕，可以入队
+            jd[nxt]--;
+            if (jd[nxt] == 0) {
+                q.push(nxt);
+            }
+        }
+    }
+
+    // 统计所有出度为 0 的节点（顶级消费者）的路径数之和
+    for (int i = 1; i <= n; i++) {
+        if (cd[i] == 0) {
+            ans = (ans + len[i]) % mod;
+        }
+    }
+
+    // 输出答案（已取模）
+    cout << ans % mod << endl;
+
+    return 0;
+}
