@@ -1,0 +1,108 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+/*
+ * 题目类型：最小生成树 + 第k大边（或“最小最大距离”问题）
+ * 
+ * 思路来源：
+ * 1. 问题转化：n个点，分成k个部落，使得不同部落间的最小距离最大化。
+ *    等价于：我们希望不同部落之间的点尽量远离，而同一部落内的点尽量靠近。
+ * 2. 逆向思考：一开始每个点自成一个部落（共n个部落），部落间的最近距离就是所有点对中最短的距离。
+ *    每次将距离最近的两个部落合并（因为近距离的点应该属于同一部落），部落数减少1。
+ *    合并过程中，新合并的边长度就是当前所有不同部落间的最小距离（因为更短的边已在部落内部）。
+ * 3. 当我们合并到只剩k个部落时，最后一条被合并的边的长度，就是不同部落间的最小距离的最大可能值。
+ *    —— 这恰好就是最小生成树中第(n-k)长的边（按从小到大排序），也就是第(n-k)条被加入MST的边。
+ * 
+ * 因此，算法流程：
+ * - 计算所有点对的距离（平方，避免浮点误差），保存为边（u, v, w）。
+ * - 按距离从小到大排序。
+ * - 使用并查集，从小到大遍历边，将不构成环的边加入“部落合并”过程，记录已加入的边数 cnt。
+ * - 当 cnt == n - k 时，当前边的长度就是答案（因为此时已经合并成k个连通分量，且该边是使部落数降到k的关键边）。
+ * - 最后输出 sqrt(该长度) 并保留两位小数。
+ * 
+ * 注意：当 k == n 时，不需要合并任何边，答案应为所有边中最短的距离（即排序后第一条边的长度）。
+ */
+
+int n;
+int k;
+
+struct xyd {
+    int x;
+    int y;
+    long long d;   // 距离的平方，避免浮点精度
+};
+
+vector<int> fa(1001);      // 并查集父节点，最大点数1000
+vector<xyd> v(1001);       // 存储每个点的坐标
+
+int find(int x) {
+    if (x == fa[x]) return x;
+    return fa[x] = find(fa[x]);
+}
+
+bool Union(int x, int y) {
+    int r1 = find(x);
+    int r2 = find(y);
+    if (r1 == r2) return true;   // 已连通，会形成环
+    fa[r1] = r2;
+    return false;                 // 合并成功
+}
+
+bool cmp(xyd a, xyd b) {
+    return a.d < b.d;             // 按距离平方升序排序
+}
+
+int main() {
+    cin >> n >> k;
+    for (int i = 1; i <= n; i++) {
+        fa[i] = i;
+    }
+
+    vector<xyd> nv;   // 存储所有边（i->j，无向）
+
+    // 读入点的坐标
+    for (int i = 1; i <= n; i++) {
+        int a, b;
+        cin >> a >> b;
+        v[i] = {a, b, 0};
+    }
+
+    // 计算所有点对之间的距离平方，构造边集
+    for (int i = 1; i <= n; i++) {
+        for (int j = 1; j <= n; j++) {
+            if (i != j) {
+                int dx = v[j].x - v[i].x;
+                int dy = v[j].y - v[i].y;
+                long long l = 1LL * dx * dx + 1LL * dy * dy;   // 防止溢出
+                nv.push_back({i, j, l});
+            }
+        }
+    }
+
+    sort(nv.begin(), nv.end(), cmp);   // 边按距离平方从小到大排序
+
+    long long ans = 0;
+    int cnt = 0;   // 已加入生成树的边数（即已经合并的部落合并次数）
+
+    for (int i = 0; i < nv.size(); i++) {
+        int a = nv[i].x;
+        int b = nv[i].y;
+        long long c = nv[i].d;
+        if (!Union(a, b)) {            // 如果这条边连接了两个不同部落
+            cnt++;                     // 合并一次，部落数减1
+            if (cnt == n - k) {        // 当总共合并了 n-k 次后，只剩 k 个部落
+                ans = c;               // 当前边的长度即为所求
+                break;
+            }
+        }
+    }
+
+    // 特殊情况：如果 k == n，则不需要合并任何边，答案应为最短边
+    if (k == n) {
+        ans = nv[0].d;
+    }
+
+    double d1 = sqrt(ans);
+    printf("%.2lf\n", d1);
+    return 0;
+}
