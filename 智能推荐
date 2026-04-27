@@ -1,0 +1,103 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int n;          // 题目总数
+int k;          // 目标题号，希望完成它
+int p;          // 第一天推荐的题目数量
+const int maxn = 5e3 + 5;
+
+vector<vector<int>> v(maxn);     // v[x] 存储依赖 x 的题目（即 x 完成能解锁的题目列表）
+vector<int> jd(maxn);            // jd[u] 存储题目 u 的依赖数量（入度）
+vector<int> sta;                 // 存储第一天推荐的题目号
+vector<int> cnt(maxn, INT_MAX);  // cnt[u] 存储完成题目 u 的最早天数，初始化为无穷大
+vector<vector<int>> che(maxn);   // che[u] 存储题目 u 的所有依赖题目列表
+
+int main() {
+    // 1. 读入 n, k, p
+    cin >> n >> k >> p;
+
+    // 2. 读入第一天推荐的 p 道题
+    for (int i = 1; i <= p; i++) {
+        int r;
+        cin >> r;
+        sta.push_back(r);
+        cnt[r] = 0;          // 第一天推荐的题在第 0 天就可以完成
+    }
+
+    // 3. 读入推荐规则的数量 r
+    int r;
+    cin >> r;
+
+    // 4. 读入每条规则
+    for (int i = 1; i <= r; i++) {
+        int u;   // 目标题目（可以推荐的题目）
+        int l;   // 依赖的题目数量
+        cin >> u >> l;
+        while (l--) {
+            int x;
+            cin >> x;           // 依赖的题目 x
+            v[x].push_back(u);  // x 完成可以解锁 u
+            che[u].push_back(x);// u 的依赖列表增加 x
+            jd[u]++;            // u 的依赖计数加1
+        }
+    }
+
+    // 5. 初始化队列，存放已确定完成时间的题目
+    queue<int> q;
+    for (int i = 0; i < sta.size(); i++) {
+        // 如果第一天推荐的题目竟然有依赖（入度不为0），则不可能，直接输出-1
+        if (jd[sta[i]] != 0) {
+            cout << -1 << endl;
+            return 0;
+        }
+        q.push(sta[i]);
+    }
+
+    // 6. 拓扑排序处理依赖关系
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+
+        // 遍历所有由 u 解锁的题目（即依赖 u 的题目）
+        for (int i = 0; i < v[u].size(); i++) {
+            int next = v[u][i];   // next 是依赖于 u 的题目
+            jd[next]--;           // 减少 next 的一个依赖计数
+
+            // 如果 next 的所有依赖都已满足（入度减到0）
+            if (jd[next] == 0) {
+                bool p = false;   // 标记是否出现不可达的依赖
+                // 遍历 next 的所有依赖题目
+                for (int j = 0; j < che[next].size(); j++) {
+                    int dep = che[next][j];
+                    // 如果某个依赖还未完成（入度不为0）或它的完成时间为无穷大
+                    if (jd[dep] != 0 || cnt[dep] == INT_MAX) {
+                        p = true;   // 说明有依赖无法完成
+                        break;
+                    }
+                    // 如果 cnt[next] 还是 INT_MAX，先初始化为0
+                    if (cnt[next] == INT_MAX) {
+                        cnt[next] = 0;
+                    }
+                    // 完成 next 所需的天数 = max(所有依赖完成天数) + 1
+                    // 因为必须等最后一个依赖完成后的下一天才能推荐并做完 next
+                    cnt[next] = max(cnt[next], cnt[dep] + 1);
+                }
+                if (p) {
+                    cnt[next] = INT_MAX;   // 有依赖不可达，标记为无法完成
+                } else {
+                    q.push(next);          // 依赖全部可达，且入度为0，入队继续处理
+                }
+            }
+        }
+    }
+
+    // 7. 输出结果
+    // 如果目标题 k 仍有未解决的依赖（入度>0），或者其完成时间为无穷大，则输出-1
+    if (jd[k] != 0 || cnt[k] == INT_MAX) {
+        cout << -1 << endl;
+    } else {
+        cout << cnt[k] << endl;   // 输出最早完成天数
+    }
+
+    return 0;
+}
