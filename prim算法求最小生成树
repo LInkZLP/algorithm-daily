@@ -1,0 +1,71 @@
+// 朴素 Prim 算法求解最小生成树（欧几里得距离）
+// 问题背景：多轮修路规则等价于求最小生成树，本题直接计算 MST 总长度即可
+// 算法思路：从一个顶点开始，每次选择距离当前生成树最近的点加入，并更新其他点到树的距离
+// 优化点：使用距离平方进行比较（避免浮点误差和多次开方），最后累加时再开方
+//         对于完全图 (n ≤ 5000)，朴素 O(n²) 优于堆优化的 O(n² log n)，堆优化会因边数过多导致内存爆炸
+
+#include <bits/stdc++.h>
+using namespace std;
+
+struct xy {
+    int x, y;
+};
+
+int n;
+const int maxn = 5e3 + 5;
+vector<long long> dist(maxn, LLONG_MAX); // dist[i]: 当前生成树到城市 i 的最短距离的平方，初始为无穷大
+vector<bool> vis(maxn, false);           // vis[i]: 城市 i 是否已加入生成树
+vector<xy> v(maxn);                      // 存储城市坐标，下标从 1 开始
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    cin >> n;
+    for (int i = 1; i <= n; ++i) {
+        cin >> v[i].x >> v[i].y;
+    }
+
+    // 从城市 1 开始构建最小生成树
+    dist[1] = 0;          // 起点到自身的距离为 0
+    double ans = 0.0;     // 最终总长度（实际距离，非平方）
+
+    // 主循环：每次将一个新顶点加入生成树，共 n 次迭代
+    for (int i = 1; i <= n; ++i) {
+        int u = -1;               // 待加入的顶点编号
+        long long best = LLONG_MAX; // 当前找到的最短距离（平方）
+
+        // 步骤1：在未加入生成树的顶点中，找出距离当前树最近的点 u
+        // 优化：直接 O(n) 扫描，因为完全图下堆维护的边数过多（~n²），反而更慢且内存大
+        for (int j = 1; j <= n; ++j) {
+            if (!vis[j] && dist[j] < best) {
+                best = dist[j];
+                u = j;
+            }
+        }
+
+        // 若图不连通（本题保证连通，此判断仅用于鲁棒性）
+        if (u == -1) break;
+
+        // 步骤2：将顶点 u 加入生成树
+        vis[u] = true;
+        ans += sqrt((double)best);   // 累加实际长度，此时 best 是距离平方
+
+        // 步骤3：利用新加入的点 u 更新其他未加入顶点到树的最短距离
+        // 优化：更新时仍使用平方距离比较，避免浮点运算
+        for (int j = 1; j <= n; ++j) {
+            if (!vis[j]) {
+                long long dx = v[u].x - v[j].x;
+                long long dy = v[u].y - v[j].y;
+                long long d2 = dx * dx + dy * dy;   // 欧几里得距离的平方
+                if (d2 < dist[j]) {
+                    dist[j] = d2;                   // 如果通过 u 能更近，则更新
+                }
+            }
+        }
+    }
+
+    // 输出结果，保留两位小数
+    printf("%.2lf\n", ans);
+    return 0;
+}
