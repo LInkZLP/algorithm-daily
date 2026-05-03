@@ -1,0 +1,118 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+// 存储每条边的信息
+struct xy {
+    int x, y;          // 两个端点
+    long long k;       // 边权（滑行距离）
+    long long hmax;    // 两端点高度较小值（实际是 min(h[x], h[y])，但变量名写成了hmax，注意用途）
+};
+
+int n, m;
+const int maxn = 100005;
+vector<long long> h(maxn);          // 景点高度
+vector<xy> v;                       // 存储所有边
+vector<bool> vis(maxn, false);      // BFS访问标记
+vector<vector<int>> g(maxn);        // 有向图（只存合法方向），用于BFS
+vector<int> fa(maxn);               // 并查集父节点
+
+// 排序比较函数：按两端点中较小高度降序，同高度时按边权升序
+// 注意：这里变量名虽为hmax，但实际存储的是 min(h[a],h[b])，导致比较的是较小高度
+// 实际上正确做法应该是比较较小高度，因为这样能保证较高一端优先被合并
+bool cmp(xy a, xy b) {
+    if (a.hmax != b.hmax) 
+        return a.hmax > b.hmax;   // 高度（较小值）大的在前
+    return a.k < b.k;             // 同高度时边权小的在前
+}
+
+// 并查集查找（路径压缩）
+int find(int x) {
+    if (x == fa[x]) return x;
+    return fa[x] = find(fa[x]);
+}
+
+// 合并两个集合，如果已经属于同一集合则返回true（表示已连通）
+bool Union(int x, int y) {
+    int r1 = find(x), r2 = find(y);
+    if (r1 == r2) return true;
+    fa[r1] = r2;
+    return false;
+}
+
+int main() {
+    cin >> n >> m;
+    for (int i = 1; i <= n; i++) {
+        cin >> h[i];
+        fa[i] = i;
+    }
+
+    // 读入m条边，同时建立有向图（只保留高度不上升的方向）和记录边信息
+    for (int i = 1; i <= m; i++) {
+        int a, b, k;
+        cin >> a >> b >> k;
+        long long hm = min(h[a], h[b]);   // 两端点中较小高度，用于排序
+        v.push_back({a, b, k, hm});
+
+        // 建图用于BFS：从高到低或等高双向
+        if (h[a] > h[b]) {
+            g[a].push_back(b);      // 只能从a滑到b
+        } else if (h[a] < h[b]) {
+            g[b].push_back(a);      // 只能从b滑到a
+        } else {
+            g[a].push_back(b);      // 高度相等可双向滑行
+            g[b].push_back(a);
+        }
+    }
+
+    // 按较小高度降序排序（关键步骤）
+    sort(v.begin(), v.end(), cmp);
+
+    // BFS：从1号景点出发，标记所有可达景点（只走高度不上升的方向）
+    queue<int> q;
+    q.push(1);
+    int maxcnt = 0;   // 可达景点总数
+    while (!q.empty()) {
+        int now = q.front(); q.pop();
+        if (vis[now]) continue;   // 防止重复处理（因入队时未标记，这里判断）
+        maxcnt++;
+        vis[now] = true;
+        for (int i = 0; i < g[now].size(); i++) {
+            int nxt = g[now][i];
+            if (!vis[nxt]) {       // 入队前检查，避免重复入队（虽不够彻底，但配合外层continue已够）
+                q.push(nxt);
+            }
+        }
+    }
+
+    // Kruskal变种：在可达点之间选择边，构建生成树，使总边权和最小
+    int cnt = 1;           // 当前已连通景点数（1号点初始连通）
+    long long total = 0;   // 总滑行距离
+    for (int i = 0; i < v.size(); i++) {
+        int x1 = v[i].x, y1 = v[i].y;
+        // 只考虑两端点都可达的边
+        if (!vis[x1] || !vis[y1]) continue;
+
+        long long h1 = h[x1], h2 = h[y1];
+        // 注意：此处判断方向并调整合并顺序，实际上由于排序已经保证了合法性，这个判断可以省略
+        // 但保留也无妨：它确保合并时较高点作为父节点（避免方向反了）
+        if (h1 >= h2) {
+            // 从x1到y1合法（或相等双向），合并时把y1并到x1的集合
+            if (!Union(y1, x1)) {
+                cnt++;
+                total += v[i].k;
+            }
+        } else {
+            if (!Union(x1, y1)) {
+                cnt++;
+                total += v[i].k;
+            }
+        }
+
+        // 当所有可达景点都已连通，停止
+        if (cnt == maxcnt) break;
+    }
+
+    // 输出：最多能到达的景点数 和 最短滑行总距离
+    cout << cnt << " " << total << endl;
+    return 0;
+}
