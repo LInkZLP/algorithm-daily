@@ -1,0 +1,86 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+const int LOG = 21;
+const int maxn = 1e5+5;
+vector<vector<int>>g(maxn);
+vector<vector<int>>up(maxn,vector<int>(22,0));
+vector<int>dep(maxn);
+vector<int>pre(maxn);
+vector<int>va(maxn);
+void dfs(int u,int p)
+{
+	up[u][0] = p;
+	for(int i = 1;i<=LOG;i++)
+	{
+		up[u][i] = up[up[u][i-1]][i-1];
+	}
+	for(int i = 0;i<g[u].size();i++)
+	{
+		if(g[u][i] == p)
+		{
+			continue;
+		}
+		dep[g[u][i]] = dep[u] + 1;
+		pre[g[u][i]] += pre[u] +va[g[u][i]];
+		dfs(g[u][i],u);
+	}
+	return;
+}
+int lca(int a,int b)
+{
+	if(dep[a] < dep[b])
+	{
+		swap(a,b);
+	}
+	int diff = dep[a] - dep[b];
+	for(int i = 0;i<LOG;i++)
+	{
+		if(diff & (1<<i))
+		{
+			a = up[a][i];
+		}
+	}	
+	if(a == b)
+	{
+		return a;
+	}
+	for(int i = LOG-1;i>=0;i--)
+	{
+		if(up[a][i] != up[b][i])
+		{
+			a = up[a][i];
+			b = up[b][i];
+		}
+	}
+	return up[a][0];
+}
+int main()
+{
+	cin>>n>>m;
+	for(int i = 1;i<=n-1;i++)
+	{
+		int a;
+		int b;
+		cin>>a>>b;
+		g[a].push_back(b);
+		g[b].push_back(a);
+		va[a]++;
+		va[b]++;
+	}
+	int r = 1;
+	pre[r] = va[r];
+	dep[r] = 1;
+	dfs(r,r);
+	for(int i = 1;i<=m;i++)
+	{
+		int a;
+		int b;
+		cin>>a>>b;
+		int r1 = lca(a,b);
+		//cout<<"r = "<<r1<<endl;
+		cout<<pre[a] + pre[b] - 2*pre[r1] + va[r1]<<endl;
+	}
+	return 0;
+}
