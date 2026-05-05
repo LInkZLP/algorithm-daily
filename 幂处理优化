@@ -1,0 +1,27 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+const int MOD = 998244353;
+const int D_MAX = 100000;  // 假设 d 最大为 100000
+const int K_MAX = 50;      // 幂次最大 50
+
+vector<vector<long long>> pow_val(D_MAX + 1, vector<long long>(K_MAX + 1, 0));
+
+void precompute_powers() {
+    for (int d = 0; d <= D_MAX; d++) {
+        long long val = 1;
+        for (int k = 1; k <= K_MAX; k++) {
+            val = val * d % MOD;
+            pow_val[d][k] = val;
+        }
+    }
+}
+
+int main() {
+    precompute_powers();
+    
+    // 现在想求 12345^30 mod MOD，直接：
+    cout << pow_val[12345][30] << '\n';
+    
+    return 0;
+}
