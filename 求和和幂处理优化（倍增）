@@ -1,0 +1,115 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int n, m;
+const int maxn = 3e5 + 5;
+const long long mod = 998244353;
+const int LOG = 21;                     // 2^21 > 3e5，足够倍增
+
+vector<int> dep(maxn);                  // 节点深度（根深度为0）
+vector<vector<int>> v(maxn);            // 邻接表
+vector<vector<int>> up(maxn, vector<int>(22, 0)); // 倍增祖先
+vector<vector<long long>> pre(maxn, vector<long long>(55, 0)); // 前缀和 pre[u][k] = 根到u的深度k次方和
+vector<vector<long long>> pow_dep;      // 幂表，pow_dep[d][k] = d^k % mod
+long long maxl = 0;                     // 树的最大深度
+
+// ========== 第一次DFS：计算深度、倍增表，并记录最大深度 ==========
+void dfs_init(int u, int p) {
+    up[u][0] = p;
+    for (int i = 1; i <= LOG; i++) {
+        up[u][i] = up[up[u][i-1]][i-1];
+    }
+    for (int nxt : v[u]) {
+        if (nxt == p) continue;
+        dep[nxt] = dep[u] + 1;
+        maxl = max(maxl, (long long)dep[nxt]); // 更新最大深度
+        dfs_init(nxt, u);
+    }
+}
+
+// ========== 第二次DFS：利用预计算的幂表计算前缀和 pre ==========
+void dfs_pre(int u, int p) {
+    for (int nxt : v[u]) {
+        if (nxt == p) continue;
+        // 对于每个幂次k，累加深度幂（直接查表，无需快速幂）
+        for (int k = 1; k <= 50; k++) {
+            pre[nxt][k] = (pre[u][k] + pow_dep[dep[nxt]][k]) % mod;
+        }
+        dfs_pre(nxt, u);
+    }
+}
+
+// ========== LCA 倍增法（标准写法） ==========
+int lca(int a, int b) {
+    if (dep[a] < dep[b]) swap(a, b);
+    int diff = dep[a] - dep[b];
+    for (int i = LOG; i >= 0; i--) {
+        if (diff & (1 << i)) {
+            a = up[a][i];
+        }
+    }
+    if (a == b) return a;
+    for (int i = LOG; i >= 0; i--) {
+        if (up[a][i] != up[b][i]) {
+            a = up[a][i];
+            b = up[b][i];
+        }
+    }
+    return up[a][0];
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    // ---------- 读入树 ----------
+    cin >> n;
+    for (int i = 1; i < n; i++) {
+        int a, b;
+        cin >> a >> b;
+        v[a].push_back(b);
+        v[b].push_back(a);
+    }
+
+    // ---------- 第一次DFS：深度 & 倍增表 ----------
+    dep[1] = 0;                     // 根节点深度为0
+    dfs_init(1, 1);
+
+    // ========== 幂处理优化（核心） ==========
+    // 问题：原方法在DFS中反复调用快速幂 work(dep, k)，复杂度 O(n*50*log dep)，严重超时。
+    // 优化：由于深度取值范围为 [0, maxl]，且 maxl ≤ n，而 k ≤ 50，
+    //       我们可以提前计算出所有 (深度, 幂次) 的幂值，存入 pow_dep[d][k]。
+    // 计算方法：对于每个深度 d，从 1 开始累乘 d 得到 d^1, d^2, ..., d^50（模 mod）。
+    // 这样后续查询和DFS时只需 O(1) 查表，总复杂度降至 O(maxl * 50 + n * 50)。
+    pow_dep.resize(maxl + 1, vector<long long>(51, 0));
+    for (int d = 0; d <= maxl; d++) {
+        long long val = 1;
+        for (int k = 1; k <= 50; k++) {
+            val = val * d % mod;    // 递推计算 d^k
+            pow_dep[d][k] = val;
+        }
+    }
+
+    // ---------- 初始化根节点的前缀和 ----------
+    // 根深度为0，0^k = 0（k≥1），故 pre[1][k] = 0
+    for (int k = 1; k <= 50; k++) {
+        pre[1][k] = pow_dep[0][k];   // 即 0
+    }
+
+    // ---------- 第二次DFS：计算所有节点的前缀和 ----------
+    dfs_pre(1, 1);
+
+    // ---------- 处理查询 ----------
+    cin >> m;
+    while (m--) {
+        int a, b, l;
+        cin >> a >> b >> l;
+        int r1 = lca(a, b);
+        // 路径 u→v 的深度 l 次方和 = pre[u] + pre[v] - 2*pre[lca] + (depth[lca])^l
+        long long ans = (pre[a][l] + pre[b][l] - 2 * pre[r1][l] + pow_dep[dep[r1]][l]) % mod;
+        if (ans < 0) ans += mod;    // 保证非负
+        cout << ans << '\n';
+    }
+
+    return 0;
+}
