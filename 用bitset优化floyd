@@ -4,7 +4,7 @@ using namespace std;
 const int maxn = 2002;
 int n;
 long long sum = 0;
-
+//bitset<N> reach[N]; 是一个 数组，数组名为 reach，数组长度为 N，每个元素都是一个 bitset<N> 对象。
 bitset<maxn>reach[maxn];//定义了一个bitset类型的数组，reach[i][j]表示i到j是否可以 
 void work()
 {
