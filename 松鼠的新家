@@ -1,0 +1,113 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+const int maxn = 3e5 + 5;
+int n;
+const int LOG = 22;               // 2^22 > 3e5，足够倍增跳祖先
+
+vector<int> diff(maxn);            // 差分数组，最终存放每个房间需要放的糖果数
+vector<vector<int>> up(maxn, vector<int>(22, 0)); // 倍增表，up[u][i] 表示 u 向上 2^i 步的祖先
+vector<int> dep(maxn);             // 每个节点的深度（根深度为 0）
+vector<vector<int>> v(maxn);       // 邻接表，存储树
+vector<int> ord(maxn);             // 参观顺序，ord[1..n]
+
+// 第一遍 DFS：预处理深度和倍增祖先
+void dfs(int u, int p) {
+    up[u][0] = p;                  // 直接父节点
+    for (int i = 1; i < LOG; i++) {
+        // u 向上 2^i 步 = 先向上 2^{i-1} 步到中间节点，再向上 2^{i-1} 步
+        up[u][i] = up[up[u][i-1]][i-1];
+    }
+    for (int i = 0; i < v[u].size(); i++) {
+        int next = v[u][i];
+        if (next == p) continue;
+        dep[next] = dep[u] + 1;    // 子节点深度 = 父节点深度 + 1
+        dfs(next, u);
+    }
+}
+
+// LCA：求节点 a 和 b 的最近公共祖先
+int lca(int a, int b) {
+    // 确保 a 是较深的节点
+    if (dep[a] < dep[b]) swap(a, b);
+    int dh = dep[a] - dep[b];
+    // 把 a 向上跳到与 b 同一深度
+    for (int i = LOG - 1; i >= 0; i--) {
+        if (dh & (1 << i)) {
+            a = up[a][i];
+        }
+    }
+    if (a == b) return a;
+    // 一起向上跳，直到父节点相同
+    for (int i = LOG - 1; i >= 0; i--) {
+        if (up[a][i] != up[b][i]) {
+            a = up[a][i];
+            b = up[b][i];
+        }
+    }
+    return up[a][0];               // 此时 a 和 b 的父节点就是 LCA
+}
+
+// 第二遍 DFS：自底向上累加差分值，得到每个节点的实际覆盖次数
+void dfs_sum(int u, int p) {
+    for (int i = 0; i < v[u].size(); i++) {
+        int next = v[u][i];
+        if (next == p) continue;
+        dfs_sum(next, u);
+        diff[u] += diff[next];     // 子节点的贡献累加到父节点
+    }
+}
+
+int main() {
+    cin >> n;
+    for (int i = 1; i <= n; i++) {
+        cin >> ord[i];             // 读入参观顺序
+    }
+    for (int i = 1; i <= n - 1; i++) {
+        int x, y;
+        cin >> x >> y;
+        v[x].push_back(y);
+        v[y].push_back(x);         // 建无向树
+    }
+
+    // 特判只有一个房间的情况：不需要糖果
+    if (n == 1) {
+        cout << 0 << endl;
+        return 0;
+    }
+
+    // 以 1 号房间为根，预处理深度和倍增祖先
+    dfs(1, 1);
+
+    // 核心：树上差分，处理每条路径 (ord[i-1], ord[i])
+    // 对于一条路径，我们的标记方式是：端点 +1，LCA -1，LCA 的父亲 -1
+    // 这样自底向上累加后，每个节点被经过的次数 = 它作为路径内部点的次数 + 作为端点的次数
+    for (int i = 2; i <= n; i++) {
+        int r = lca(ord[i], ord[i-1]);   // 当前相邻两个参观节点的 LCA
+        diff[ord[i]]++;                  // 当前终点 +1
+        diff[ord[i-1]]++;                // 当前起点 +1
+        diff[r]--;                       // LCA 本身减1，防止向上重复
+        if (r != up[r][0]) {             // 如果 LCA 不是根，则它的父亲也要减1
+            diff[up[r][0]]--;
+        }
+    }
+
+    // 自底向上累加差分，此时 diff[u] 表示在整条参观路线上，u 被“覆盖”的次数
+    // 注意：这里的覆盖次数 = u 作为路径端点被加的次数 + u 作为路径内部点的次数
+    dfs_sum(1, 1);
+
+    // 修正：因为每个参观节点（除了第一个）在作为前一段的终点时被 +1，作为后一段的起点时又被 +1，
+    // 但实际上到达该房间时只拿一次糖，所以需要减去一次。
+    // 另外，最后一个房间 ord[n] 不需要拿糖（餐厅），它作为最后一段的终点也被 +1 了，也要减去。
+    // 因此直接从 ord[2] 到 ord[n] 每个减去 1 即可。
+    for (int i = 2; i <= n; i++) {
+        diff[ord[i]]--;
+    }
+
+    // 输出最终每个房间需要的糖果数
+    for (int i = 1; i <= n; i++) {
+        cout << diff[i] << endl;
+    }
+
+    return 0;
+}
