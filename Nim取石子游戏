@@ -1,0 +1,32 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int main()
+{
+	int t;
+	cin>>t;
+	//必须知道，异或全为0可以取任意数字，使它不为0，而异或不为0的，总能找到一个方法使它异或不为0 
+	//针对博弈论Nim取石头游戏，所有数字异或为0，有0^0为0，可以有一种方式，留给后手吧0^0的局面留给自己 
+	while(t--)
+	{
+		int n;
+		cin>>n;
+		int c = 0;
+		for(int i = 1;i<=n;i++)
+		{
+			int x;
+			cin>>x;
+			c ^= x;
+		}
+		if(c)
+		{
+			cout<<"Yes"<<endl;
+		}
+		else
+		{
+			cout<<"No"<<endl;
+		}
+	}
+	
+	return 0;
+}
