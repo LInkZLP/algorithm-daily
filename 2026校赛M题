@@ -1,0 +1,32 @@
+#include <iostream>
+#include <string>
+using namespace std;
+
+int main() {
+    int T;
+    cin >> T;
+    while (T--) {
+        int n;
+        string s;
+        cin >> n >> s;
+
+        int c1 = 0, c0 = 0;
+        for (char ch : s) {
+            if (ch == '1') c1++;
+            else c0++;
+        }
+
+        // 博弈结论证明：
+        // 1. 终极技能可以强制制造一个 '1'，且游戏在最后一次操作为 '1' 时结束。
+        // 2. 总操作次数的奇偶性决定最后一次是谁操作：奇数 => 先手最后一手，偶数 => 后手最后一手。
+        // 3. 若先手最后一手，他只需保证还有可用核心（即 c1 > c0）即可使用终极技能获胜；
+        //    若后手最后一手，先手无论如何无法阻止后手用终极技能取得胜利。
+        // 4. 因此先手必胜条件为：n 为奇数 且 c1 > c0。
+        if (n % 2 == 1 && c1 > c0) {
+            cout << "YES" << endl;
+        } else {
+            cout << "NO" << endl;
+        }
+    }
+    return 0;
+}
