@@ -1,0 +1,26 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+const int maxn = 2000;
+vector<vector<int>>dp(maxn,vector<int>(maxn,0));
+const int mod = 998244353;
+
+int main()
+{
+	cin>>n>>m;
+	dp[0][0] = 1;
+	dp[1][1] = 1;
+	dp[1][0] = 2;	
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 1;j<=i;j++)
+		{
+			dp[i][j] = (dp[i-1][j] * 2 % mod + dp[i-1][j-1]) % mod;
+			//cout<<i<<" "<<j<<" "<<dp[i][j]<<endl; 
+		}
+	}
+	cout<<dp[n][m];
+	
+	return 0;
+}
