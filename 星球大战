@@ -1,0 +1,110 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+const int maxn = 1000001;          // 题目最大范围，开大一点保证安全
+vector<int> vec(maxn);             // 并查集的父节点数组
+
+// 并查集初始化：每个点自成一集
+void Initial(int n) {
+    for (int i = 0; i <= n; i++) {
+        vec[i] = i;
+    }
+}
+
+// 并查集查找（路径压缩）
+int Find(int x) {
+    if (vec[x] == x) return x;
+    return vec[x] = Find(vec[x]);
+}
+
+// 并查集合并：将 x 所在集合合并到 y 所在集合
+void Union(int x, int y) {
+    int r1 = Find(x);
+    int r2 = Find(y);
+    if (r1 == r2) return;
+    vec[r1] = r2;                 // 将 r1 的父节点设为 r2
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(0);
+
+    int n, m;
+    cin >> n >> m;
+
+    // 邻接表存储原始图（无向边）
+    vector<vector<int>> g1(maxn);
+    Initial(n);                   // 并查集初始化
+
+    // 读入所有边
+    for (int i = 1; i <= m; i++) {
+        int p1, p2;
+        cin >> p1 >> p2;
+        g1[p1].push_back(p2);
+        g1[p2].push_back(p1);
+    }
+
+    int k;
+    cin >> k;
+    vector<int> tar(k);           // 按顺序存储被摧毁的星球编号
+    vector<int> tar_des(n, 0);    // tar_des[x] = 1 表示星球 x 在本次作战中被摧毁
+
+    for (int i = 0; i < k; i++) {
+        cin >> tar[i];
+        tar_des[tar[i]] = 1;      // 标记该星球已被摧毁
+    }
+
+    vector<int> ans(k + 1, 0);     // ans[i] 存储第 i 次摧毁后的连通块数（i=0为初始状态，i=1为第一次摧毁后...）
+    int idx = 0;                   // ans 数组的写入指针
+
+    /* ---------- 第一步：构建所有“从未被摧毁”的星球之间的并查集 ---------- */
+    for (int i = 0; i < n; i++) {
+        if (tar_des[i] == 0) {    // 只考虑从未被摧毁的点
+            for (int j = 0; j < g1[i].size(); j++) {
+                int v = g1[i][j];
+                if (!tar_des[v] && i < v) {  // 只合并一次（i < v 避免重复，也可用并查集内部判断）
+                    Union(i, v);
+                }
+            }
+        }
+    }
+
+    // 统计当前（所有摧毁发生后）的连通块个数
+    int res = 0;
+    for (int i = 0; i < n; i++) {
+        if (tar_des[i] == 0 && vec[i] == i) { // 必须是没被摧毁的集合代表元
+            res++;
+        }
+    }
+    ans[idx++] = res;   // ans[0] 存储全部摧毁后的连通块个数
+
+    /* ---------- 第二步：逆序加入被摧毁的点，逐步恢复连通块 ---------- */
+    for (int i = k - 1; i >= 0; i--) {
+        int x = tar[i];                 // 当前要恢复的星球（原来被摧毁，现在加回来）
+        tar_des[x] = 0;                // 取消摧毁标记
+        vec[x] = x;                    // 将自己设为独立的集合（恢复初始状态）
+        res++;                         // 每加入一个点，连通块数量先加1（它自己独立成块）
+
+        // 遍历该星球的所有邻居
+        for (int j = 0; j < g1[x].size(); j++) {
+            int v = g1[x][j];
+            if (tar_des[v] == 0) {     // 邻居必须是当前“未摧毁”状态（包括已经恢复的）
+                int r1 = Find(x);
+                int r2 = Find(v);
+                if (r1 != r2) {        // 如果不在同一个集合，则合并，并减少一个连通块
+                    Union(r1, r2);
+                    res--;
+                }
+            }
+        }
+        ans[idx++] = res;               // 记录当前（即加回 x 之后）的连通块个数
+    }
+
+    // 输出答案：ans[0] 是全部摧毁后的情况，ans[1..k] 对应逆序过程中依次恢复的结果，
+    // 但题目要求的是顺次摧毁后的结果，所以需要从后往前输出。
+    for (int i = k; i >= 0; i--) {
+        cout << ans[i] << endl;
+    }
+
+    return 0;
+}
