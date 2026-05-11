@@ -1,0 +1,101 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+// 最大原始玩家数量
+const int maxn = 3e5 + 5;
+// 最大操作次数（用于新增虚拟节点）
+const int maxnop = 3e5 + 5;
+
+// 并查集父节点数组，大小 = 原始节点数 + 最多新增节点数（每个删除操作最多新增一个）
+vector<int> fa(maxn + maxnop);
+// ptr[i] 表示玩家 i 当前对应的并查集节点编号（初始为 i，删除后指向新节点）
+vector<int> ptr(maxn);
+// sz[x] 仅对集合根有效，表示该集合的大小（元素个数）
+vector<int> sz(maxn + maxnop);
+// tot 记录当前已使用的最大节点编号（包括原始节点和新增节点）
+int tot;
+int n, m;  // n 为初始玩家数，m 为操作数
+
+// 并查集查找根节点（带路径压缩）
+int find(int x) {
+    if (x == fa[x]) return x;
+    return fa[x] = find(fa[x]);  // 路径压缩，直接指向根
+}
+
+// 合并两个节点所在的集合
+void Union(int x, int y) {
+    int r1 = find(x);
+    int r2 = find(y);
+    if (r1 != r2) {
+        // 将 r1 的根指向 r2（简单合并，未按秩优化，但功能正确）
+        fa[r1] = r2;
+        // 更新新根的大小
+        sz[r2] += sz[r1];
+    }
+}
+
+// 删除玩家 x（使其从当前集合中独立，成为新集合）
+void Delete(int x) {
+    // 关键：通过 ptr[x] 找到玩家 x 当前对应的真实节点编号
+    int cur = ptr[x];
+    int r1 = find(cur);       // 找到该节点所在集合的根
+    if (sz[r1] == 1) return;  // 如果集合只剩自己，无需操作
+
+    // 1. 从原集合中移除玩家 x
+    sz[r1]--;                 // 原集合大小减 1
+
+    // 2. 创建一个新的虚拟节点，代表玩家 x 的新身份
+    tot++;                    // 新节点编号
+    fa[tot] = tot;            // 自成一派
+    sz[tot] = 1;              // 新集合大小为 1
+
+    // 3. 更新映射：玩家 x 现在指向新节点
+    ptr[x] = tot;
+}
+
+int main() {
+    cin >> n >> m;
+
+    // 初始化：玩家 1..n 各自对应节点 1..n
+    for (int i = 1; i <= n; i++) {
+        fa[i] = i;    // 每个节点自己是根
+        sz[i] = 1;    // 每个集合初始大小为 1
+        ptr[i] = i;   // 玩家 i 当前对应的节点就是 i
+    }
+    tot = n;          // 当前最大节点编号为 n
+
+    while (m--) {
+        int op;
+        cin >> op;
+        if (op == 1) {
+            // 合并操作：将玩家 x 和玩家 y 所在的网络合并
+            int x, y;
+            cin >> x >> y;
+            // 注意：合并的是他们当前对应的节点（可能已被删除重映射过）
+            Union(ptr[x], ptr[y]);
+        } 
+        else if (op == 2) {
+            // 查询操作：询问玩家 x 和 y 是否在同一网络（同一集合）
+            int x, y;
+            cin >> x >> y;
+            if (find(ptr[x]) == find(ptr[y]))
+                cout << "Yes" << endl;
+            else
+                cout << "No" << endl;
+        } 
+        else if (op == 3) {
+            // 删除操作：玩家 u 断网，即从当前集合中移除并独立
+            int u;
+            cin >> u;
+            Delete(u);
+        } 
+        else if (op == 4) {
+            // 查询大小：输出玩家 u 所在网络的人数
+            int u;
+            cin >> u;
+            // 先通过 ptr[u] 找到当前节点，再找到根，输出根对应的 sz
+            cout << sz[find(ptr[u])] << endl;
+        }
+    }
+    return 0;
+}
