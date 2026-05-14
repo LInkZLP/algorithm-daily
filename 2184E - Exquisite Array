@@ -1,0 +1,126 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int t;
+int n;
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(0);
+    cin >> t;
+    while (t--) {
+        cin >> n;
+        int maxn = n + 5;                     // 稍微多开一点空间，避免越界
+        vector<int> a(maxn);                  // 原排列，下标从1开始
+        vector<int> diff(maxn);               // 相邻差绝对值数组，diff[i] = |a[i+1]-a[i]|
+
+        // 读入排列
+        for (int i = 1; i <= n; i++) {
+            cin >> a[i];
+        }
+
+        // 计算相邻差的绝对值，长度 n-1，下标 1..n-1
+        for (int i = 1; i <= n - 1; i++) {
+            diff[i] = abs(a[i + 1] - a[i]);
+        }
+
+        // cnt[v] : 最小相邻差恰好等于 v 的子数组个数
+        vector<long long> cnt(maxn, 0);
+
+        // 单调栈求左右边界
+        stack<int> s;
+        vector<long long> left(maxn);   // left[i] : 左边第一个严格小于 diff[i] 的位置（不存在为0）
+        vector<long long> right(maxn);  // right[i]: 右边第一个小于等于 diff[i] 的位置（不存在为n）
+
+        // ---------- 步骤1：计算 left[i] ----------
+        // 从左往右，维护单调递增栈（栈内元素值严格递增）
+        // 弹出所有 >= diff[i] 的元素，保证栈顶是左边第一个 < diff[i] 的位置
+        for (int i = 1; i <= n - 1; i++) {
+            while (!s.empty() && diff[s.top()] >= diff[i]) {
+                s.pop();
+            }
+            left[i] = s.empty() ? 0 : s.top();   // 不存在则左边界为0
+            s.push(i);
+        }
+
+        // 清空栈，准备计算 right
+        while (!s.empty()) s.pop();
+
+        // ---------- 步骤2：计算 right[i] ----------
+        // 从右往左，维护单调递增栈（严格）
+        // 弹出所有 > diff[i] 的元素，保证栈顶是右边第一个 <= diff[i] 的位置
+        // 注意：此处取“小于等于”是为了避免重复计数（与左边严格小于配合）
+        for (int i = n - 1; i >= 1; i--) {
+            while (!s.empty() && diff[s.top()] > diff[i]) {
+                s.pop();
+            }
+            right[i] = s.empty() ? n : s.top();   // 不存在则右边界为n（即n-1+1）
+            s.push(i);
+        }
+
+        // ---------- 步骤3：统计每个差值作为最小值的子数组个数 ----------
+        // 对于每个位置 i，以 diff[i] 为最小值的子数组：
+        //   左端点可以取 (left[i], i] 范围内的任意一个
+        //   右端点可以取 [i, right[i]) 范围内的任意一个
+        // 子数组的个数 = (i - left[i]) * (right[i] - i)
+        for (long long i = 1; i <= n - 1; i++) {
+            long long c = (i - left[i]) * (right[i] - i);   // 注意乘法可能溢出，但 i,left,right 均为 long long
+            cnt[diff[i]] += c;                              // 累加到 cnt[差值] 中
+        }
+
+        // ---------- 步骤4：后缀和得到答案 ----------
+        // ans[k] 表示最小相邻差 >= k 的子数组个数
+        vector<long long> ans(maxn, 0);
+        for (int k = n - 1; k >= 0; k--) {
+            ans[k] = ans[k + 1] + cnt[k];
+        }
+
+        // ---------- 步骤5：输出答案（k=1..n-1） ----------
+        for (int k = 1; k <= n - 1; k++) {
+            cout << ans[k];
+            if (k != n - 1) cout << " ";   // 行末无多余空格
+        }
+        cout << endl;
+    }
+    return 0;
+}
+
+/*
+====================== 注释说明 ======================
+
+【思路】
+  对于每个子数组，定义它的“最小相邻差”为 min(|p[l+1]-p[l]|, ..., |p[r]-p[r-1]|)。
+  那么该子数组对所有的 k <= 这个最小值都有贡献1。
+  因此，我们只需统计每个可能的值 v 作为最小值的子数组有多少个，然后从大到小做后缀和。
+
+【方法】
+  1. 计算相邻差的绝对值数组 diff[1..n-1]。
+  2. 使用单调栈求出每个 diff[i] 作为区间最小值的最大范围（左右边界）。
+     - left[i]：左边第一个严格小于 diff[i] 的位置（不存在为0）
+     - right[i]：右边第一个小于等于 diff[i] 的位置（不存在为 n）
+  3. 对于每个 i，以 diff[i] 为最小值的子数组个数为 (i-left[i])*(right[i]-i)。
+     累加到 cnt[diff[i]]。
+  4. 计算后缀和 ans[k] = sum_{v=k}^{n-1} cnt[v]。
+  5. 输出 ans[1..n-1]。
+
+【易错点】
+  - 乘法溢出： (i-left[i])*(right[i]-i) 可能达到 1e10，需要用 long long。
+  - 左右边界定义：左边取“严格小于”，右边取“小于等于”，避免重复计算相等值。
+  - 边界哨兵： left 不存在时设为 0，right 不存在时设为 n（因为 diff 下标范围 1..n-1，n 作为哨兵）。
+  - n=1 的情况需要特殊处理（题目虽保证 n>=2，但代码仍可兼容）。
+
+【注意事项】
+  - 使用 vector 动态开空间，不要用固定大数组（可能超时/超内存）。
+  - 输入输出用 ios::sync_with_stdio(false) 加速。
+  - 输出行末不要有多余空格，否则可能被判错。
+  - 单调栈中比较的是 diff 值，而不是原排列的值。
+
+【步骤要点】
+  1. 读入 n 和排列 a。
+  2. 构造差值 diff 数组。
+  3. 单调栈求 left。
+  4. 单调栈求 right（注意方向相反）。
+  5. 计算每个 diff[i] 的贡献并累加到 cnt。
+  6. 后缀和得到 ans。
+  7. 按格式输出。
+*/
