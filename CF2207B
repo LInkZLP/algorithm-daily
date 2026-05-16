@@ -1,0 +1,90 @@
+#include <bits/stdc++.h>
+using namespace std;
+int t;
+const int maxn = 2e5+5;
+deque<int>dq;
+//：因为敌人可以完全控制每秒的分配，
+//所以他会尽量让所有计数器的值变得平均（这样你把最大的重置后，剩下的仍然很大）。
+//我们可以用一个数据结构来模拟当前所有计数器的值，并且在每一段中，敌人会“尽量拉平”这些值。
+bool check(int x,int k)//给定当前队列里的所有值，如果敌人想把所有值都变成至少 mid，需要至少增加多少？
+{
+	int sum = 0;
+	for(int y : dq)
+	{
+		if( y <= x)
+		{
+			sum += (x - y);
+		}
+	}
+	return sum <= k;
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+	cin.tie(0);
+	cin>>t;
+	while(t--)
+	{
+		int n;
+		int m;
+		int l;
+		cin>>n>>m>>l;
+		vector<int>u(maxn);
+		for(int i = 1;i<=n;i++)
+		{
+			cin>>u[i];		
+		}		
+		dq.clear();
+		for(int i = 1;i<=n;i++)
+		{
+			int t = u[i] - u[i-1];
+			int l = 1;
+			int r = u[i];
+			while(dq.size() < min(m,n-i+2))
+			{
+				dq.push_back(0);
+			}
+			int best = 0;
+			while(l <= r)//敌人能把所有值提高到多少？
+			{
+				int mid = (r - l) / 2 + l;
+				if(check(mid,t))
+				{
+					l = mid+1;
+					best = mid;
+				}
+				else
+				{
+					r = mid-1;
+				}
+			}
+			r = best;
+			for(int &x :dq)
+			{
+				if(x <= r)
+				{
+					t -= (r - x);
+					x = r;
+				}
+			}
+			for(int &x :dq)//如果还有剩余次数 len
+			{
+				if( t && x == r )
+				{
+					x++;
+					t--;
+				}
+			}
+			dq.pop_front();//重置
+		}
+		if(dq.size()) 
+		{
+			cout<<dq.front()+l - u[n] <<endl;
+		}
+		else
+		{
+			cout<<l - u[n]<<endl;
+		}
+	}
+	return 0;
+}
