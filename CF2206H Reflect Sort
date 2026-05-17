@@ -1,0 +1,70 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 1e6+5;
+vector<long long> v(maxn);   // v[1]存放第一个数，v[2..n]存放相邻差的绝对值
+
+// 最大公约数（支持 long long）
+long long gcd(long long m, long long n) {
+    return n == 0 ? m : gcd(n, m % n);
+}
+
+int main() {
+    int n;
+    cin >> n;
+    long long last = 0;          // 用于计算相邻差，初始0是为了让v[1]得到第一个数
+    for (int i = 1; i <= n; i++) {
+        long long x;
+        cin >> x;
+        // 技巧：第一次循环时 last=0 → v[1]=|x-0|=x，即第一个数本身
+        // 后续循环中，v[i] 存储相邻两数之差的绝对值
+        v[i] = abs(x - last);
+        last = x;
+    }
+
+    // ========== 关键观察1 ==========
+    // 操作（关于某点反射前缀或后缀）不会改变任意相邻两数之差的绝对值。
+    // 证明：如果两个相邻位置都在操作范围内，它们的差不变；
+    //       如果都不在，也不变；如果一个在另一个不在，则差变为相反数，绝对值不变。
+    // 因此 |a[i+1] - a[i]| 在整个过程中是常量。
+
+    // 统计所有相邻差的绝对值之和 s，同时计算所有差值的最大公约数 r
+    long long r = 0;   // gcd of all |a[i+1]-a[i]|
+    long long s = 0;   // sum of all |a[i+1]-a[i]|
+    for (int i = 2; i <= n; i++) {
+        s += v[i];
+        r = gcd(r, v[i]);
+    }
+
+    // 特殊情况：所有相邻差均为0，即原序列所有数相等
+    // 此时无法操作（因为任何操作都不会改变值），答案就是原来的最后一个数
+    if (r == 0) {
+        cout << last << endl;   // last 就是 a_n
+        return 0;
+    }
+
+    // ========== 关键观察2 ==========
+    // 最终要求序列单调不降，因此必须让每个差值取正：
+    //   a[i+1] - a[i] = |a[i+1]-a[i]|
+    // 于是整个序列完全由第一个数 a1' 决定：
+    //   a_n' = a1' + sum_{i=1}^{n-1} |a[i+1]-a[i]| = a1' + s
+    // 我们只需最小化 a1'（同时保证所有数 > 0，即 a1' >= 1）
+
+    // ========== 关键观察3 ==========
+    // 通过一系列操作，a1 可以改变的量是所有 2*d_i 的整数线性组合。
+    // 设 g = gcd(d_1, d_2, ..., d_{n-1})，则 a1 可以变为 a1_original + k * (2g)  (k∈Z)
+    // 因此步长 step = 2 * r (这里 r 就是上述的 g)
+    r *= 2;                     // 步长 step = 2 * gcd(all diffs)
+
+    // 我们要找与原始 a1 模 step 同余的最小正数
+    // 即余数 rem = v[1] % step，若 rem == 0 则取 step，否则取 rem
+    long long g;
+    if (v[1] % r == 0) {
+        g = r;                  // 余数为0时，最小正数是 step 本身
+    } else {
+        g = v[1] % r;           // 否则取余数
+    }
+
+    // 最终答案 = 最小可能的 a1' + 所有相邻差之和
+    cout << s + g << endl;
+    return 0;
+}
