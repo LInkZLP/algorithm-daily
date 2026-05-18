@@ -1,0 +1,81 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 1e5+5;
+int n;
+int m;
+#define pli pair<long long,int>
+vector<vector<pli>>v(maxn);
+vector<vector<pli>>rv(maxn);
+vector<long long>dist(maxn,LLONG_MAX);
+vector<long long>ans(maxn,LLONG_MAX);
+int main()
+{
+	cin>>n>>m;
+	for(int i = 1;i<=m;i++)
+	{
+		int a;
+		int b;
+		long long w;
+		cin>>a>>b>>w;
+		v[a].push_back({w,b});
+		rv[b].push_back({w,a});
+	}
+	priority_queue<pli,vector<pli>,greater<pli>>pq;
+	pq.push({0,1});
+	dist[1] = 0;
+	while(!pq.empty())
+	{
+		pli r = pq.top();
+		pq.pop();
+		int now = r.second;
+		long long d = r.first;
+		if(d > dist[now])
+		{
+			continue;
+		}
+		for(int i = 0;i<v[now].size();i++)
+		{
+			int next = v[now][i].second;
+			long long w = v[now][i].first;
+			if(dist[next] > dist[now] + w)
+			{
+				dist[next] = dist[now] + w;
+				pq.push({dist[next],next});
+			}
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		if(dist[i] != LLONG_MAX)
+		{
+			ans[i] = dist[i];
+			pq.push({ans[i],i});
+		}
+	}
+	while(!pq.empty())
+	{
+		pli r = pq.top();
+		pq.pop();
+		int now = r.second;
+		for(int i = 0;i<rv[now].size();i++)
+		{
+			int next = rv[now][i].second;
+			long long w = rv[now][i].first;
+			if(ans[next] > ans[now]+w)
+			{
+				ans[next] = ans[now] + w;
+				pq.push({ans[next],next});
+			}
+		}
+	}
+	for(int i = 2;i<=n;i++)
+	{
+		if(ans[i] == LLONG_MAX)
+		{
+			cout<<-1<<" ";
+			continue;
+		}
+		cout<<ans[i]<<" ";
+	}
+	return 0;
+ } 
