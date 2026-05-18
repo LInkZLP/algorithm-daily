@@ -49,7 +49,7 @@ int main()
 		if(dist[i] != LLONG_MAX)
 		{
 			ans[i] = dist[i];
-			pq.push({ans[i],i});
+			pq.push({ans[i],i});//每个点都是源节点 
 		}
 	}
 	while(!pq.empty())
