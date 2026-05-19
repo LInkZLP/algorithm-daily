@@ -1,0 +1,79 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+    // 加速输入输出
+    ios::sync_with_stdio(false);
+    cin.tie(0);
+
+    string s;
+    int m;
+    cin >> s >> m;
+    int n = s.size();
+
+    // 思路：
+    // 题目要求：对于每个询问的两个区间，分别取出子串，然后每个子串中每种字符只保留第一次出现的位置，
+    // 得到两个去重后的字符序列（按原串顺序），然后逐位比较这两个序列有多少位置不同，
+    // 最后再加上较长序列多出的长度（多出的部分每个位置都视为不同）。
+    //
+    // 关键点：
+    // 1. 每个区间去重后最多只有26个字符（因为只有小写字母）。
+    // 2. 要得到每个字符在区间内第一次出现的位置，可以预处理每个字符的所有出现位置（有序列表），
+    //    然后对于给定区间，通过二分查找快速找到第一个 >= L 的位置，并检查是否 <= R。
+    // 3. 将所有找到的（位置, 字符）按照位置排序，即得到原串顺序的去重序列。
+    // 4. 两个序列逐位比较即可。
+
+    // pos[c] 存储字符 c（c = 0~25 代表 a~z）在字符串中所有出现的位置（1-indexed）
+    vector<vector<int>> pos(26);
+    for (int i = 0; i < n; ++i) {
+        // 将字符转换为 0~25 的编号，位置存储为 i+1（1-indexed，便于输入的下标直接使用）
+        pos[s[i] - 'a'].push_back(i + 1);
+    }
+
+    while (m--) {
+        int la, ra, lb, rb;
+        cin >> la >> ra >> lb >> rb;
+
+        // A 和 B 分别存储两个区间去重后的 (位置, 字符编号) 对
+        vector<pair<int, int>> A, B;
+
+        // 对每个字符进行查询
+        for (int c = 0; c < 26; ++c) {
+            const vector<int>& v = pos[c];   // 引用，避免拷贝，提高效率
+
+            // 处理第一个区间 [la, ra]
+            // 二分查找第一个 >= la 的位置
+            int idx = lower_bound(v.begin(), v.end(), la) - v.begin();
+            if (idx < (int)v.size() && v[idx] <= ra) {
+                // 该字符在区间内第一次出现的位置是 v[idx]
+                A.push_back({v[idx], c});    // 存储位置和字符编号
+            }
+
+            // 处理第二个区间 [lb, rb]
+            idx = lower_bound(v.begin(), v.end(), lb) - v.begin();
+            if (idx < (int)v.size() && v[idx] <= rb) {
+                B.push_back({v[idx], c});
+            }
+        }
+
+        // 将 A 和 B 按位置从小到大排序，这样得到的字符顺序就是原串中的顺序
+        sort(A.begin(), A.end());
+        sort(B.begin(), B.end());
+
+        // 计算答案
+        int ans = 0;
+        int lenA = A.size(), lenB = B.size();
+
+        // 逐位比较公共部分
+        for (int i = 0; i < min(lenA, lenB); ++i) {
+            if (A[i].second != B[i].second) {
+                ++ans;
+            }
+        }
+        // 加上长度差（较长串多出的部分每个位置都不同）
+        ans += abs(lenA - lenB);
+
+        cout << ans << '\n';
+    }
+    return 0;
+}
