@@ -1,0 +1,107 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+// 倍增法的最大层数（2^22 > 1e5）
+const int LOG = 22;
+const int maxn = 1e5 + 5;
+
+int n, m;                         // n个节点，m条路径
+
+struct st {
+    int id;      // 边的编号（1 ~ n-1）
+    int next;    // 邻接点
+};
+
+vector<int> dep(maxn);            // 节点深度
+vector<vector<int>> up(maxn, vector<int>(LOG, 0)); // 倍增祖先表
+vector<vector<st>> v(maxn);       // 邻接表，存储边id和相邻节点
+vector<int> w(maxn);              // 每条边被覆盖的次数（边编号为下标）
+vector<int> diff(maxn);           // 树上差分数组
+
+// 预处理：深度 + 倍增祖先
+void dfs(int u, int p) {
+    up[u][0] = p;                 // 直接父节点
+    // 计算2^i级祖先
+    for (int i = 1; i < LOG; i++) {
+        up[u][i] = up[up[u][i-1]][i-1];
+    }
+    for (int i = 0; i < v[u].size(); i++) {
+        int nxt = v[u][i].next;
+        if (nxt == p) continue;
+        dep[nxt] = dep[u] + 1;
+        dfs(nxt, u);
+    }
+}
+
+// 倍增法求LCA
+int lca(int a, int b) {
+    // 保证a的深度更大
+    if (dep[a] < dep[b]) swap(a, b);
+    int dh = dep[a] - dep[b];
+    // 将a上跳到与b同深度
+    for (int i = LOG-1; i >= 0; i--) {
+        if (dh & (1 << i)) {
+            a = up[a][i];
+        }
+    }
+    if (a == b) return a;
+    // 一起上跳直到父节点相同
+    for (int i = LOG-1; i >= 0; i--) {
+        if (up[a][i] != up[b][i]) {
+            a = up[a][i];
+            b = up[b][i];
+        }
+    }
+    return up[a][0];
+}
+
+// 自底向上累加差分值，计算每条边的覆盖次数
+// u: 当前节点，p: 父节点
+void dfs_sum(int u, int p) {
+    for (int i = 0; i < v[u].size(); i++) {
+        int nxt = v[u][i].next;
+        if (nxt == p) continue;
+        dfs_sum(nxt, u);
+        // 边(u, nxt)的覆盖次数加上子树的差分和
+        w[v[u][i].id] += diff[nxt];
+        // 当前节点的差分累加上子树的差分
+        diff[u] += diff[nxt];
+    }
+}
+
+int main() {
+    cin >> n >> m;
+    // 读入树边，编号从1开始
+    for (int i = 1; i <= n-1; i++) {
+        int x, y;
+        cin >> x >> y;
+        v[x].push_back({i, y});
+        v[y].push_back({i, x});
+    }
+    // 根节点为1，父节点设为自身（后续LCA写法需保证up[1][0]=1）
+    dfs(1, 1);
+
+    // 处理m条路径，使用树上差分
+    for (int i = 1; i <= m; i++) {
+        int x, y;
+        cin >> x >> y;
+        int r = lca(x, y);
+        // 经典差分：x+1, y+1, lca-2
+        diff[x]++;
+        diff[y]++;
+        diff[r] -= 2;
+    }
+
+    // 后序遍历累加差分，得到每条边的覆盖次数
+    dfs_sum(1, 1);
+
+    // 寻找被所有m条路径覆盖的边中，编号最大的
+    int ans = -1;
+    for (int i = 1; i <= n-1; i++) {
+        if (w[i] == m) {
+            ans = max(ans, i);
+        }
+    }
+    cout << ans << endl;
+    return 0;
+}
