@@ -1,0 +1,75 @@
+#include <bits/stdc++.h>
+using namespace std;
+//最大数量 = 连通块个数（每个连通块独立成环，链也可以自己首尾相连成环）。
+//最小数量 =
+若图中存在度数为 1 的点（即有链）→ 环的个数 + 1
+若全是环（无链）→ 环的个数
+等价公式：min(连通块个数, 连通块个数 - 叶子数/2 + 1)
+const int maxn = 2e5 + 5;
+int fa[maxn];   // 并查集父节点
+int deg[maxn];  // 每个节点的度数（无向图中已经添加的边数）
+
+// 并查集查找根节点 + 路径压缩
+int Find(int x) {
+    return x == fa[x] ? x : fa[x] = Find(fa[x]);
+}
+
+// 合并两个节点所在的集合（只维护连通性，不处理度数）
+void Union(int x, int y) {
+    int rx = Find(x), ry = Find(y);
+    if (rx != ry) fa[rx] = ry;
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int t;
+    cin >> t;
+    while (t--) {
+        int n;
+        cin >> n;
+
+        // 初始化：每个点自成一个集合，度数为0
+        for (int i = 1; i <= n; ++i) {
+            fa[i] = i;
+            deg[i] = 0;
+        }
+
+        // 用于记录已经处理过的无向边，避免重复计数
+        // 键为 (u, v) 对，值为 true 表示这条边已经添加
+        map<pair<int, int>, bool> used;
+
+        // 读入每个人记得的邻居，构建无向图（去重）
+        for (int i = 1; i <= n; ++i) {
+            int x;
+            cin >> x;
+            // 如果边 (i, x) 和 (x, i) 都未出现过，才处理
+            if (!used[{i, x}] && !used[{x, i}]) {
+                used[{i, x}] = used[{x, i}] = true; // 标记双向边
+                deg[i]++;   // i 的度数 +1
+                deg[x]++;   // x 的度数 +1
+                Union(i, x); // 合并 i 和 x 所在的连通块
+            }
+        }
+
+        int comp = 0; // 连通块总数
+        int leaf = 0; // 度数为 1 的节点总数（叶子节点）
+        for (int i = 1; i <= n; ++i) {
+            if (Find(i) == i) comp++;   // 根节点代表一个连通块
+            if (deg[i] == 1) leaf++;    // 统计叶子
+        }
+
+        // 根据推导：
+        // 最大圆圈舞数量 = 连通块数（每个块独立成环）
+        int maxAns = comp;
+        // 最小圆圈舞数量 = 环的个数 + (链的个数 > 0 ? 1 : 0)
+        // 环的个数 = 连通块数 - 链的个数 = comp - leaf/2
+        // 所以 minAns = (comp - leaf/2) + (leaf > 0 ? 1 : 0)
+        // 等价于 min(comp, comp - leaf/2 + 1)（当 leaf=0 时后者为 comp+1，取 min 修正）
+        int minAns = min(comp, comp - leaf / 2 + 1);
+
+        cout << minAns << " " << maxAns << "\n";
+    }
+    return 0;
+}
