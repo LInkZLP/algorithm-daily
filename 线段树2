@@ -1,0 +1,134 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+// 线段树支持：区间加、区间乘、区间求和（结果对 m 取模）
+// 注意：操作类型 c=1 为乘法，c=2 为加法，c=3 为查询（题目给出的样例如此）
+
+int n;          // 数列长度
+long long m;    // 模数
+int k;          // 操作次数
+const int maxn = 1e5 + 10;
+
+vector<long long> sum(maxn * 4);   // 区间和（已取模）
+vector<long long> add(maxn * 4);   // 加法懒标记（未取模？实际必须取模，见下文）
+vector<long long> mul(maxn * 4, 1);// 乘法懒标记（初始为1）
+vector<long long> v(maxn);         // 原始数组（1-indexed）
+
+// 建树
+void build(int l, int r, int i) {
+    if (l == r) {
+        sum[i] = v[l] % m;   // 重要：初始值取模
+        return;
+    }
+    int mid = (l + r) >> 1;
+    build(l, mid, i << 1);
+    build(mid + 1, r, i << 1 | 1);
+    sum[i] = (sum[i << 1] + sum[i << 1 | 1]) % m;
+}
+
+// 下传懒标记（核心，容易错）
+// ln 和 rn 分别为左右子树的区间长度（节点数）
+void dowm(int i, int ln, int rn) {
+    // 注意：必须先下传乘法标记，因为乘法优先级高于加法
+    // 乘法标记对当前节点的 sum、add、mul 都有影响
+    if (mul[i] != 1) {
+        long long t = mul[i] % m;   // 重要：先取模，防止溢出
+
+        // 左孩子
+        sum[i << 1] = sum[i << 1] * t % m;
+        mul[i << 1] = mul[i << 1] * t % m;   // 乘法标记累乘
+        add[i << 1] = add[i << 1] * t % m;   // 关键！加法标记也要乘（因为乘法作用于整个区间）
+
+        // 右孩子
+        sum[i << 1 | 1] = sum[i << 1 | 1] * t % m;
+        mul[i << 1 | 1] = mul[i << 1 | 1] * t % m;
+        add[i << 1 | 1] = add[i << 1 | 1] * t % m;
+
+        mul[i] = 1;   // 清除当前节点乘法标记
+    }
+
+    // 再下传加法标记
+    if (add[i] != 0) {
+        long long t = add[i] % m;
+
+        // 左孩子
+        sum[i << 1] = (sum[i << 1] + ln * t) % m;
+        add[i << 1] = (add[i << 1] + t) % m;   // 加法标记累加
+
+        // 右孩子
+        sum[i << 1 | 1] = (sum[i << 1 | 1] + rn * t) % m;
+        add[i << 1 | 1] = (add[i << 1 | 1] + t) % m;
+
+        add[i] = 0;   // 清除当前节点加法标记
+    }
+}
+
+// 区间乘（c=1）
+void summul(int jobl, int jobr, long long jobv, int l, int r, int i) {
+    jobv %= m;   // 重要：乘数先取模
+    if (jobl <= l && r <= jobr) {
+        sum[i] = sum[i] * jobv % m;
+        mul[i] = mul[i] * jobv % m;
+        add[i] = add[i] * jobv % m;   // 关键：加法标记也要乘（因为乘法优先级高）
+        return;
+    }
+    int mid = (l + r) >> 1;
+    dowm(i, mid - l + 1, r - mid);   // 下传懒标记，保证子树数据正确
+    if (jobl <= mid) summul(jobl, jobr, jobv, l, mid, i << 1);
+    if (jobr > mid)  summul(jobl, jobr, jobv, mid + 1, r, i << 1 | 1);
+    sum[i] = (sum[i << 1] + sum[i << 1 | 1]) % m;
+}
+
+// 区间加（c=2）
+void sumadd(int jobl, int jobr, long long jobv, int l, int r, int i) {
+    jobv %= m;
+    if (jobl <= l && r <= jobr) {
+        sum[i] = (sum[i] + jobv * (r - l + 1)) % m;
+        add[i] = (add[i] + jobv) % m;   // 加法标记累加
+        return;
+    }
+    int mid = (l + r) >> 1;
+    dowm(i, mid - l + 1, r - mid);
+    if (jobl <= mid) sumadd(jobl, jobr, jobv, l, mid, i << 1);
+    if (jobr > mid)  sumadd(jobl, jobr, jobv, mid + 1, r, i << 1 | 1);
+    sum[i] = (sum[i << 1] + sum[i << 1 | 1]) % m;
+}
+
+// 区间查询和
+long long query(int jl, int jr, int l, int r, int i) {
+    if (jl <= l && r <= jr) {
+        return sum[i];
+    }
+    int mid = (l + r) >> 1;
+    dowm(i, mid - l + 1, r - mid);   // 查询前也要下传懒标记
+    long long ans = 0;
+    if (jl <= mid) ans = (ans + query(jl, jr, l, mid, i << 1)) % m;
+    if (jr > mid)  ans = (ans + query(jl, jr, mid + 1, r, i << 1 | 1)) % m;
+    return ans;
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(0);
+
+    cin >> n >> k >> m;
+    for (int i = 1; i <= n; ++i) cin >> v[i];
+    build(1, n, 1);
+
+    while (k--) {
+        int c, x, y;
+        cin >> c >> x >> y;
+        if (c == 1) {          // 乘法
+            long long w;
+            cin >> w;
+            summul(x, y, w, 1, n, 1);
+        } else if (c == 2) {   // 加法
+            long long w;
+            cin >> w;
+            sumadd(x, y, w, 1, n, 1);
+        } else {               // 查询
+            cout << query(x, y, 1, n, 1) << '\n';
+        }
+    }
+    return 0;
+}
