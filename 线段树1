@@ -1,0 +1,102 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+// 线段树模板：区间加 + 区间求和（无取模，long long直接存）
+// 线段树空间：一般开4倍节点数，即 maxn*4
+
+int n;                // 数列长度
+long long m;          // 注意：这里 m 实际是操作次数（变量名容易混淆，建议改为 q）
+const int maxn = 1e5+10;
+
+vector<long long> sum(maxn*4);   // 每个节点的区间和
+vector<long long> add(maxn*4);   // 懒标记（加法标记），表示该区间所有元素待加的值
+vector<long long> v(maxn);       // 原始数组（1-indexed）
+
+// 建树：将原始数组的值赋给叶子节点，然后自底向上合并区间和
+void build(int l, int r, int i) {
+    if (l == r) {
+        sum[i] = v[l];   // 叶子节点直接赋值
+        return;
+    }
+    int mid = (l + r) >> 1;
+    build(l, mid, i << 1);       // 递归左子树
+    build(mid + 1, r, i << 1 | 1); // 递归右子树
+    sum[i] = sum[i << 1] + sum[i << 1 | 1]; // 合并左右子区间和
+}
+
+// 下传懒标记（核心函数）
+// ln: 左子树的区间长度（节点数），rn: 右子树的区间长度
+void dowm(int i, int ln, int rn) {
+    // 如果当前节点有未下传的加法标记
+    if (add[i] != 0) {
+        // 1. 更新左子树的区间和：左子树每个元素加上 add[i]，共 ln 个元素
+        sum[i << 1] += ln * add[i];
+        // 2. 将加法标记累加到左子树的懒标记上
+        add[i << 1] += add[i];
+
+        // 3. 更新右子树的区间和：右子树每个元素加上 add[i]，共 rn 个元素
+        sum[i << 1 | 1] += rn * add[i];
+        // 4. 将加法标记累加到右子树的懒标记上
+        add[i << 1 | 1] += add[i];
+
+        // 5. 清除当前节点的懒标记（已经下传）
+        add[i] = 0;
+    }
+    // 注意：如果只有加法操作，不需要先下传乘法；这里没有乘法，所以顺序无关紧要
+}
+
+// 区间加：将 [jobl, jobr] 内的每个元素加上 jobv
+void sumadd(int jobl, int jobr, long long jobv, int l, int r, int i) {
+    // 完全覆盖：当前节点区间完全在修改区间内
+    if (jobl <= l && r <= jobr) {
+        sum[i] += jobv * (r - l + 1);   // 更新区间和
+        add[i] += jobv;                 // 累加懒标记，暂不下传
+        return;
+    }
+    // 否则需要向下递归，递归前先下传当前节点的懒标记，保证子节点数据正确
+    int mid = (l + r) >> 1;
+    dowm(i, mid - l + 1, r - mid);      // 下传标记（传入左右子树长度）
+
+    // 递归修改左右子树
+    if (jobl <= mid) sumadd(jobl, jobr, jobv, l, mid, i << 1);
+    if (jobr > mid)  sumadd(jobl, jobr, jobv, mid + 1, r, i << 1 | 1);
+
+    // 回溯时重新合并区间和
+    sum[i] = sum[i << 1] + sum[i << 1 | 1];
+}
+
+// 区间查询：返回 [jl, jr] 的和
+long long query(int jl, int jr, int l, int r, int i) {
+    // 完全覆盖：直接返回当前节点的区间和
+    if (jl <= l && r <= jr) {
+        return sum[i];
+    }
+    // 否则需要向下递归，先下传懒标记
+    int mid = (l + r) >> 1;
+    dowm(i, mid - l + 1, r - mid);
+
+    long long ans = 0;
+    if (jl <= mid) ans += query(jl, jr, l, mid, i << 1);
+    if (jr > mid)  ans += query(jl, jr, mid + 1, r, i << 1 | 1);
+    return ans;
+}
+
+int main() {
+    // 输入：第一行 n 和 m（m 是操作次数）
+    cin >> n >> m;
+    for (int i = 1; i <= n; i++) cin >> v[i];
+    build(1, n, 1);   // 建树
+
+    while (m--) {
+        int c, x, y;
+        cin >> c >> x >> y;
+        if (c == 2) {   // 查询操作
+            cout << query(x, y, 1, n, 1) << endl;
+        } else if (c == 1) {   // 加法操作
+            long long w;
+            cin >> w;
+            sumadd(x, y, w, 1, n, 1);
+        }
+    }
+    return 0;
+}
