@@ -1,0 +1,106 @@
+#include <bits/stdc++.h>
+using namespace std;
+//范围重置
+int n;
+int m;
+const int maxn = 1e5+5;
+vector<long long>change(maxn);
+vector<long long >sum(maxn*4); 
+vector<bool>update(maxn*4);//判断有无重置任务 
+vector<long long>v(maxn);
+void build(int l,int r,int i)
+{
+	if(r == l)
+	{
+		sum[i] = v[l];
+		return;
+	}
+	int mid = (l + r) >> 1;
+	build(l,mid,i<<1);
+	build(mid+1,r,i<<1|1);
+	sum[i] = sum[i<<1] + sum[i<<1|1];
+	return;
+}
+void lazy(int i,long long jobv,int len)
+{
+	sum[i] = jobv*len;
+	change[i] = jobv;
+	update[i] = true;
+	return;
+}
+void down(int i,int ln,int rn)
+{
+	if(update[i])
+	{
+		lazy(i<<1,change[i],ln);
+		lazy(i<<1|1,change[i],rn);
+		update[i] = false;
+	}
+}
+void remake(int jobl,int jobr,int jobv,int l ,int r,int i)
+{
+	if(jobl <= l && r <= jobr)
+	{
+		lazy(i,jobv,r - l + 1);
+		return;
+	}
+	int mid = (l + r) >> 1;
+	down(i,mid - l +1,r - mid);
+	if(jobl <= mid)
+	{
+		remake(jobl,jobr,jobv,l,mid,i<<1);
+	}
+	if(jobr >= mid+1)
+	{
+		remake(jobl,jobr,jobv,mid+1,r,i<<1|1);
+	}
+	sum[i] = sum[i<<1] + sum[i<<1|1];
+	return;
+}
+long long query(int jobl,int jobr,int l,int r,int i)
+{
+	if(jobl <= l && jobr >= r)
+	{
+		return sum[i];
+	}
+	int mid = (l + r) >>1;
+	down(i,mid-l+1,r - mid);
+	long long ans = 0;
+	if(jobl <= mid)
+	{
+		ans += query(jobl,jobr,l,mid,i<<1);
+	}
+	if(jobr >= mid+1)
+	{
+		ans += query(jobl,jobr,mid+1,r,i<<1|1);
+	}
+	return ans;
+}
+
+int main()
+{
+	cin>>n>>m;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+	}
+	build(1,n,1);
+	while(m--)
+	{
+		int x;
+		int y;
+		int c;
+		cin>>c>>x>>y;
+		if(c == 1)
+		{
+			int p;
+			cin>>p;
+			remake(x,y,p,1,n,1);
+		}
+		else
+		{
+			cout<<query(x,y,1,n,1)<<endl;
+		}
+	}
+	return 0;
+ } 
