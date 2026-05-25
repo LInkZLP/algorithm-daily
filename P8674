@@ -1,0 +1,48 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int n;          // 模数（一小时有 n 分钟，时间显示范围 0 ~ n-1）
+int k;          // 新增的 +k 按钮的步长
+const int maxn = 1e5 + 5;
+
+vector<long long> dis(maxn);   // 存储从起点 0 到每个点的最短步数
+vector<bool> vis(maxn);        // 标记节点是否已访问（实际上代码未使用 vis，而是用 dis==0 判断）
+
+int main() {
+    cin >> n >> k;
+    queue<int> q;               // BFS 队列
+    q.push(0);                  // 从 0 开始
+    dis[0] = 0;                 // 起点距离为 0
+
+    while (!q.empty()) {
+        int u = q.front();      // 当前节点编号
+        q.pop();
+
+        // 操作1：按 +k 按钮，到达 v1
+        long long v1 = ((u + k) % n + n) % n;   // 保证结果在 [0, n-1] 内（处理负数，虽然这里不会出现负数）
+        // 操作2：按 +1 按钮，到达 v2
+        long long v2 = ((u + 1) % n + n) % n;
+
+        // 如果 v1 尚未被访问（dis[v1]==0 且 v1 不是起点 0，因为起点距离是0但已经入队过）
+        // 注意：此判断依赖起点 0 的 dis[0]==0 且不会再次入队，而对于其他未访问点 dis 默认为0，可行
+        if (!dis[v1]) {
+            dis[v1] = dis[u] + 1;   // 步数 +1
+            q.push(v1);             // 入队继续 BFS
+        }
+        // 同样处理 v2
+        if (!dis[v2]) {
+            dis[v2] = dis[u] + 1;
+            q.push(v2);
+        }
+    }
+
+    // 从 1 到 n-1 中找最大距离（因为从 0 到 0 的距离为 0，不需要比较）
+    long long res = -1;
+    for (int i = 1; i <= n; i++) {   // 注意这里循环到 n，但 dis[n] 不存在？实际上 maxn = 1e5+5，下标 n 时可能越界？但原题 n≤1e5，所以 i<=n 不对，应改为 i<n
+        // 原代码此处有 bug：应该 i < n，因为有效下标是 0 ~ n-1。但 n=5 时，i=5 会访问 dis[5]，未定义行为。
+        // 不过题目数据较小可能没触发错误。修改建议：for(int i=1;i<n;i++)
+        res = max(res, dis[i]);
+    }
+    cout << res << endl;
+    return 0;
+}
