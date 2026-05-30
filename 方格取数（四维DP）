@@ -1,0 +1,44 @@
+#include <bits/stdc++.h>
+using namespace std; 
+vector<vector<int>>g(11,vector<int>(11,0));
+int dp[11][11][11][11];
+//dp[i][j][k][l] 表示第一条路径走到 (i, j)、第二条路径走到 (k, l) 时，能取到的数字最大和。
+int main()
+{
+	memset(dp,0,sizeof(dp));
+	int n;
+	cin>>n;
+	while(1)
+	{
+		int x;
+		int y;
+		int c;
+		cin>>x>>y>>c;
+		if(x == 0 || y == 0 || c == 0)
+		{
+			break;
+		}
+		g[x][y] = c;
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 1;j<=n;j++)
+		{
+			for(int k = 1;k<=n;k++)
+			{
+				for(int l = 1;l<=n;l++)
+				{
+					int va = max(max(dp[i][j-1][k][l-1],dp[i][j-1][k-1][l]),max(dp[i-1][j][k][l-1],dp[i-1][j][k-1][l]));
+					int add = g[i][j] + g[k][l];
+					if(i == k && j == l)
+					{
+						add -= g[i][j];
+					}
+					dp[i][j][k][l] = va + add;
+				}
+			}
+		}
+	}
+	cout<<dp[n][n][n][n]<<endl;
+	return 0;
+}
