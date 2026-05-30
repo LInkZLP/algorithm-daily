@@ -1,0 +1,40 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+const int maxn = 5e3+5;
+vector<long long >v(maxn); 
+int main()
+{
+	cin>>n>>m;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+	}
+	while(m--)
+	{
+		long long k;
+		cin>>k;
+		long long sum = 0;
+		vector<long long>pre(n+1);
+		for(int i = 1;i<=n;i++)
+		{
+			cin>>v[i];
+			sum += v[i];
+			//pre[i] =f(i)- v[i];
+			//f为变化后的版本 
+		}
+		long long ans1 = pre[1];
+		long long ans2 = pre[1];
+		long long t1 = pre[1];
+		long long t2 = pre[1];
+		//当前最值和全局最值 
+		for(int i =1;i<=n;i++ )
+		{
+			//t1 = max(pre[i],pre[i] + t1)
+			//ans1 = max(t1,ans1)
+		}
+		//ans1 += sum;
+	}
+	return 0;
+}
