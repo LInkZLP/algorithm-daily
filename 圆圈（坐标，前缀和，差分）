@@ -1,0 +1,80 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int n;          // 圆的个数
+int m;          // 查询次数
+
+struct cyc {
+    int x;      // 圆心 x 坐标
+    int y;      // 圆心 y 坐标
+    int r;      // 半径
+};
+
+vector<vector<int>> dp(1005, vector<int>(1005, 0)); // 最终每个点被覆盖的次数（只关心奇偶）
+vector<cyc> v(1005);                               // 存储所有圆，下标从1开始
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(0);
+    cout.tie(0);  // 加速输入输出
+
+    cin >> n;
+
+    // 差分数组，diff[y][x] 表示在 (x, y) 这一行的差分值
+    // 开 1005×1005 是为了让下标 1~1000 正常使用，且留出 r+1 的边界
+    vector<vector<int>> diff(1005, vector<int>(1005, 0));
+
+    // ----- 预处理阶段：对每个圆，在它覆盖的每一行标记差分区间 -----
+    for (int i = 1; i <= n; i++) {
+        cin >> v[i].x >> v[i].y >> v[i].r;
+        int r1 = v[i].r;
+
+        // 圆覆盖的纵坐标范围 [miny, maxy]
+        int miny = max(1, v[i].y - r1);
+        int maxy = min(1000, v[i].y + r1);
+
+        // 遍历圆覆盖的每一行
+        for (int j = miny; j <= maxy; j++) {
+            int dy = v[i].y - j;                     // 当前行与圆心的竖直距离
+            // 半宽 dx = floor(sqrt(r^2 - dy^2))，即该行覆盖的 x 区间半径
+            int dx = (int)sqrt(r1 * r1 - dy * dy);   // 直接转 int 是向下取整，但浮点误差可能使结果偏小
+            // 易错点1：当 r^2 - dy^2 是完全平方数时，sqrt 可能返回 2.9999999，转 int 得 2，导致覆盖区间缩小
+            // 修正方法（未在此处写，但注释提醒）：可以加上 while((dx+1)*(dx+1) <= d) dx++; 确保正确向下取整
+
+            int l = v[i].x - dx;      // 左边界
+            int r = v[i].x + dx;      // 右边界
+
+            // 边界裁剪：只保留 [1, 1000] 范围内的网格点
+            if (l < 1) l = 1;
+            if (r > 1000) r = 1000;
+
+            // 差分标记：在区间 [l, r] 内每个点覆盖次数 +1
+            // 使用一维差分：diff[j][l]++ 表示从 l 开始累加，diff[j][r+1]-- 表示到 r+1 停止
+            diff[j][l]++;             // 注意：行索引是 j（当前 y 坐标）
+            diff[j][r + 1]--;         // 易错点2：如果 r=1000，r+1=1001 仍在数组范围内（开到了1005），没问题
+        }
+    }
+
+    // ----- 还原每个点的实际覆盖次数（前缀和）-----
+    // diff[i][j] 最终存储坐标为 (j, i) 的点被覆盖的次数（注意下标顺序）
+    for (int i = 1; i <= 1000; i++) {        // i 表示 y 坐标（行）
+        for (int j = 1; j <= 1000; j++) {    // j 表示 x 坐标（列）
+            diff[i][j] += diff[i][j - 1];    // 对第 i 行做前缀和
+            dp[i][j] = diff[i][j];           // 存入 dp[y][x]（因为 i 对应 y，j 对应 x）
+        }
+    }
+
+    // ----- 处理查询 -----
+    cin >> m;
+    while (m--) {
+        int x1, y1;
+        cin >> x1 >> y1;
+        // 易错点3：dp 的第一维是 y，第二维是 x，所以要查询 dp[y1][x1]
+        if (dp[y1][x1] & 1) {      // 如果覆盖次数为奇数
+            cout << "Yes" << '\n'; // 注意用 '\n' 代替 endl 加快输出
+        } else {
+            cout << "No" << '\n';
+        }
+    }
+    return 0;
+}
