@@ -1,0 +1,41 @@
+#include <bits/stdc++.h>
+using namespace std;
+int t;
+int n;
+const int maxn = 2e5+5;
+int main()
+{
+	cin>>t;
+	//prove :
+	//我们需要证明两点：
+	//h 不能超过所有前缀平均值的下取整的最小值（必要性）。
+	//存在一种操作，使得 h 等于这个最小值（充分性）。
+	//1 <= k <= i,for i ,h * k <= sum,we get h <= [sum / k]
+	//
+	// 对于 k + 1 来说， 如果An - k * h + a(k +1 ) >= h ,最小值不变，为h
+	//若 An - k * h + a(k + 1) < h;
+	//可以得到 new_h = A(k+1)  / (k+1) < h，更新 
+	while(t--)
+	{
+		cin>>n;
+		vector<long long>v(n+5);
+		long long sum = 0;
+		long long best = LLONG_MAX;
+		for(int i = 1;i<=n;i++)
+		{
+			cin>>v[i];
+			sum += v[i];
+			best = min(best,sum / i);
+			if(i == n)
+			{
+				cout<<best<<endl;
+			}
+			else
+			{
+				cout<<best<<" ";
+			}
+		}
+	}
+	
+	return 0;
+}
