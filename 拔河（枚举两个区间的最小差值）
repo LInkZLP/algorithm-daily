@@ -1,0 +1,63 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+const int maxn = 1e3+5;
+vector<vector<long long>>dp(maxn,vector<long long>(maxn,0));
+vector<long long>v(maxn);
+vector<long long>pre(maxn);
+int main()
+{
+	ios::sync_with_stdio(false);
+	cin.tie(0),cout.tie(0);
+	cin>>n;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+		pre[i] = pre[i-1] + v[i];
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 1;j<=n;j++)
+		{
+			dp[i][j] = pre[j] - pre[i-1];
+		}
+	}
+	long long ans = LLONG_MAX;
+	for(int i = 1;i<=n;i++) // r1
+	{
+		for(int j = i+1;j<=n;j++) //r2
+		{
+			int l1 = i;
+			int r2 = j;
+			while(l1 >= 1 && r2 <= n)
+			{
+				long long t = dp[j][r2] - dp[l1][i];
+				ans = min(ans,abs(t));
+				if(t > 0)
+				{
+					l1--;
+				}
+				else if(t == 0)
+				{
+					ans = 0;
+					break;
+				}
+				else
+				{
+					r2++;
+				}
+			}
+			if(ans == 0)
+			{
+				break;
+			}
+		}
+		if(ans == 0)
+		{
+			break;
+		}
+	}
+	cout<<ans<<endl;
+	
+	return 0;
+}
