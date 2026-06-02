@@ -1,0 +1,53 @@
+#include <bits/stdc++.h>
+using namespace std;
+const long long mod = 1e9 + 7;
+int a[20];
+long long dp[200][200];
+long long dfs(int pos,int limit,int sum)
+{
+	if(pos <= 0)
+	{
+		return sum;
+	}
+	if(!limit && dp[pos][sum] != -1)
+	{
+		return dp[pos][sum];
+	}
+	long long ret = 0;
+	int res = limit ? a[pos] : 9;
+	for(int i = 0;i<=res;i++)
+	{
+		ret =(ret+ dfs(pos-1,limit && i== res,sum+i) ) % mod;
+	}
+	if(!limit)
+	{
+		dp[pos][sum] = ret;
+	}
+	return ret;
+}
+long long work(long long n)
+{
+	memset(dp,-1,sizeof (dp));
+	memset(a,0,sizeof(a));
+	int l = 0;
+	while(n)
+	{
+		a[++l] = n % 10;
+		n/=10;
+	}
+	return dfs(l,1,0);
+	
+}
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		long long x;
+		long long y;
+		cin>>x>>y;
+		cout<<(work(y) - work(x-1) + mod) % mod<<endl;
+	}
+	return 0;
+}
