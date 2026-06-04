@@ -1,0 +1,120 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int n; // 节点数
+int m; // 附加边数
+
+// 存储树边（主要边）的结构体
+struct po {
+    int id;   // 边的编号（1 ~ n-1）
+    int next; // 相邻节点
+};
+
+const int maxn = 100005;
+// 邻接表，v[u] 存储从 u 出发的所有主要边
+vector<vector<po>> v(maxn);
+
+const int LOG = 22; // 因为 n ≤ 100000，2^17=131072，取 22 足够
+// up[u][k]：节点 u 向上跳 2^k 步到达的祖先，0 表示不存在（此处根的父亲设为自己）
+vector<vector<int>> up(maxn, vector<int>(LOG, 0));
+
+vector<long long> l(maxn);   // l[边编号] = 该主要边被附加边覆盖的次数
+vector<long long> dep(maxn); // 节点深度，根深度为 0
+vector<long long> diff(maxn); // 树上差分数组
+
+// 第一次 DFS：预处理倍增祖先和深度
+void dfs(int u, int p) {
+    up[u][0] = p; // 向上跳 1 步是父节点
+    // 预处理所有 2^k 级祖先
+    // 注意：之前错误地写成了 i <= n，导致数组越界 RE
+    // 正确写法：i < LOG
+    for (int i = 1; i < LOG; i++) {
+        up[u][i] = up[up[u][i-1]][i-1];
+    }
+    // 遍历所有主要边
+    for (int i = 0; i < v[u].size(); i++) {
+        int nxt = v[u][i].next;
+        if (nxt == p) continue; // 避免回到父节点
+        dep[nxt] = dep[u] + 1;
+        dfs(nxt, u);
+    }
+}
+
+// LCA 倍增实现
+int lca(int a, int b) {
+    // 让 a 成为深度较大的节点
+    if (dep[a] < dep[b]) swap(a, b);
+    int dh = dep[a] - dep[b];
+    // 将 a 上跳到与 b 同一深度
+    for (int i = LOG-1; i >= 0; i--) {
+        if (dh & (1 << i)) {
+            a = up[a][i];
+        }
+    }
+    if (a == b) return a;
+    // 一起向上跳，直到父节点相同
+    for (int i = LOG-1; i >= 0; i--) {
+        if (up[a][i] != up[b][i]) {
+            a = up[a][i];
+            b = up[b][i];
+        }
+    }
+    return up[a][0];
+}
+
+// 第二次 DFS：自底向上累加差分值，计算每条主要边被附加边覆盖的次数
+void dfs_sum(int u, int p) {
+    for (int i = 0; i < v[u].size(); i++) {
+        int tar = v[u][i].id;   // 当前主要边的编号
+        int nxt = v[u][i].next; // 子节点
+        if (nxt == p) continue;
+        dfs_sum(nxt, u);
+        // 将子节点的差分值累加到父节点
+        diff[u] += diff[nxt];
+        // 注意：这条主要边连接 u 和 nxt，且 nxt 是孩子
+        // 该主要边被覆盖的次数 = 子树 nxt 中所有差分值的和
+        l[tar] += diff[nxt];
+    }
+}
+
+int main() {
+    cin >> n >> m;
+    // 读入主要边，边编号为 1 ~ n-1
+    for (int i = 1; i <= n-1; i++) {
+        int x, y;
+        cin >> x >> y;
+        v[x].push_back({i, y});
+        v[y].push_back({i, x});
+    }
+
+    // 预处理倍增数组
+    dfs(1, 1); // 根节点设为 1，父节点设为自己（避免 up[0] 越界）
+
+    // 树上差分：对于每条附加边 (x, y)
+    for (int i = 1; i <= m; i++) {
+        int x, y;
+        cin >> x >> y;
+        diff[x]++;          // x 节点 +1
+        diff[y]++;          // y 节点 +1
+        int l = lca(x, y);
+        diff[l] -= 2;       // LCA 处 -2，因为 x 到 y 路径上的每条边会被加一次，LCA 本身不应计入
+    }
+
+    // 计算每条主要边的覆盖次数
+    dfs_sum(1, 1);
+
+    // 统计答案
+    int cnt = 0;
+    for (int i = 1; i <= n-1; i++) {
+        if (l[i] == 0) {
+            // 没有被任何附加边覆盖：切断该主要边后图已断，再切任意一条附加边即可
+            cnt += m;
+        } else if (l[i] == 1) {
+            // 只被一条附加边覆盖：必须切断那一条附加边
+            cnt++;
+        }
+        // 如果 l[i] >= 2：切断一条附加边后仍有其他附加边连接，无法断开，方案数为 0
+    }
+    cout << cnt << endl;
+    return 0;
+}
