@@ -1,0 +1,55 @@
+#include  <bits/stdc++.h>
+using namespace std;
+//数学上的取模永远是非负数的，如果是负数，则加上abs(base) 
+string work(long long n,int base)
+{
+	if(n == 0)
+	{
+		return "0";
+	}
+	vector<char>digits;
+	while(n!=0)
+	{
+		int r = n % base;
+		n /= base;
+		if(r < 0)
+		{
+			r += abs(base);
+			n+=1;
+			if(abs(r) >= 10)
+			{
+				digits.push_back((abs(r) -10 + 'A'));
+			}
+			else
+			{
+				digits.push_back(abs(r) + '0');
+			}
+		}
+		else
+		{
+			if(abs(r) >= 10)
+			{
+				digits.push_back((abs(r) -10 + 'A'));
+			}
+			else
+			{
+				digits.push_back(abs(r) + '0');
+			}
+		}
+	}
+	string res = "";
+	for(char i : digits)
+	{
+		res = i + res;
+	}
+	return res;
+}
+int main()
+{
+	long long n;
+	int base;
+	cin>>n>>base;
+	string s1 = "(base" + to_string(base) + ")";
+	cout<<to_string(n) + "="+work(n,base)+s1<<endl;
+	return 0;
+}
