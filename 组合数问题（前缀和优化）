@@ -1,0 +1,45 @@
+#include  <bits/stdc++.h>
+using namespace std;
+//组合数公式 ： C(a,b) = C(a-1,b-1) + Ca-1,b)
+//前缀和优化 
+int main()
+{
+	int t;
+	int k;
+	cin>>t>>k;
+	vector<vector<long long>>ans(2e3+5,vector<long long>(2e3+5));
+	vector<vector<long long>>c(2e3+5,vector<long long>(2e3+5));
+	c[0][0] = 1;
+	c[1][0] = 1;
+	c[1][1] = 1;
+	for(int i = 2;i<=2000;i++)
+	{
+		c[i][0] = 1;
+		for(int j = 1;j<=i;j++)
+		{
+			c[i][j] = (c[i-1][j-1] + c[i-1][j]) % k;
+			ans[i][j] = ans[i-1][j] + ans[i][j-1]  - ans[i-1][j-1];
+			if(!c[i][j])
+			{
+				ans[i][j]++;
+			}
+			ans[i][i+1] = ans[i][i];
+		}
+	}
+	
+	while(t--)
+	{
+		int n;
+		int m;
+		cin>>n>>m;
+		if( m > n)
+		{
+			cout<<ans[n][n]<<endl;
+		}
+		else
+		{
+			cout<<ans[n][m]<<endl;
+		}
+	}
+	return 0;
+}
