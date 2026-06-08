@@ -1,0 +1,31 @@
+#include  <bits/stdc++.h>
+using namespace std;
+int n;
+vector<vector<long long>>dp(1<<20,vector<long long>(25,LLONG_MAX/2));
+vector<vector<long long>>v(22,vector<long long>(22));
+int main()
+{
+	cin>>n;
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 1;j<=n;j++)
+		{
+			cin>>v[i][j];
+		}
+	}
+	dp[1][1] = 0;
+	for(int i = 1;i<(1<<n);i++)//枚举状态 
+	{
+		for(int j = 1;j<=n;j++)//枚举上一个点 
+		{
+			if(((i>>(j-1))&1)==0)continue;
+			for(int k=1;k<=n;k++)
+			{
+				if (!((i >> (k-1)) & 1)) continue;   // k 不在集合 i 中
+				dp[i][j]=min(dp[i][j],dp[i-(1<<(j-1))][k]+v[j][k]);
+			}
+		}
+	}
+	cout<<dp[(1<<n) - 1][n]<<endl;
+	return 0;
+}
