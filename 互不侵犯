@@ -1,0 +1,87 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+// 检查状态 a 自身是否合法（同一行内没有相邻的国王）
+bool c1(int a) {
+    // 如果 a 和 a 左移一位有重叠，说明存在相邻的 1，非法
+    // 注意括号：必须写成 (a & (a << 1)) == 0，不能省略括号，否则优先级错误
+    return (a & (a << 1)) == 0;
+}
+
+// 检查上一行状态 a 和当前行状态 b 是否冲突（8 方向）
+bool c2(int a, int b) {
+    // 1. 上下相邻：同一列不能同时为 1
+    if ((a & b) != 0) return false;
+    // 2. 左上-右下对角线：a 的第 j 位与 b 的第 j-1 位不能同时为 1
+    if ((a & (b << 1)) != 0) return false;
+    // 3. 右上-左下对角线：a 的第 j 位与 b 的第 j+1 位不能同时为 1
+    if ((a & (b >> 1)) != 0) return false;
+    return true;
+}
+
+// 统计二进制中 1 的个数（popcount）
+int cnt(int x) {
+    int c = 0;
+    while (x) {
+        c++;
+        // 经典技巧：x &= (x-1) 清除最低位的 1
+        x &= (x - 1);
+    }
+    return c;
+}
+
+int main() {
+    int n, k;
+    cin >> n >> k;
+
+    int total = 1 << n;                     // 所有可能的状态数（2^n）
+    vector<bool> ok_s(total, false);        // ok_s[s] = true 表示状态 s 行内合法
+    // dp[行][状态][已放国王数] = 方案数
+    // 注意：第二维大小 total，第三维大小 k+5 防止越界
+    vector<vector<vector<long long>>> dp(n, vector<vector<long long>>(total, vector<long long>(k + 5, 0)));
+
+    // 初始化第一行
+    for (int i = 0; i < total; i++) {
+        if (c1(i)) {                        // 状态 i 自身合法
+            ok_s[i] = true;
+            int t = cnt(i);
+            if (t <= k) {                   // 国王数不能超过总需求
+                dp[0][i][t] = 1;            // 第一行状态 i 且放 t 个国王的方案数为 1
+            }
+        }
+    }
+
+    // 逐行 DP，从第 2 行开始（下标 1）
+    for (int i = 1; i < n; i++) {
+        for (int mask = 0; mask < total; mask++) {   // 当前行状态
+            if (!ok_s[mask]) continue;
+            int t1 = cnt(mask);                      // 当前行自身国王数
+            if (t1 > k) continue;                    // 已超过总数，剪枝
+
+            for (int cur = 0; cur < total; cur++) {  // 上一行状态
+                if (!ok_s[cur]) continue;
+                if (!c2(cur, mask)) continue;        // 两行冲突则跳过
+                int t2 = cnt(cur);                   // 上一行自身国王数
+
+                // 关键转移：遍历上一行已经放置的国王总数 p
+                // 上一行的国王总数至少为 t2（因为它自身就有 t2 个国王），最多为 k - t1
+                // 这里用 j 作为偏移量，p = t2 + j
+                for (int j = 0; j <= k - t1 - t2; j++) {
+                    // 上一行总国王数为 t2+j，加上当前行的 t1，得到新的总国王数 t1+t2+j
+                    // 注意：不能写成 dp[i][mask][t1+t2+j] += dp[i-1][cur][t2]; 这是常见错误！
+                    // 必须使用 dp[i-1][cur][t2+j]，因为上一行的总国王数可能是 t2, t2+1, ...
+                    dp[i][mask][t1 + t2 + j] += dp[i - 1][cur][t2 + j];
+                }
+            }
+        }
+    }
+
+    // 统计答案：最后一行所有状态中，恰好放了 k 个国王的方案数之和
+    long long sum = 0;      // 使用 long long，防止 int 溢出
+    for (int i = 0; i < total; i++) {
+        sum += dp[n - 1][i][k];
+    }
+    cout << sum << endl;
+
+    return 0;
+}
