@@ -1,0 +1,91 @@
+#include <bits/stdc++.h>
+using namespace std;
+bool ch(int a)
+{
+	if((a &(a << 1) )!=0 )
+	{
+		return false;
+	}
+	return true;
+}
+bool check(int a,int b)
+{
+	if((a & b) != 0 || (a & (b>>1)) !=0 ||(a & (b<<1)) != 0)
+	{
+		return false;
+	}
+	return true;
+}
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		int n;
+		int m;
+		cin>>n>>m;
+		vector<vector<int>>v(n,vector<int>(1<<(m+1),0));
+		for(int i = 0;i<n;i++)
+		{
+			for(int j = 0;j<m;j++)
+			{
+				int x;
+				cin>>x;
+				v[i][j] = x;
+			}
+		}
+		vector<vector<int>>dp(n,vector<int>(1<<(m+1),0));
+		vector<vector<int>>va(n,vector<int>(1<<(m+1),0));
+		vector<bool>vis(1<<m,false);
+		for(int s = 0;s<(1<<m);s++)
+		{
+			if(ch(s))
+			{
+				vis[s] = true;
+				for(int i = 0;i<n;i++)
+				{
+					int sum = 0;
+					for(int j = 0;j<m;j++)
+					{
+						if(s >>j & 1)
+						{
+							sum += v[i][j];
+						}
+					}
+					va[i][s] = sum;
+				}
+			}	
+		}
+		for(int s = 0;s < (1<<m);s++)
+		{
+			if(vis[s])
+			{
+				dp[0][s] = va[0][s];
+			}
+		}
+		for(int i = 1;i<n;i++)
+		{
+			for(int s = 0;s<(1<<m);s++)
+			{
+				if(vis[s])
+				{
+					for(int t = 0;t<(1<<m);t++)
+					{
+						if(vis[t] && check(s,t))
+						{
+							dp[i][s] = max(dp[i][s],dp[i-1][t] + va[i][s]);
+						}
+					}
+				}
+			}
+		}
+		int ans = 0 ;
+		for(int i = 0;i<(1<<m);i++)
+		{
+			ans = max(ans,dp[n-1][i]);
+		}
+		cout<<ans<<endl;
+	}
+	return 0;
+}
