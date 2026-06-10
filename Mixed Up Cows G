@@ -1,0 +1,53 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int n;      // 奶牛数量
+int k;      // 相邻编号差必须大于 k
+
+int main() {
+    cin >> n >> k;
+    vector<int> v(n, 0);                    // 存储每头奶牛的编号
+    long long total = 1 << n;               // 所有可能的集合总数（2^n）
+    // dp[last][mask]：已选集合为 mask，且最后一个奶牛是 last 的合法排列数
+    vector<vector<long long>> dp(n, vector<long long>(total, 0));
+
+    // 输入编号并初始化：只有一头奶牛的情况（长度为1的序列）
+    for (int i = 0; i < n; i++) {
+        cin >> v[i];
+        dp[i][1 << i] = 1;                  // 仅包含 i 的集合有 1 种排列
+    }
+
+    // 枚举所有集合（mask 表示已选奶牛）
+    for (long long mask = 1; mask < total; mask++) {
+        // 枚举当前集合中可能的最后一头奶牛 i
+        for (int i = 0; i < n; i++) {
+            if ((mask & (1 << i)) == 0) continue;   // i 不在集合中，跳过
+            // 枚举上一头奶牛 j（必须在集合中，且不等于 i）
+            for (int j = 0; j < n; j++) {
+                if ((mask & (1 << j)) == 0) continue;   // j 不在集合中
+                // 注意：j 可以等于 i，此时 prev 会去掉 i 后集合不变，但 dp[i][mask] 不应该从自身转移
+                // 但由于集合不变，prev 与 mask 相同，且 dp[j][prev] 中的 j 会与 i 相同。
+                // 当 i==j 时，prev = mask ^ (1<<i) 会去掉 i，集合少了一位，所以不会自环。
+                // 所以不需要显式跳过 i==j，但为了清晰可以加上 if(i==j) continue;
+
+                // 检查相邻两头奶牛的编号差是否大于 k
+                if (abs(v[i] - v[j]) > k) {
+                    // 前一个状态：去掉当前最后一头奶牛 i，得到集合 prev
+                    long long prev = mask ^ (1 << i);
+                    // 状态转移：以 i 结尾、集合为 mask 的方案数 +=
+                    // 以 j 结尾、集合为 prev（即去掉 i）的方案数
+                    dp[i][mask] += dp[j][prev];
+                }
+            }
+        }
+    }
+
+    // 答案：所有以任意奶牛结尾且集合为全集（total-1）的方案数之和
+    long long ans = 0;
+    for (int i = 0; i < n; i++) {
+        ans += dp[i][total - 1];
+    }
+    cout << ans << endl;
+
+    return 0;
+}
