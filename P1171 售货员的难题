@@ -1,0 +1,63 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int main()
+{
+	cin>>n;
+	// 错误1: 1<<n 中的 1 是 int 类型，当 n≥31 时会溢出
+	// 应改为 1LL << n，并使用 long long 类型存储 total
+	long long total = 1<<n;
+	// dp[i][mask]: 当前在节点 i，已访问集合为 mask 的最短路径长度（从起点 0 出发，未返回）
+	vector<vector<int>>dp(n,vector<int>(total,INT_MAX / 2));
+	vector<vector<int>>v(n+4,vector<int>(n+4,0));
+	for(int i = 0;i<n;i++)
+	{
+		for(int j = 0;j<n;j++)
+		{
+			cin>>v[i][j];
+		}
+	}
+	// 正确初始化：只访问起点 0，路径长度为 0
+	dp[0][1] = 0;
+	
+	// 错误2: 缺少对单点初始化的赋值
+	// 正确做法：对于每个 i>=1，dp[i][(1<<i)|1] = v[0][i]
+	// 表示从起点 0 直接走到 i，访问集合 {0,i}
+	// 你的代码中漏掉了这一步，导致很多状态无法从合法子状态转移，dp[i][mask] 可能保持无穷大
+	
+	// 错误3: mask 应从 1 开始遍历，因为 mask=0 不包含起点，无意义且浪费
+	// 错误4: 没有强制 mask 必须包含起点 0，导致后面转移中出现不含 0 的 mask
+	// 但你的内层循环中 i 从 1 开始，且最终答案需要 dp[i][full] 存在，所以最好加上 if(!(mask&1)) continue;
+	for(long long mask = 0;mask<(1<<n);mask++) // 遍历所有状态
+	{
+		// 建议：加上 if((mask & 1) == 0) continue; 只处理包含起点 0 的 mask
+		for(long long i = 1;i<n;i++) // 终点 i 不能是起点 0（起点只作为开始和结束）
+		{
+			if((mask & (1<<i)) == 0) continue; // i 必须在当前集合中
+			for(long long j = 0;j<n;j++) // 枚举前一个点 j
+			{
+				if((mask&(1<<j)) == 0) continue; // j 必须在当前集合中
+				// 错误5: 没有检查 i 和 j 是否相等
+				// 如果 i == j，则 prev = mask ^ (1<<i) 会去掉 i，此时 j(=i) 不在 prev 中
+				// 导致 dp[j][prev] 是非法状态（无穷大），虽然 min 不会受影响，但多了无意义计算
+				// 应加上 if(i == j) continue;
+				
+				long long prev = mask ^ (1<<i); // 去掉 i 后的集合
+				// 错误6: 没有检查 j 是否在 prev 中
+				// 当 i != j 时，因为 mask 同时包含 i 和 j，去掉 i 后 j 仍在 prev 中，所以条件自动满足
+				// 但为了代码清晰，可以加上 if(!(prev & (1<<j))) continue;
+				dp[i][mask] = min(dp[i][mask], dp[j][prev] + v[j][i]);
+			}
+		}
+	}
+	int ans = INT_MAX;
+	// 正确计算回路：从 i 返回起点 0
+	for(int i = 1;i<n;i++)
+	{
+		ans = min(ans,dp[i][(1<<n)-1] + v[i][0]);
+	}
+	// 错误7: 未处理 dp[i][full] 可能为 INF 的情况（如初始化缺失导致）
+	// 建议添加 if(dp[i][full] < INT_MAX/2) 判断
+	cout<<ans<<endl; 
+	return 0;	
+}
