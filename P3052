@@ -1,0 +1,84 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int n;           // 奶牛数量，N ≤ 18
+long long w;     // 电梯最大载重
+
+int main() {
+    cin >> n >> w;
+    long long ans = LLONG_MAX;
+    long long total = 1 << n;               // 状态总数，2^n
+
+    // dp[i][mask] : 已经运走的奶牛集合为 mask，且最后一趟电梯中最后放入的是奶牛 i 时的最少趟数
+    vector<vector<long long>> dp(20, vector<long long>(total, LLONG_MAX));
+    // rem[mask][i] : 在状态 (mask, i) 下，当前电梯（最后一趟）的剩余容量
+    vector<vector<long long>> rem(total, vector<long long>(20, w));
+    vector<int> v(20);                      // 奶牛体重
+
+    // ---------- 初始化 ----------
+    // 每头奶牛单独坐一趟电梯
+    for (int i = 0; i < n; i++) {
+        cin >> v[i];
+        if (v[i] <= w) {                    // 体重合法（题目保证 ≤ w）
+            dp[i][1 << i] = 1;              // 只运了 i，需要 1 趟
+            rem[1 << i][i] = w - v[i];      // 剩余容量 = W - 体重
+        }
+    }
+
+    // ---------- 状态转移 ----------
+    // 从小到大枚举所有状态集合 mask
+    for (long long mask = 0; mask < total; mask++) {
+        // 遍历最后一趟电梯中最后放入的奶牛 i （必须是 mask 中的元素）
+        for (int i = 0; i < n; i++) {
+            if ((mask & (1 << i)) == 0) continue;   // i 不在当前集合中
+
+            // 寻找前驱状态：前一个状态是去掉 i 的集合，并且前一趟的最后一头奶牛是 j
+            for (int j = 0; j < n; j++) {
+                if ((mask & (1 << j)) == 0) continue;   // j 不在 mask 中（其实此处 j 必须存在，下面会进一步检查）
+
+                long long prev = mask ^ (1 << i);       // 前一个集合（还没放 i）
+                // 关键：前一个状态中必须包含 j，否则 rem[prev][j] 无定义
+                if (((1 << j) & prev) == 0) continue;
+
+                /* ========== 重要：跳过无效的前驱状态 ==========
+                   你最初遗漏了这条判断，导致从 dp[j][prev] == LLONG_MAX 的状态转移，
+                   会错误地更新 dp[i][mask]。
+                */
+                if (dp[j][prev] == LLONG_MAX) continue;
+
+                // 情形1：当前电梯还能放下奶牛 i（剩余容量足够）
+                if (rem[prev][j] >= v[i]) {
+                    // 尝试用更少的趟数（或等趟数下更大的剩余容量）更新
+                    if (dp[i][mask] > dp[j][prev]) {
+                        dp[i][mask] = dp[j][prev];
+                        rem[mask][i] = rem[prev][j] - v[i];
+                    }
+                    // ========== 关键优化：趟数相同时，保留剩余容量更大的方案 ==========
+                    // 你最初只更新了趟数更小的情况，导致丢失潜在更优的后继状态
+                    else if (dp[i][mask] == dp[j][prev] && rem[mask][i] < rem[prev][j] - v[i]) {
+                        rem[mask][i] = rem[prev][j] - v[i];
+                    }
+                }
+                // 情形2：当前电梯放不下，必须新开一趟（i 成为新电梯的唯一奶牛）
+                else {  // rem[prev][j] < v[i]
+                    if (dp[i][mask] > dp[j][prev] + 1) {
+                        dp[i][mask] = dp[j][prev] + 1;
+                        rem[mask][i] = w - v[i];       // 新电梯剩余容量 = W - 体重
+                    }
+                    // 同样处理趟数相等的情况
+                    else if (dp[i][mask] == dp[j][prev] + 1 && rem[mask][i] < w - v[i]) {
+                        rem[mask][i] = w - v[i];
+                    }
+                }
+            }
+        }
+    }
+
+    // ---------- 输出答案 ----------
+    for (int i = 0; i < n; i++) {
+        ans = min(ans, dp[i][total - 1]);   // total-1 是全部奶牛都在集合中的状态
+    }
+    cout << ans << endl;
+
+    return 0;
+}
