@@ -1,0 +1,61 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+const int maxn = 3e4+5;
+int m;
+#define pli pair<long long ,int>
+vector<vector<pli>>v(maxn);
+vector<long long>dist(maxn,LLONG_MIN);
+vector<bool>inq(maxn,false);
+long long spfa()
+{
+	queue<pli>pq;
+	pq.push({0,0});
+	dist[0] = 0;
+	inq[0] = true;
+	while(!pq.empty())
+	{
+		pli r = pq.front();
+		pq.pop();
+		int now = r.second;
+		inq[now]= false;
+		long long w = r.first;
+		if(w > dist[now])
+		{
+			continue;
+		}
+		for(int i = 0;i<v[now].size();i++)
+		{
+			int next = v[now][i].second;
+			long long d = v[now][i].first;
+			if(dist[now]+d > dist[next])
+			{
+				dist[next] = dist[now] + d;
+				pq.push({dist[next],next});
+				inq[next] = true;
+			}
+		}
+	}
+	return dist[n];
+}
+//spfa : 1.入队次数，2.是否在队伍里面 
+int main()
+{
+	cin>>n>>m;
+	for(int i = 1;i<=n;i++)
+	{
+		v[i-1].push_back({0,i});
+		v[i].push_back({-1,i-1});//第 i 个位置最多只能种 1 棵树,s[i-1] >= s[i]+1
+	}
+	for(int i = 1;i<=m;i++)	
+	{
+		int x;
+		int y;
+		int c;
+		cin>>x>>y>>c;
+		v[x-1].push_back({c,y});
+	}
+	cout<<spfa()<<endl;
+	
+	return 0;
+}
