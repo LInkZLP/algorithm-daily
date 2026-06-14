@@ -1,0 +1,68 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+/*
+ * 题目总结：
+ * 1. 问题本质：将 n 个人分成若干批过桥，每批总重量 ≤ W，每批耗时 = 该批中最大 t[i]，
+ *    求最小总耗时。
+ *
+ * 2. 数据范围：n ≤ 16，W ≤ 400，t[i] ≤ 50，w[i] ≤ 100。
+ *    因此可以用状态压缩动态规划，枚举所有子集。
+ *
+ * 3. 核心思路：
+ *    - 预处理：对于每个子集 mask（二进制位表示哪些人），计算该子集的总重量 subw[mask] 和最大时间 maxt[mask]。
+ *    - DP 定义：dp[mask] 表示处理完 mask 中所有人所需的最小总时间。
+ *    - 转移方程：dp[mask] = min{ dp[mask ^ sub] + maxt[sub] }，其中 sub 是 mask 的非空子集，且 subw[sub] ≤ W。
+ *      含义：枚举最后一批过桥的人为子集 sub，之前的人为 mask ^ sub，总时间为之前的时间加上这一批的时间。
+ *    - 初始状态：dp[0] = 0。
+ *    - 最终答案：dp[total - 1]，其中 total = 1 << n。
+ *
+ * 4. 复杂度：预处理 O(n * 2^n)，DP 转移 O(3^n)（枚举所有子集）。当 n=16 时，3^16 ≈ 43M，在时限内可接受。
+ *
+ * 5. 实现细节：
+ *    - 使用 1LL << n 避免溢出。
+ *    - 枚举子集的技巧：for (int sub = mask; sub; sub = (sub - 1) & mask) 可高效遍历 mask 的所有非空子集。
+ *    - 注意 dp 数组初始化为较大值（如 800000 或 1e9），表示不可达状态。
+ */
+
+int main()
+{
+    int n, w;
+    cin >> w >> n;
+    long long total = 1LL << n;                 // 总状态数，用 1LL 防止移位溢出
+    const int INF = 800000;                     // 足够大的初始值（比可能的最大答案大即可）
+    vector<int> dp(total, INF);                 // dp[mask] 表示处理完 mask 的最小总时间
+    vector<int> subw(total, 0);                 // subw[mask] 子集总重量
+    vector<int> maxt(total, 0);                 // maxt[mask] 子集最大耗时
+    vector<int> v(n), t(n);                     // 每个人的重量和耗时
+
+    // 读入数据
+    for (int i = 0; i < n; ++i) {
+        cin >> t[i] >> v[i];
+        dp[1 << i] = t[i];                      // 单个人直接过桥
+    }
+    dp[0] = 0;                                  // 空集时间为 0
+
+    // 预处理所有子集的总重量和最大时间
+    for (long long mask = 1; mask < total; ++mask) {
+        for (int i = 0; i < n; ++i) {
+            if (mask & (1 << i)) {
+                subw[mask] += v[i];
+                maxt[mask] = max(maxt[mask], t[i]);
+            }
+        }
+    }
+
+    // 状态压缩 DP：枚举子集转移
+    for (long long mask = 1; mask < total; ++mask) {
+        // 枚举 mask 的所有非空子集 sub 作为最后一批
+        for (long long sub = mask; sub; sub = (sub - 1) & mask)//枚举子集 {
+            if (subw[sub] <= w) {               // 只有重量不超过桥的承重才能作为一批
+                dp[mask] = min(dp[mask], dp[mask ^ sub] + maxt[sub]);
+            }
+        }
+    }
+
+    cout << dp[total - 1] << endl;              // 输出处理完所有人所需的最小总时间
+    return 0;
+}
