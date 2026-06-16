@@ -1,0 +1,106 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 5e5+5;
+int n;
+int m;
+struct node{
+	int sum;
+	int lmax;
+	int rmax;
+	int tmax;
+}tree[maxn<<2];
+vector<int>v(maxn);
+node pushup(node l,node r)
+{
+	node res;
+	res.sum = l.sum + r.sum;
+	res.lmax = max(l.lmax ,l.sum + r.lmax);
+	res.rmax = max(r.rmax ,r.sum + l.rmax);
+	res.tmax  = max(max(l.tmax,r.tmax),l.rmax + r.lmax);
+	return res;
+}
+void build(int i,int l,int r)
+{
+	if(l == r)
+	{
+		tree[i] = {v[l],v[l],v[l],v[l]};
+		return;
+	}
+	int mid = (l + r) >> 1;
+	build(i<<1,l,mid);
+	build(i<<1|1,mid+1,r);
+	tree[i] = pushup(tree[i<<1],tree[i<<1|1]);
+	return;
+}
+void update(int i,int l,int r,int pos,int val)
+{
+	if(l==r)
+	{
+		tree[i] = {val,val,val,val};
+		return;
+	}
+	int mid = (l + r) >> 1;
+	if(pos <= mid)
+	{
+		update(i<<1,l,mid,pos,val);
+	}
+	else
+	{
+		update(i<<1|1,mid+1,r,pos,val);
+	}
+	tree[i] = pushup(tree[i<<1],tree[i<<1|1]);
+	return;
+}
+node query(int i,int l,int r,int ql,int qr)
+{
+	// 当前区间完全在查询区间内，直接返回
+	if(ql <= l && r <= qr)
+	{
+		return tree[i];
+	}
+	int mid = (l+r) >> 1;
+	// 查询区间完全在左子树
+	if(qr <= mid)
+	{
+		return query(i<<1,l,mid,ql,qr);
+	}
+	// 查询区间完全在右子树
+	if(ql > mid)
+	{
+		return query(i<<1|1,mid+1,r,ql,qr);
+	}
+	// 查询区间横跨左右子树，分别查询后合并
+	node left = query(i<<1,l,mid,ql,qr);
+	node right = query(i<<1|1,mid+1,r,ql,qr);
+	return pushup(left,right);
+}
+int main()
+{
+	cin>>n>>m;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+	}
+	build(1,1,n);
+	while(m--)
+	{
+		int c;
+		int x;
+		int y;
+		cin>>c>>x>>y;
+		if(c == 1)
+		{
+			if(x > y)
+			{
+				swap(x,y);
+			}
+			node ans = query(1,1,n,x,y);
+			cout<<ans.tmax<<endl;
+		}
+		else
+		{
+			update(1,1,n,x,y);
+		}
+	}
+	return 0;
+}
