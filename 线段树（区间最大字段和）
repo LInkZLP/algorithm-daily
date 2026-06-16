@@ -14,7 +14,7 @@ node pushup(node l,node r)
 {
 	node res;
 	res.sum = l.sum + r.sum;
-	res.lmax = max(l.lmax ,l.sum + r.lmax);
+	res.lmax = max(l.lmax ,l.sum + r.lmax);//是从l开始到mid的最大子段和，还是从l开始到Mid的和加上从mid到r的最大字子和 
 	res.rmax = max(r.rmax ,r.sum + l.rmax);
 	res.tmax  = max(max(l.tmax,r.tmax),l.rmax + r.lmax);
 	return res;
