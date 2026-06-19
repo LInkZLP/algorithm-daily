@@ -1,0 +1,152 @@
+#include <bits/stdc++.h>
+using namespace std;
+bool check(long long l1,long long l2,long long l3)
+{
+	if(((l1 & (l1<<2) )!= 0 || ((l1 & (l1>>2)) != 0) || ((l1 & (l1 <<1))!=0) || ((l1 & (l1>>1))!=0)))
+	{
+		return false;
+	}
+	swap(l1,l2);
+	if(((l1 & (l1<<2) )!= 0 || ((l1 & (l1>>2)) != 0) || ((l1 & (l1 <<1))!=0) || ((l1 & (l1>>1))!=0)))
+	{
+		return false;
+	}
+	swap(l1,l2);
+	swap(l1,l3);
+	if(((l1 & (l1<<2) )!= 0 || ((l1 & (l1>>2)) != 0) || ((l1 & (l1 <<1))!=0) || ((l1 & (l1>>1))!=0)))
+	{
+		return false;
+	}
+	swap(l1,l3);
+	if((l2 & l3) != 0)
+	{
+		return false;
+	}
+	if((l1 & l2) !=0 || (l1 & l3)!=0)
+	{
+		return false;
+	}
+	return true;
+}
+int cnt(int x)
+{
+	int res = 0;
+	while(x)
+	{
+		res++;
+		x &= (x-1);
+	}
+	return res;
+}
+
+int n;
+int m;
+int main()
+{
+	vector<int>g(105);
+	cin>>n>>m;
+	int t = 1<<m;	
+	for(int i = 0;i<n;i++)
+	{
+		for(int j = m-1;j>=0;j--)
+		{
+			char p;
+			cin>>p;
+			if(p == 'H')
+			{
+				g[i] |= (1 << j);
+			}
+		}
+	}
+	vector<int>r(t+5);
+	int u = 0;
+	for(int l1 = 0;l1 < t;l1++)
+	{
+		if(((l1 & (l1<<2) )!= 0 || ((l1 & (l1>>2)) != 0) || ((l1 & (l1 <<1))!=0) || ((l1 & (l1>>1))!=0)))
+		{
+			continue;
+		}
+		r[u++] = l1;
+	}
+	vector<vector<vector<long long>>>dp(n,vector<vector<long long>>(u+5,vector<long long>(u+5,0)));
+	//此处借鉴离散化技巧，简化合法状态，减少内存 
+	for(int i1 = 0;i1<u;i1++)
+	{
+		int l1 = r[i1];
+		if(((l1 & (l1<<2) )!= 0 || ((l1 & (l1>>2)) != 0) || ((l1 & (l1 <<1))!=0) || ((l1 & (l1>>1))!=0)))
+		{
+			continue;
+		}
+		if((g[0] & (l1) ) != 0)
+		{
+			continue;
+		}
+		dp[0][i1][0] = cnt(r[i1]);
+	}
+	for(int i1 = 0;i1 <u && n > 1;i1++)
+	{
+		int l1 = r[i1];
+		if((g[1] & (l1) ) != 0)
+		{
+			continue;
+		}
+		for(int i2 = 0;i2 < u;i2++)
+		{
+			int l2 = r[i2];
+			if(((l1 & (l1<<2) )!= 0 || ((l1 & (l1>>2)) != 0) || ((l1 & (l1 <<1))!=0) || ((l1 & (l1>>1))!=0)))
+			{
+				continue;
+			}
+			if((l1 & l2) != 0)
+			{
+				continue;
+			}
+			if((g[0] & (l2) ) != 0)
+			{
+				continue;
+			}
+			dp[1][i1][i2] = max(dp[1][i1][i2],dp[0][i2][0] +cnt(r[i1]));
+		}
+	}
+	for(int i = 2;i<n;i++)
+	{
+		for(int i1 = 0;i1 < u;i1++)
+		{
+			int l1 = r[i1];
+			if((g[i] & l1) != 0)
+			{
+				continue;
+			}
+			for(int i2 = 0;i2 < u;i2++)
+			{
+				int l2 = r[i2];
+				if((g[i-1] & l2) != 0)
+				{
+					continue;
+				}
+				for(int i3 = 0;i3 < u;i3++)
+				{
+					int l3 = r[i3];
+					if((g[i-2] & l3) != 0)
+					{
+						continue;
+					}
+					if(check(l1,l2,l3))
+					{
+						dp[i][i1][i2] = max(dp[i][i1][i2],dp[i-1][i2][i3] + cnt(r[i1]));
+					}
+				}
+			}
+		}
+	}
+	long long ans = 0;
+	for(int i1 = 0;i1<u;i1++)
+	{
+		for(int i2= 0;i2<u;i2++)
+		{
+			ans = max(ans,dp[n-1][i1][i2]);
+		}
+	}
+	cout<<ans<<endl;
+	return 0;
+ } 
