@@ -1,0 +1,117 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+const int maxn = 1e5+5;
+vector<long long>d(maxn*4);
+vector<long long>v(maxn);
+vector<long long>add(maxn * 4);
+void down(int i,int ln,int rn)
+{
+	if(add[i] != 0)
+	{
+		long long t = add[i];
+		add[i<<1] += t;
+		add[i<<1|1] += t;
+		d[i<<1] += t * ln;
+		d[i<<1|1] += t * rn;
+		add[i] = 0;
+	}
+	return;
+}
+void build(int l,int r,int i)
+{
+	if(l == r)
+	{
+		d[i] = v[l] - v[l-1];
+		return;
+	}
+	int mid = (l + r) >> 1;
+	build(l,mid,i<<1);
+	build(mid+1,r,i<<1|1);
+	d[i] = d[i<<1] + d[i<<1|1];
+	return ;
+}
+void change(int l,int r,int i,int jobl,int jobr,long long jobv)
+{
+	if(jobl > jobr)
+	{
+		return;
+	}
+	if(jobl <= l && jobr >= r)
+	{
+		d[i] += jobv * (r - l + 1);
+		add[i] += jobv;
+		return;
+	}
+	int mid = (l + r) >>1;
+	down(i,mid - l + 1,r - mid);
+	if(jobl <= mid)
+	{
+		change(l,mid,i<<1,jobl,jobr,jobv);
+	}
+	if(jobr >= mid+1)
+	{
+		change(mid+1,r,i<<1|1,jobl,jobr,jobv);
+	}
+	d[i] = d[i<<1] + d[i<<1|1];
+}
+long long query(int l,int r,int jobl,int jobr,int i)
+{
+	if(jobl <= l && jobr >= r)
+	{
+		return d[i];
+	}
+	int mid = (l + r) >> 1;
+	down(i,mid-l+1,r - mid);
+	long long ans = 0;
+	if(jobl <= mid)
+	{
+		ans += query(l,mid,jobl,jobr,i<<1);
+	}
+	if(jobr >= mid+1)
+	{
+		ans += query(mid+1,r,jobl,jobr,i<<1|1);
+	}
+	return ans;
+}
+int main()
+{
+	cin>>n>>m;
+	v[0] = 0;	
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+	}
+	build(1,n,1);
+	while(m--)
+	{
+		int p;
+		cin>>p;
+		if(p == 1)
+		{
+			int l;
+			int r;
+			long long k;
+			long long D;
+			cin>>l>>r>>k>>D;
+			change(1,n,1,l,l,k);
+			//对原数组区间 [l, r] 加上首项为 K、公差为 D 的等差数列，
+			if(l+1 <= r)
+			{
+				change(1,n,1,l+1,r,D);
+			}
+			if(r + 1<=n)
+			{
+				change(1,n,1,r+1,r+1,-(k + (r - l) * D));
+			}
+		}
+		else
+		{
+			int p;
+			cin>>p;
+			cout<<query(1,n,1,p,1)<<endl;
+		}
+	}
+	return 0;
+ } 
