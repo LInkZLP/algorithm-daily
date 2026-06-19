@@ -1,0 +1,107 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int n;             // 色板长度（方格数）
+int m;             // 操作次数
+int t;             // 颜色种类数（虽然题目给定了，但代码中只用到了 t 的输入，未实际使用，仅用于读入）
+
+const int maxn = 1e5 + 5;
+vector<long long> sum(maxn * 4);   // 线段树节点：存储区间内所有颜色的位掩码（按位或结果）
+vector<long long> add(maxn * 4);   // 懒标记：表示该区间需要被整体赋值的颜色掩码，0 表示无标记
+
+// 统计一个长整型数中二进制位为 1 的个数（即颜色种类数）
+int cnt(long long x) {
+    int res = 0;
+    while (x) {
+        res++;
+        x &= (x - 1);    // 清除最低位的 1
+    }
+    return res;
+}
+
+// 建树：初始化所有方格颜色为 1（对应二进制第 0 位）
+void build(int l, int r, int i) {
+    if (l == r) {
+        sum[i] = 1;          // 初始颜色 1 对应位掩码 1<<(1-1) = 1
+        return;
+    }
+    int mid = (l + r) >> 1;
+    build(l, mid, i << 1);
+    build(mid + 1, r, i << 1 | 1);
+    // 父节点的颜色集合 = 左儿子 ∪ 右儿子（按位或）
+    sum[i] = sum[i << 1];
+    sum[i] |= sum[i << 1 | 1];
+}
+
+// 下传懒标记（将当前节点的赋值标记传给左右孩子）
+// 注意：l, r 在当前实现中没有使用，但保留无妨（可改成 void down(int i)）
+void down(int l, int r, int i) {
+    if (add[i] != 0) {
+        long long v = add[i];
+        add[i] = 0;                // 清除当前标记
+        add[i << 1] = v;           // 左孩子标记赋值为 v
+        add[i << 1 | 1] = v;       // 右孩子标记赋值为 v
+        sum[i << 1] = v;           // 左孩子颜色集合直接改为 v
+        sum[i << 1 | 1] = v;       // 右孩子颜色集合直接改为 v
+    }
+}
+
+// 区间涂色（赋值）：将 [jobl, jobr] 全部改为颜色 jobv（位掩码）
+void change(int l, int r, int i, int jobl, int jobr, int jobv) {
+    if (jobl <= l && r <= jobr) {   // 完全覆盖
+        add[i] = jobv;
+        sum[i] = jobv;
+        return;
+    }
+    down(l, r, i);                  // 下传懒标记，保证子节点数据正确
+    int mid = (l + r) >> 1;
+    if (mid >= jobl)                // 左子区间有交集
+        change(l, mid, i << 1, jobl, jobr, jobv);
+    if (mid + 1 <= jobr)            // 右子区间有交集
+        change(mid + 1, r, i << 1 | 1, jobl, jobr, jobv);
+    // 回溯时合并左右孩子的颜色集合
+    sum[i] = sum[i << 1];
+    sum[i] |= sum[i << 1 | 1];
+}
+
+// 区间查询：将 [jobl, jobr] 的所有颜色位掩码合并到 ans 中（按位或）
+void query(int l, int r, int i, int jobl, int jobr, long long &ans) {
+    if (l >= jobl && r <= jobr) {   // 完全包含
+        ans |= sum[i];
+        return;
+    }
+    int mid = (l + r) >> 1;
+    down(1, n, i);                  // 注意：此处传入了固定的 [1,n] 作为区间范围，虽然不会影响下传结果，但习惯上应传 (l,r,i)
+    if (jobl <= mid)
+        query(l, mid, i << 1, jobl, jobr, ans);
+    if (mid + 1 <= jobr)
+        query(mid + 1, r, i << 1 | 1, jobl, jobr, ans);
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    cin >> n >> t >> m;          // 读入长度、颜色数、操作数
+    build(1, n, 1);              // 建树，所有叶子初始为颜色 1
+
+    while (m--) {
+        char op;
+        cin >> op;
+        if (op == 'P') {          // 查询操作
+            int a, b;
+            cin >> a >> b;
+            if (a > b) swap(a, b);   // 保证 a <= b
+            long long ans = 0;
+            query(1, n, 1, a, b, ans);
+            cout << cnt(ans) << '\n';
+        } else {                   // 涂色操作 'C'
+            int a, b, c;
+            cin >> a >> b >> c;
+            if (a > b) swap(a, b);
+            // 颜色 c 对应二进制第 (c-1) 位，所以掩码为 1 << (c-1)
+            change(1, n, 1, a, b, 1 << (c - 1));
+        }
+    }
+    return 0;
+}
