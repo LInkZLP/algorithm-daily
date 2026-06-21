@@ -1,0 +1,101 @@
+#include <bits/stdc++.h>
+using namespace std;
+//处理区间最长不连续
+//l -> 1
+//r -> 0
+const int maxn = 2e5+5;
+vector<int>rs(maxn * 4);
+vector<int>ls(maxn * 4);
+vector<int>mxl(maxn * 4);
+vector<int>mxr(maxn * 4);
+vector<int>ans(maxn * 4);
+vector<int>len(maxn * 4);
+int n;
+int m;
+void work(int pos,int k)
+{
+	ans[pos] = 1;
+	mxl[pos] = 1;
+	mxr[pos] = 1;
+	ls[pos] = k;
+	rs[pos] = k;
+	return;
+}
+
+void down(int i)
+{
+	if(rs[i<<1] ^ ls[i<<1|1])
+	{
+		ans[i] = mxr[i<<1] + mxl[i<<1|1];
+		ans[i] = max(ans[i],ans[i<<1]);//
+		ans[i] = max(ans[i],ans[i<<1|1]);//
+	}
+	else
+	{
+		ans[i] = max(ans[i<<1],ans[i<<1|1]);
+	}
+	ls[i] = ls[i<<1];
+	rs[i] = rs[i<<1|1];
+	if(mxl[i<<1] == len[i<<1] && rs[i<<1] ^ ls[i<<1|1])
+	{
+		mxl[i] = mxl[i<<1] + mxl[i<<1|1];
+	}
+	else
+	{
+		mxl[i] = mxl[i<<1];
+	}
+	if(mxr[i<<1|1] == len[i<<1|1] && rs[i<<1] ^ ls[i<<1|1])
+	{
+		mxr[i] = mxr[i<<1|1] + mxr[i<<1];
+	}
+	else
+	{
+		mxr[i] = mxr[i<<1|1];
+	}
+	return;
+}
+void build(int l,int r,int i)
+{
+	len[i] = r- l + 1;
+	if(l == r)
+	{
+		work(i,0);
+		return ;
+	}
+	int mid = (l + r) >> 1;
+	build(l,mid,i<<1);
+	build(mid+1,r,i<<1|1);
+	down(i);
+	return;
+}
+void change(int l,int r,int i,int jobl,int jobr)
+{
+	if(l >= jobl && r <= jobr)
+	{
+		work(i,!ls[i]);
+		return;
+	}
+	int mid = (l + r) >>1;
+	if(jobl <= mid)
+	{
+		change(l,mid,i<<1,jobl,jobr);
+	}
+	if(mid + 1 <= jobr)
+	{
+		change(mid+1,r,i<<1|1,jobl,jobr);
+	}
+	down(i);
+}
+int main()
+{
+	cin>>n>>m;
+	build(1,n,1);	
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		cin>>x;
+		change(1,n,1,x,x);
+		cout<<ans[1]<<endl;
+	}
+	return 0;
+}
