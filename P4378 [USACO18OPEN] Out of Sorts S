@@ -1,0 +1,78 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+// 结构体：记录元素值和它最初的原始位置（从1开始计数）
+struct st {
+    int pos;       // 原始下标 + 1
+    long long va;  // 元素值
+};
+
+// 归并排序的合并函数，同时保持稳定性（值相等时，左边先放入）
+void mergecheck(int left, int mid, int right, vector<st>& arr, vector<st>& temp) {
+    int i = left, j = mid + 1, k = left;
+    // 合并两个有序子数组 [left, mid] 和 [mid+1, right]
+    while (i <= mid && j <= right) {
+        // 注意：使用 > 保证稳定性，相等时走 else，即保留左边元素在前
+        if (arr[i].va > arr[j].va) {
+            temp[k++] = arr[j++];   // 赋值并移动指针
+        } else {
+            temp[k++] = arr[i++];
+        }
+    }
+    // 剩余元素复制
+    while (i <= mid) temp[k++] = arr[i++];
+    while (j <= right) temp[k++] = arr[j++];
+    // 将排好序的 temp 段复制回 arr
+    for (k = left; k <= right; k++) {
+        arr[k] = temp[k];
+    }
+}
+
+// 归并排序递归函数
+void merge(int left, int right, vector<st>& arr, vector<st>& temp) {
+    if (left >= right) return;
+    int mid = left + (right - left) / 2;   // 防溢出写法
+    merge(left, mid, arr, temp);
+    merge(mid + 1, right, arr, temp);
+    mergecheck(left, mid, right, arr, temp);
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+    vector<st> arr(n), temp(n);
+    for (int i = 0; i < n; i++) {
+        cin >> arr[i].va;
+        arr[i].pos = i + 1;   // 记录原始位置（1-based）
+    }
+
+    // 稳定排序（按值升序）
+    merge(0, n - 1, arr, temp);
+
+    /*
+     * 计算冒泡排序中 "moo" 的输出次数。
+     * 原理：
+     *   每一轮扫描，一个元素最多只能向左移动 1 格。
+     *   若某元素的原始位置为 orig（1-based），排序后位置为 sorted（0-based），
+     *   则它需要向左移动 orig - (sorted+1) 步。
+     *   因此至少需要 (orig - (sorted+1)) 轮才能到达目标位置。
+     *   最后还要多一轮作为“检查轮”（因为 while 先输出 moo 再扫描）。
+     *   所以该元素需要的总轮数为：orig - (sorted+1) + 1 = orig - sorted。
+     *   所有元素的最大值即为答案，且至少为 1。
+     *
+     * 注：如果 orig - sorted 为负数，表示该元素向右移动，对轮数无贡献。
+     *     此时 orig - sorted <= 0，而 ans 初始为 1，所以不影响。
+     */
+    int ans = 1;
+    for (int i = 0; i < n; i++) {
+        // arr[i].pos 是原始位置（1-based），i 是排序后下标（0-based）
+        int need = arr[i].pos - i;   // 等价于 orig - sorted
+        ans = max(ans, need);
+    }
+
+    cout << ans << '\n';
+    return 0;
+}
