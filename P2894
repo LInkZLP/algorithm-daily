@@ -1,0 +1,151 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 5e4+5;
+int n, m;
+
+// 注意：以下数组用 vector 定义，且初始化时未指定默认值，
+// 但全局变量或vector默认初始化为0，而 add 初始化为 -1（此写法正确）
+vector<int> v(maxn, 0);
+vector<int> ls(maxn*4, 0);
+vector<int> rs(maxn*4, 0);
+vector<int> mxl(maxn * 4);
+vector<int> mxr(maxn * 4);
+vector<int> ans(maxn * 4);
+vector<int> add(maxn * 4, -1);   // 此处初始化为-1，懒标记无值
+vector<int> len(maxn * 4);
+
+// 合并左右子区间信息
+void pushup(int i) {
+    // 错误点1（已修正）：这里条件写反过，曾经写成 if(rs[left] != 0 || ls[right] != 0) 直接取 max，
+    // 但这样当两边都空时（rs==0 && ls==0）也应该能合并，所以正确的逻辑是：
+    // 若左右有一个不是空（即满房），则不能跨区间合并，答案取左右儿子的最大值；
+    // 否则（两边都空），则可以跨区间合并，取左后缀+右前缀，再与儿子最大值比较。
+    if (rs[i<<1] != 0 || ls[i<<1|1] != 0) {
+        ans[i] = max(ans[i<<1], ans[i<<1|1]);
+    } else { // 两边都空
+        ans[i] = mxr[i<<1] + mxl[i<<1|1];
+        ans[i] = max(ans[i], ans[i<<1]);
+        ans[i] = max(ans[i], ans[i<<1|1]);
+    }
+    // 左右端点继承
+    ls[i] = ls[i<<1];
+    rs[i] = rs[i<<1|1];
+
+    // 计算左起最长空房
+    mxl[i] = mxl[i<<1];
+    if (mxl[i<<1] == len[i<<1] && rs[i<<1] == 0)   // 左儿子全空且左儿子右端为空
+        mxl[i] += mxl[i<<1|1];
+
+    // 计算右起最长空房
+    mxr[i] = mxr[i<<1|1];
+    if (mxr[i<<1|1] == len[i<<1|1] && ls[i<<1|1] == 0) // 右儿子全空且右儿子左端为空
+        mxr[i] += mxr[i<<1];
+}
+
+void build(int l, int r, int i) {
+    // 错误点2（已修正）：曾经忘记给内部节点设置 len，导致合并时 mxl==len 判断失效
+    len[i] = r - l + 1;   // 必须在这里设置，确保每个节点都有长度
+    add[i] = -1;
+    if (l == r) {
+        ls[i] = rs[i] = 0;   // 空房
+        mxl[i] = mxr[i] = ans[i] = 1;
+        return;
+    }
+    int mid = (l + r) >> 1;
+    build(l, mid, i<<1);
+    build(mid+1, r, i<<1|1);
+    pushup(i);
+}
+
+// 下传懒标记，ln和rn分别为左右儿子区间长度
+void down(int i, int ln, int rn) {
+    if (add[i] == -1) return;
+    int lc = i<<1, rc = i<<1|1;
+    if (add[i] == 1) { // 全满（入住）
+        // 错误点3（已修正）：曾经在 add==1 时漏设 rs[lc]（左儿子的右端点）为1，导致合并判断出错
+        ls[lc] = rs[lc] = 1;
+        mxl[lc] = mxr[lc] = ans[lc] = 0;
+        add[lc] = 1;
+
+        ls[rc] = rs[rc] = 1;
+        mxl[rc] = mxr[rc] = ans[rc] = 0;
+        add[rc] = 1;
+    } else { // 全空（退房）
+        // 错误点4（已修正）：曾经 add==0 时漏设 ls[rc] 或 rs[lc]，导致左右端点状态未正确清空
+        ls[lc] = rs[lc] = 0;
+        mxl[lc] = mxr[lc] = ans[lc] = ln;
+        add[lc] = 0;
+
+        ls[rc] = rs[rc] = 0;
+        mxl[rc] = mxr[rc] = ans[rc] = rn;
+        add[rc] = 0;
+    }
+    add[i] = -1;
+}
+
+// 区间赋值：va=1 全满（入住），va=0 全空（退房）
+void change(int l, int r, int i, int jobl, int jobr, int va) {
+    if (l >= jobl && r <= jobr) {
+        if (va == 1) {
+            ls[i] = rs[i] = 1;
+            mxl[i] = mxr[i] = ans[i] = 0;
+        } else {
+            ls[i] = rs[i] = 0;
+            mxl[i] = mxr[i] = ans[i] = r - l + 1;
+        }
+        add[i] = va;
+        return;
+    }
+    int mid = (l + r) >> 1;
+    down(i, mid - l + 1, r - mid);
+    // 错误点5（已修正）：曾经递归传参时写成 change(l, r, ...) 而不是 change(l, mid, ...)
+    if (mid >= jobl) change(l, mid, i<<1, jobl, jobr, va);
+    if (mid + 1 <= jobr) change(mid + 1, r, i<<1|1, jobl, jobr, va);
+    pushup(i);
+}
+
+// 查询最左端能放下 x 个连续空房的起始位置
+int query(int l, int r, int i, int x) {
+    if (l == r) return l;
+    int mid = (l + r) >> 1;
+    down(i, mid - l + 1, r - mid);
+
+    // 贪心的优先顺序：先左，再中，最后右。
+    // 这保证了找到的第一个可行位置一定是最靠左的。
+    if (ans[i<<1] >= x) {
+        return query(l, mid, i<<1, x);
+    } else if (rs[i<<1] == 0 && ls[i<<1|1] == 0 &&
+               mxr[i<<1] + mxl[i<<1|1] >= x) {
+        // 错误点6（已修正）：曾经写成 == x，导致长度大于x时无法正确返回，应使用 >=
+        return mid - mxr[i<<1] + 1;
+    }
+    return query(mid + 1, r, i<<1|1, x);
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    cin >> n >> m;
+    build(1, n, 1);
+    while (m--) {
+        int op;
+        cin >> op;
+        if (op == 1) {
+            int x;
+            cin >> x;
+            if (ans[1] < x) {
+                cout << 0 << '\n';
+            } else {
+                int pos = query(1, n, 1, x);
+                cout << pos << '\n';
+                // 错误点7（已修正）：之前查询后忘记将房间置为满房，导致状态未更新
+                change(1, n, 1, pos, pos + x - 1, 1);
+            }
+        } else {
+            int x, y;
+            cin >> x >> y;
+            change(1, n, 1, x, x + y - 1, 0);
+        }
+    }
+    return 0;
+}
