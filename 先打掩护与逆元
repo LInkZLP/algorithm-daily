@@ -1,0 +1,115 @@
+#include  <bits/stdc++.h>
+using namespace std;
+const int maxn = 3e5+5;
+vector<long long>v(maxn);
+vector<long long>sum(maxn * 4);
+vector<long long>psum(maxn * 4);
+vector<long long>inv(maxn*4);
+const long long mod = 998244353;
+int n;
+int m;
+void build(int l,int r,int i)
+{
+	if(l == r)
+	{
+		sum[i] = v[l];
+		psum[i] =(v[l] * v[l]) % mod;
+		return;
+	}
+	int mid = ( l+ r ) >>1;
+	build(l,mid,i<<1);
+	build(mid+1,r,i<<1|1);
+	psum[i] = (psum[i<<1] + psum[i<<1|1]) % mod;
+	sum[i] = (sum[i<<1] + sum[i<<1|1]) % mod;
+	return;
+}
+void change(int l,int r,int i,int jobl,int jobr,long long k)
+{
+	if(l>=jobl && r <= jobr)
+	{
+		sum[i] = k;
+		psum[i] = k * k % mod;
+		return;
+	}
+	int mid = (l + r) >> 1;
+	if(mid >= jobl)
+	{
+		change(l,mid,i<<1,jobl,jobr,k);
+	}
+	if(mid+1 <= jobr)
+	{
+		change(mid+1,r,i<<1|1,jobl,jobr,k);
+	}
+	psum[i] = (psum[i<<1] + psum[i<<1|1]) % mod;
+	sum[i] = (sum[i<<1] + sum[i<<1|1]) % mod;
+}
+long long query1(int l,int r,int i,int jobl,int jobr)
+{
+	if(jobl <= l && jobr >= r)
+	{
+		return sum[i];
+	}
+	long long res = 0;
+	int mid = (l + r) >> 1;
+	if(mid >= jobl)
+	{
+		res = (res + query1 (l,mid,i<<1,jobl,jobr) ) % mod;
+	}
+	if(mid + 1<=jobr)
+	{
+		res = ( res + query1(mid+1,r,i<<1|1,jobl,jobr)) % mod;
+	}
+	return res;
+}
+long long query2(int l,int r,int i,int jobl,int jobr)
+{
+	if(jobl <= l && jobr >= r)
+	{
+		return psum[i];
+	}
+	long long res = 0;
+	int mid = (l + r) >> 1;
+	if(mid >= jobl)
+	{
+		res = (res + query2 (l,mid,i<<1,jobl,jobr) ) % mod;
+	}
+	if(mid + 1<=jobr)
+	{
+		res = ( res + query2(mid+1,r,i<<1|1,jobl,jobr)) % mod;
+	}
+	return res;
+}
+int main()
+{
+	cin>>n>>m;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+	}
+	inv[1] = 1;
+	for(int i = 2;i<=n;i++)
+	{
+		inv[i] = (mod - mod / i) * inv[mod%i] % mod;
+	}
+	build(1,n,1);
+	while(m--)
+	{
+		int c;
+		int x;
+		int y;
+		cin>>c>>x>>y;
+		if(c == 1)
+		{
+			int cnt = (y - x + 1);
+			long long s = query1(1,n,1,x,y);
+			long long xi =s * inv[cnt]% mod;
+			long long var = (query2(1,n,1,x,y) -s * s%mod *inv[cnt]% mod+ mod) % mod;
+			cout<<xi<<" "<<var<<endl;
+		}
+		else
+		{
+			change(1,n,1,x,x,y);
+		}
+	}
+	return 0;
+ }  
