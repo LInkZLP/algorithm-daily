@@ -1,0 +1,69 @@
+#include <bits/stdc++.h>
+using namespace std;
+long long ans = 0;
+int n;
+long long m;
+int li = 0;
+int ri = 0; 
+int maxn = 40;
+void dfs(vector<long long>&s,int p,long long sum,int lim,vector<long long>&arr)
+{
+	if(p > lim)
+	{
+		s.push_back(sum);
+		return;
+	}
+	dfs(s,p+1,sum,lim,arr);
+	dfs(s,p+1,sum+arr[p],lim,arr);
+	return;
+}
+int main()
+{
+	cin>>n>>m;
+	li = n / 2;
+	ri = n - li;
+	vector<long long>l(maxn);
+	vector<long long>r(maxn);
+	vector<long long>s1;
+	vector<long long>s2;
+	for(int i = 1;i<=li;i++)
+	{
+		cin>>l[i];
+	}
+	for(int i = 1;i<=ri;i++)
+	{
+		cin>>r[i];
+	}
+	dfs(s1,1,0,li,l);
+	dfs(s2,1,0,ri,r);
+	sort(s1.begin(),s1.end());
+	sort(s2.begin(),s2.end());
+//	cout<<s1.size()<<" "<<s2.size()<<endl;
+	for(int i = 0;i<s1.size();i++)
+	{
+		long long now = s1[i];
+		long long tar = m - now;
+		int left = 0;
+		int right = s2.size()-1;
+		long long ty = -1;
+		while(left <= right)
+		{
+			int mid = (right + left) >>1;
+			if(tar >= s2[mid])
+			{
+				ty = mid+1;
+				left = mid+1;
+			}
+			else
+			{
+				right = mid-1;
+			}
+		}
+		if(ty != -1)
+		{
+			ans += ty;
+		}
+	}
+	cout<<ans<<endl;
+	return 0;
+}
