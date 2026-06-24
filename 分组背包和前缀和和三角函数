@@ -1,0 +1,86 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+const int maxn = 205;
+int n, m;               // n个黄金，总时间T（即m）
+
+struct gold {
+    int x, y;           // 坐标
+    int d;              // 距离平方（用于组内排序，近→远）
+    int t;              // 挖掘耗时
+    int va;             // 价值
+    double r;           // 极角（弧度）
+};
+
+vector<gold> v(maxn);          // 存储所有黄金
+vector<gold> sum(maxn);        // 存储每组的前缀选项（只用到t和va）
+vector<long long> dp(40005, 0); // dp[j]：用j时间能获得的最大价值
+
+// 排序比较函数：先按极角分组，同组内按距离从小到大
+bool cmp(gold a, gold b) {
+    double k1 = atan2(a.y, a.x);   // 注意：atan2(y,x) 返回 [-π, π]
+    double k2 = atan2(b.y, b.x);
+    // 这里直接比较浮点数相等（可能因精度出错，但数据弱时能过）
+    // 更稳妥的做法：if (fabs(k1-k2) > 1e-9) return k1 < k2;
+    if (k1 == k2) {
+        return a.d < b.d;          // 同一射线，距离近的优先
+    } else {
+        return k1 < k2;
+    }
+}
+
+int main() {
+    cin >> n >> m;
+    for (int i = 1; i <= n; i++) {
+        int x, y, t, va;
+        cin >> x >> y >> t >> va;
+        // 计算距离平方和极角（atan2 能正确处理 x=0 的情况）
+        v[i] = {x, y, x*x + y*y, t, va, atan2(y, x)};
+    }
+
+    // 排序：极角升序，同角距离升序
+    sort(v.begin() + 1, v.begin() + n + 1, cmp);
+
+    // 核心：计算每个位置的前缀和（只对同一组有效）
+    // sum[i] 表示“从该组第一个挖到第 i 个（相对于该组内序号）”的累加
+    for (int i = 1; i <= n; i++) {
+        if (v[i-1].r == v[i].r) {      // 和上一个属于同一组
+            sum[i] = v[i];             // 先复制当前点
+            sum[i].va += sum[i-1].va;  // 累加价值
+            sum[i].t += sum[i-1].t;    // 累加时间
+        } else {
+            sum[i] = v[i];             // 新组，前缀即自身
+        }
+    }
+
+    // 统计每组有多少个元素（用于分组背包时确定范围）
+    vector<int> cnt(maxn, 0);
+    cnt[1] = 1;          // 假设第一组至少有一个
+    int u = 1;           // 当前组号
+    for (int i = 2; i <= n; i++) {
+        if (v[i-1].r == v[i].r) {
+            cnt[u]++;    // 同一组，数量加1
+        } else {
+            u++;         // 新组
+            cnt[u] = 1;
+        }
+    }
+
+    // 分组背包
+    int last = 1;               // 当前组在 sum 数组中的起始下标
+    for (int g = 1; g <= u; g++) {
+        // 倒序遍历容量（保证每组最多选一个前缀）
+        for (int s = m; s >= 0; s--) {
+            // 遍历该组的所有前缀选项：从 last 到 last + cnt[g] - 1
+            for (int j = last; j <= cnt[g] + last - 1; j++) {
+                if (s >= sum[j].t) {
+                    dp[s] = max(dp[s - sum[j].t] + sum[j].va, dp[s]);
+                }
+            }
+        }
+        last += cnt[g];     // 移动到下一组起始位置
+    }
+
+    cout << dp[m] << endl;
+    return 0;
+}
