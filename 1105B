@@ -1,0 +1,40 @@
+#include <bits/stdc++.h>
+using namespace std;
+long long mod = 998244353;
+long long f(long long x)
+{
+	long long res = 1;
+	long long r = 2;
+	while(x)
+	{
+		if(x & 1)
+		{
+			res = res * r % mod;
+		}
+		r = r * r%mod;
+		x >>=1;
+	}
+	return res;
+}
+//如果某个子矩阵里，除了右下角之外的其他元素都已经知道了，那么右下角就唯一确定了。
+//只要约束是局部矩形且重叠，就能用递推，
+//自由变量数通常等于总变量数减去约束数，或者约束数减去冗余。
+int main()
+{
+	int t;
+	cin>>t;
+	//cout<<f(5)<<endl;
+	//cout<<f(6)<<endl;
+	while(t--)
+	{
+		long long n;
+		long long m;
+		long long r;
+		long long c;
+		cin>>n>>m>>r>>c;
+		long long k = n *m - (n - r + 1) * (m - c + 1);
+		//cout<<k<<endl;
+		cout<<f(k)<<endl;
+	}
+	return 0;
+ } 
