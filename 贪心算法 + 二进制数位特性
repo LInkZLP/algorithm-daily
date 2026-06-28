@@ -1,0 +1,54 @@
+#include <iostream>
+using namespace std;
+
+// 数一数 x 的二进制里有几个 1
+//尽量拆成全为1的数
+int countOnes(int x) {
+    int cnt = 0;
+    while (x > 0) {
+        if (x % 2 == 1) cnt++;  // 最后一位是1就计数
+        x = x / 2;              // 右移一位
+    }
+    return cnt;
+}
+
+int main() {
+    int N, K;
+    cout << "请输入 N 和 K: ";
+    cin >> N >> K;
+
+    int remaining = N;   // 还剩多少可以分配
+    int total = 0;       // 总共的1的个数
+
+    for (int i = 1; i <= K; i++) {
+        int take;  // 当前这个数取多少
+
+        if (i == K) {
+            // 最后一个数：剩多少拿多少
+            take = remaining;
+        } else {
+            // 不是最后一个：要预留后面每个数至少为 1
+            int reserve = K - i;  // 后面还有几个数
+
+            // 找最大的 "1, 3, 7, 15..." 不超过 (remaining - reserve)
+            int maxAvailable = remaining - reserve;
+            
+            // 从 1 开始试：1, 3, 7, 15, 31...
+            take = 1;
+            while (take * 2 + 1 <= maxAvailable) {
+                take = take * 2 + 1;  // 1→3→7→15→31...
+            }
+            
+            // 万一 take 变成了 0（不会发生，因为 maxAvailable >= 1）
+            if (take < 1) take = 1;
+        }
+
+        total += countOnes(take);  // 累加这个数的1的个数
+        remaining -= take;          // 减去用掉的
+
+        cout << "取了: " << take << " (二进制 " << take << " 有 " << countOnes(take) << " 个1)" << endl;
+    }
+
+    cout << "总共最多有 " << total << " 个 1" << endl;
+    return 0;
+}
