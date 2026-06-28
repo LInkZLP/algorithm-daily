@@ -1,0 +1,22 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+    int t; cin >> t;
+    while (t--) {
+        int n, k; cin >> n >> k;
+        int ans = 0;
+        for (int b = 0; ; b++) {
+            int w = (1 << b);           // 2^b
+            if (w > n) break;           // 再也放不下
+            int take = min(k, n / w);   // 最多放 k 个，且不能超 n
+            ans += take;
+            n -= take * w;
+        }
+        cout << ans << endl;
+    }
+    return 0;
+}
+
+//你有的硬币面额：1, 2, 4, 8, 16, ...（2 的幂）
+//最大化硬币的总个数
