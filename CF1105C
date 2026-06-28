@@ -1,0 +1,50 @@
+#include <bits/stdc++.h>
+using namespace std;
+const long long mod = 998244353;
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		//所以这个核心是:当一项的大小比除了它之外的异或值大，那么就可以分出一个数，
+		//使全部异或值为0，并且最后剩余一个数，只有一个数就是必败态
+		//核心逻辑就是：
+		//必胜走法 = 一步走到必败态
+		int n;
+		cin>>n;
+		vector<long long>v(n+5);
+		long long ans = 0;
+		int c = 0;
+		for(int i = 1;i<=n;i++)
+		{
+			long long x;
+			cin>>x;
+			v[i] = x;
+			ans ^= x;
+			if(x > 0)
+			{
+				c++;
+			}
+		}
+		if(c <= 1)
+		{
+			cout<<0<<endl;
+			continue;
+		}
+		long long sum = 0;
+		if(ans == 0)
+		{
+			sum++;
+		}
+		for(int i = 1;i<= n;i++)
+		{
+			if(v[i] > (ans ^ v[i]))
+			{
+				sum = (sum +1) % mod;
+			}
+		}
+		cout<<sum<<endl;
+	}
+	return 0;
+}
