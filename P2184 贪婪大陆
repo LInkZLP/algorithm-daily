@@ -1,0 +1,126 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+/*
+ * 题目背景：每次埋雷 [l, r] 就相当于画一条线段。
+ * 核心思想：用“容斥原理”判断线段是否与查询区间 [x, y] 相交。
+ * 我们不需要管线段中间怎么覆盖，只需要管线段的“起点(l)”和“终点(r)”。
+ */
+
+const int maxn = 1e5 + 5;
+int n, m;
+
+// suml[i]：线段树节点，维护的是“起点(左端点)”的个数
+// sumr[i]：线段树节点，维护的是“终点(右端点)”的个数
+vector<long long> suml(maxn << 2);
+vector<long long> sumr(maxn << 2);
+
+/*
+ * 函数：change1（本质是单点更新，虽然传了 jobl/jobr，但调用时 jobl==jobr）
+ * 作用：在位置 jobl 处，让“起点数量” +1
+ * 解释：埋一条 [x, y] 的雷，就在 x 位置标记“这里多了一个起点”
+ */
+void change1(int l, int r, int i, int jobl, int jobr) {
+    // 如果当前区间完全被任务区间覆盖（因为传的是单点，所以就是找到了叶子节点）
+    if (l >= jobl && r <= jobr) {
+        suml[i]++; // 这个位置的起点数量 +1
+        return;
+    }
+    int mid = (l + r) >> 1;
+    if (mid >= jobl) change1(l, mid, i << 1, jobl, jobr);
+    if (mid + 1 <= jobr) change1(mid + 1, r, i << 1 | 1, jobl, jobr);
+    // 回溯更新父节点：父节点存的是左右孩子起点数量的总和
+    suml[i] = suml[i << 1] + suml[i << 1 | 1];
+}
+
+/*
+ * 函数：change2（本质是单点更新）
+ * 作用：在位置 jobl 处，让“终点数量” +1
+ * 解释：埋一条 [x, y] 的雷，就在 y 位置标记“这里多了一个终点”
+ */
+void change2(int l, int r, int i, int jobl, int jobr) {
+    if (l >= jobl && r <= jobr) {
+        sumr[i]++; // 这个位置的终点数量 +1
+        return;
+    }
+    int mid = (l + r) >> 1;
+    if (mid >= jobl) change2(l, mid, i << 1, jobl, jobr);
+    if (mid + 1 <= jobr) change2(mid + 1, r, i << 1 | 1, jobl, jobr);
+    sumr[i] = sumr[i << 1] + sumr[i << 1 | 1];
+}
+
+/*
+ * 函数：query1
+ * 作用：查询起点（左端点）在 [jobl, jobr] 这个区间内的地雷总数
+ */
+long long query1(int l, int r, int i, int jobl, int jobr) {
+    if (l >= jobl && r <= jobr) {
+        return suml[i];
+    }
+    int mid = (l + r) >> 1;
+    long long res = 0;
+    if (mid >= jobl) res += query1(l, mid, i << 1, jobl, jobr);
+    if (mid + 1 <= jobr) res += query1(mid + 1, r, i << 1 | 1, jobl, jobr);
+    return res;
+}
+
+/*
+ * 函数：query2
+ * 作用：查询终点（右端点）在 [jobl, jobr] 这个区间内的地雷总数
+ */
+long long query2(int l, int r, int i, int jobl, int jobr) {
+    if (l >= jobl && r <= jobr) {
+        return sumr[i];
+    }
+    int mid = (l + r) >> 1;
+    long long res = 0;
+    if (mid >= jobl) res += query2(l, mid, i << 1, jobl, jobr);
+    if (mid + 1 <= jobr) res += query2(mid + 1, r, i << 1 | 1, jobl, jobr);
+    return res;
+}
+
+int main() {
+    cin >> n >> m;
+
+    while (m--) {
+        int op, x, y;
+        cin >> op >> x >> y;
+
+        if (op == 1) {
+            // 埋雷操作 [x, y]：
+            // 1. 在 x 位置记录：这里多了一个起点
+            change1(1, n, 1, x, x);
+            // 2. 在 y 位置记录：这里多了一个终点
+            change2(1, n, 1, y, y);
+        } else {
+            // 查询操作 [x, y]：统计有多少条线段与 [x, y] 有交集
+
+            // ---- 第一步：c1 统计“所有没有完全跑到右边的线段” ----
+            // 一条线段如果完全在查询区间 [x, y] 的右边，它的起点 l 一定 > y。
+            // 所以，只要起点 l <= y，这条线段就“没有完全在右边”，它有可能和 [x, y] 相交。
+            // query1(1, y) 统计的就是：起点在 [1, y] 范围内的线段总数。
+            long long c1 = query1(1, n, 1, 1, y);
+
+            // ---- 第二步：c2 统计“完全跑到左边的线段” ----
+            // 一条线段如果完全在查询区间 [x, y] 的左边，它的终点 r 一定 < x（即 r <= x-1）。
+            // 这些线段虽然满足了“起点 <= y”（被 c1 包含了），但它们其实跟 [x, y] 毫无交集。
+            // 我们需要把这类“完全在左边”的线段从 c1 中剔除。
+            long long c2 = 0;
+            if (x > 1) {
+                // 查询终点在 [1, x-1] 范围内的线段总数，即 r < x 的线段数量
+                c2 = query2(1, n, 1, 1, x - 1);
+            } else {
+                // 如果 x == 1，不可能有任何线段的终点 < 1，所以 c2 = 0
+                c2 = 0;
+            }
+
+            // ---- 第三步：容斥得出答案 ----
+            // 所有“没有完全在右边”的线段（c1） - 所有“完全在左边”的线段（c2）
+            // = 剩下既不在左边、也不在右边的线段
+            // = 跟 [x, y] 有交集的线段数量
+            // （因为如果有线段完全在右边，它的起点 > y，根本没进 c1，所以不需要减）
+            cout << max(0LL, c1 - c2) << endl;
+        }
+    }
+    return 0;
+}
