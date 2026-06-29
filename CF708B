@@ -1,0 +1,48 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		int n;
+		int m;
+		cin>>n>>m;
+		vector<int>mod(m+5);
+		for(int i = 1;i<=n;i++)
+		{
+			long long x;
+			cin>>x;
+			mod[x % m] ++;
+		}
+		int sum = mod[0] == 0 ? 0 : 1;
+		for(int i = 1;i<=m / 2 ;i++)
+		{
+			if(mod[i] == 0)
+			{
+				sum += mod[m - i] == 0 ? 0 : mod[m - i];
+			}
+			else
+			{
+				if(mod[m - i] == 0)
+				{
+					sum += mod[i];
+				}
+				else
+				{
+					int u = min(mod[i],mod[m - i]);
+					int k = max(mod[i],mod[m - i]);
+					sum += 1;//注意m为偶数时候，这些步骤就能解决m / 2 了，无非是mod[m / 2] 是否为0，最大贡献也只能为1！ 
+					if(k - u >= 2)
+					{
+						sum += ( k- u -1);
+					}
+				}
+			}
+		}
+		cout<<sum<<endl;
+	}
+	return 0;
+ } 
