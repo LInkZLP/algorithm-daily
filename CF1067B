@@ -1,0 +1,59 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		int n;
+		cin>>n;
+		vector<int>v(n*2+5);
+		vector<int>m(n*2+5);
+		int sta = 1e8;
+		int en = 0;
+		for(int i = 1;i<=n*2;i++)
+		{
+			cin>>v[i];
+			m[v[i]] ++;
+			sta = min(sta,v[i]);
+			en = max(en,v[i]);
+		}
+		int c1 = 0;
+		int c2 = 0;
+		int sum = 0;
+		for(int i = 1;i<=2*n;i++)
+		{
+			if(m[i] != 0)//一个元素出现次数 
+			{
+				if(m[i] & 1)//出现奇数次 
+				{
+					c1++;
+				}
+				else//出现偶数次 
+				{
+					c2++;
+				}
+			}
+		}
+		//因为我们可以自由调整每个数值分给 p 的具体个数，而不改变奇偶性贡献。 
+		if(c1>0)//存在奇数出现的次数 
+		{
+			sum = c1 + 2*min(c2,n);
+			//一个奇数次数能贡献1，c1个可以贡献c1,剩下的靠c2来划分 
+		}
+		else
+		{
+			int k = min(c2,n);
+			if((k&1) != (n & 1))//我们要确保选出来贡献 2 的数值个数 k，和 n 的奇偶性一致。
+			{
+				k--;
+				//当所有数值出现次数都是偶数时，必须保证 k 和 n 的奇偶性相同，否则无法构造出两个数量相等的子序列。 
+			}
+			sum = 2*k;
+		}
+		cout<<sum<<endl;
+	}
+	return 0;
+ } 
