@@ -1,0 +1,74 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+// 最大公约数函数，用于后续计算全局 gcd
+long long gcd(long long m, long long n) {
+    return n == 0 ? m : gcd(n, m % n);
+}
+
+int main() {
+    int t;
+    cin >> t;
+
+    /*
+     * 核心结论：
+     * 设 g = gcd(所有数)，统计数组中等于 g 的元素个数 cnt。
+     * 如果 cnt >= 2，则无论怎样排列，最终结果必为 0，输出 NO。
+     * 如果 cnt <= 1，则总能构造出非零结果，输出 YES。
+     *
+     * 证明简述：
+     * 必要性（cnt >= 2 → 必为 0）：
+     *   所有数都是 g 的倍数，任意取模仍保持为 g 的倍数。
+     *   数组中至少有两个 g，考虑最后一个 g 出现的位置，
+     *   它之前的所有操作结果仍是 g 的倍数，最后用这个结果对 g 取模，结果必为 0。
+     *
+     * 充分性（cnt <= 1 → 可构造非零）：
+     *   - 若 cnt == 1，将唯一的 g 放在最前面，后续所有数都大于等于 g，
+     *     且至少有一个大于 g（因为只有一个个g），所以 g % 任何数 = g，
+     *     最终结果为 g ≠ 0。
+     *   - 若 cnt == 0，说明 g 不在数组中，令 mn = 最小值。
+     *       若 mn 出现一次，将 mn 放首位，同理结果恒为 mn ≠ 0。
+     *       若 mn 出现多次，由于 g 不在数组中，必存在某个数不是 mn 的倍数，
+     *       将这个数放首位，mn 放第二位，取模得到余数 r（0<r<mn），
+     *       后续所有数 ≥ mn > r，结果恒为 r ≠ 0。
+     *   综上，总能构造成功。
+     */
+
+    while (t--) {
+        int n;
+        cin >> n;
+        vector<long long> v(n + 5);
+        long long p = 0; // 存储全局 gcd
+
+        // 输入并计算所有数的最大公约数 p
+        for (int i = 1; i <= n; i++) {
+            cin >> v[i];
+            p = gcd(p, v[i]);
+        }
+
+        int cnt = 0;      // 统计数组中等于 p 的元素个数
+        long long u = 0;  // 用于计算 v[i]/p 的全局 gcd，实际恒等于 1
+
+        for (int i = 1; i <= n; i++) {
+            long long val = v[i] / p; // 每个数除以 p 后，整体互质
+            if (val == 1) {           // 说明 v[i] 本身等于 p
+                cnt++;
+            }
+            u = gcd(u, val);          // 所有 val 的 gcd 必定为 1（因为 p 已是最大公约数）
+        }
+
+        /*
+         * 判断：
+         * 如果 cnt > 1，则数组中至少有 2 个等于 p 的元素，答案为 NO。
+         * 额外检查 u != 1 其实永远不会发生（因为 p 是最大公约数），
+         * 但保留作为安全校验（如果数据错误或未求完整 gcd 可能触发）。
+         * 通常可简化为 if (cnt > 1) cout << "NO"; else cout << "YES";
+         */
+        if (cnt > 1 || u != 1) {
+            cout << "NO" << endl;
+        } else {
+            cout << "YES" << endl;
+        }
+    }
+    return 0;
+}
