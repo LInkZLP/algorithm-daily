@@ -1,0 +1,30 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		int n;
+		string s;
+		cin>>n>>s;
+		vector<int>arr(28);
+		int mx = 0;
+		for(char x : s)
+		{
+			arr[x - 'a'] ++;
+			mx = max(mx,arr[x - 'a']);
+		}
+		int ans = n % 2 ;
+		ans = max(ans,mx * 2 - n);
+		cout<<ans<<endl;
+	}
+	/*
+	我们只需要考虑出现次数最多的字符的个数，如果出现次数最多的字符的个数没超超过 n /2
+	则一定可以删掉,反之，则会剩下一些。
+证明：设出现次数最多的字符个数为 a，其余字符的个数为 b，如果 a≤b ，则一定存在方案使得出现次数最多的字符全被删除，且剩下 b?a 个不同字符，且一定存在方案使得 b?a 个字符两两相除，剩下 1 个（nmod2=1）或 0 个（nmod2=0）字符。但如果 a>b，则出现次数最多的字符不能够被全部删除，
+会留下 a-b 相同的字符，这些字符不能够再删除，答案就是 a-b。*/
+	return 0;
+ } 
