@@ -1,0 +1,116 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 100005;
+vector<vector<long long>>v(maxn);
+vector<long long>cost(maxn);
+int n;
+int m; 
+vector<vector<long long>>dp(maxn,vector<long long>(3,LLONG_MIN));
+//没有购买，已经购买准备卖，已经卖了 0 1 2
+vector<vector<bool>>inq(maxn,vector<bool>(5,false));
+long long ans = 0;
+long long work()
+{
+	int sta = 1;
+	queue<pair<int,int>>q;
+	dp[sta][0] = 0;
+	dp[sta][1] = -cost[sta];
+	inq[sta][0] = true;
+	inq[sta][1] = true;
+	q.push({sta,1});
+	q.push({sta,0});
+	//DP讲究就算对面没有做过也可以更新 
+	while(!q.empty())
+	{
+		pair<int,int> r =q.front();
+		q.pop();
+		int k = r.second;
+		int now = r.first;
+		inq[now][k] = false;
+		for(int i = 0;i<v[now].size();i++)
+		{
+			int next = v[now][i];
+			if(k == 2)
+			{
+				if(dp[next][k] < dp[now][k])
+				{
+					dp[next][k] = dp[now][k];
+					if(!inq[next][k])
+					{
+						q.push({next,k});
+						inq[next][k] = true;
+					}
+				}
+			}
+			else if(k == 1)
+			{
+				if(dp[next][2] < dp[now][k] + cost[next])//卖 
+				{
+					dp[next][2] = dp[now][k] + cost[next];
+					if(!inq[next][2])
+					{
+						q.push({next,2});
+						inq[next][2] = true;
+					}
+				}
+				if(dp[next][k] < dp[now][k])//不卖 
+				{
+					dp[next][k] = dp[now][k];
+					if(!inq[next][k])
+					{
+						q.push({next,k});
+						inq[next][k] = true;
+					}
+				}
+			}
+			else
+			{
+				if(dp[next][k] < dp[now][k])
+				{
+					dp[next][k] = dp[now][k] ;
+					if(!inq[next][k])
+					{
+						q.push({next,k});
+						inq[next][k] = true;
+					}
+				}
+				if(dp[next][1] < dp[now][k] - cost[next])//购买 
+				{
+					dp[next][1] = dp[now][k] - cost[next];
+					if(!inq[next][1])
+					{
+						q.push({next,1});
+						inq[next][1] = true;
+					}
+				}
+			}
+		}
+	}
+	return max(dp[n][2],0LL);
+}
+int main()
+{
+	cin>>n>>m;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>cost[i];
+	}
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		int z;
+		cin>>x>>y>>z;
+		if(z & 1)
+		{
+			v[x].push_back(y);
+		}
+		else
+		{
+			v[y].push_back(x);
+			v[x].push_back(y);
+		}
+	}
+	cout<<work()<<endl;
+	return 0;
+ } 
