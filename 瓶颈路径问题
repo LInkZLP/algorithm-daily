@@ -1,0 +1,159 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int q;
+const int maxn = 1e5+5;
+const int LOG = 22;
+vector<bool> vis(maxn*3, false);
+struct xyw{
+	int w;
+	int x;
+	int y;
+};
+struct po{
+	int next;
+	int w;
+};
+vector<xyw>g(maxn*3);
+vector<vector<po>>v(maxn);
+vector<vector<po>>up(maxn,vector<po>(LOG));
+vector<int>dep(maxn);
+vector<int>fa(maxn);
+vector<vector<int>>minw(maxn,vector<int>(LOG,INT_MAX));
+bool cmp(xyw a,xyw b)
+{
+	return a.w>b.w;
+}
+void initial(int n)
+{
+	for(int i = 0;i<=n;i++)
+	{
+		fa[i] = i;
+		for(int j = 0;j<LOG;j++)
+		{
+			up[i][j].next = 0; 
+			up[i][j].w = INT_MAX; 
+		}
+	}
+	return;
+}
+int find(int x)
+{
+	if(x == fa[x])
+	{
+		return x;
+	}
+	return fa[x] = find(fa[x]);
+}
+bool Union(int x,int y)
+{
+	int r1=  find(x);
+	int r2 = find(y);
+	if(r1 == r2)
+	{
+		return true;
+	}
+	fa[r1] = r2;
+	return false;
+}
+void dfs(int u,int p,int l)
+{
+	vis[u] = true; 
+	up[u][0].next = p;
+	minw[u][0] = l;
+	for(int i = 1;i<LOG;i++)
+	{
+		up[u][i].next = up[up[u][i-1].next][i-1].next;
+		minw[u][i] = min(minw[u][i-1],minw[up[u][i-1].next][i-1]);
+	}
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i].next;
+		if(nxt == p)
+		{
+			continue;
+		}
+		dep[nxt] = dep[u] + 1;
+		dfs(nxt,u,v[u][i].w);
+	}
+	return;
+}
+int lca(int a,int b)
+{
+	if(dep[a] < dep[b])
+	{
+		swap(a,b);
+	}
+	int dh = dep[a] - dep[b];
+	int res = INT_MAX;
+	for(int i = LOG-1;i>=0;i--)
+	{
+		if(dh & (1<<i))
+		{
+			res = min(res,minw[a][i]);
+			a = up[a][i].next;
+		}
+	}
+	if(a == b)
+	{
+		return res;
+	}
+	for(int i = LOG-1;i>=0;i--)
+	{
+		if(up[a][i].next != up[b][i].next)
+		{
+			res = min(res,minw[a][i]);
+			res = min(res,minw[b][i]);
+			a = up[a][i].next;
+			b = up[b][i].next;
+		}
+	}
+	res = min(res,minw[a][0]);
+	res = min(res,minw[b][0]);
+	return res;
+}
+int main()
+{
+	cin>>n>>m>>q;
+	for(int i =1;i<=m;i++)
+	{
+		cin>>g[i].x>>g[i].y>>g[i].w;
+	}
+	sort(g.begin()+1,g.begin()+1+m,cmp);
+	initial(n);
+	for(int i = 1;i<=m;i++)
+	{
+		int x1 = g[i].x;
+		int y1 = g[i].y;
+		int w1 = g[i].w;
+		if(!Union(x1,y1))
+		{
+			v[x1].push_back({y1,w1});
+			v[y1].push_back({x1,w1});
+		}
+	}
+	//程序是通过 Kruskal 构建最大生成森林，如果原图本身就不连通，构建出的就是多棵树（森林）
+	//保证每一个连通分量都被 DFS 预处理。(关键) 
+	for (int i = 1; i <= n; i++) {
+	    if (!vis[i]) {
+	        dep[i] = 1;
+	        dfs(i, 0, INT_MAX);
+	    }
+	}
+	while(q--)
+	{
+		int a;
+		int b;
+		cin>>a>>b;
+		if(find(a) == find(b))
+		{
+			cout<<lca(a,b)<<endl;
+		}
+		else
+		{
+			cout<<-1<<endl;
+		}
+	}
+	return 0;
+ } 
