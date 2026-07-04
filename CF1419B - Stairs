@@ -1,0 +1,34 @@
+#include <bits/stdc++.h>
+using namespace std;
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		long long x;
+		cin>>x;
+		long long sta = 1;
+		long long cnt = 1;
+		//分析图形可知只有1,3,7,15...2^k-1可以构造出来，之后就是贪心和等差数列求和 
+		int sum= 0;
+		while(x >= 0)
+		{
+			if(x >= sta)
+			{
+				x -= sta;
+				sum++;
+			}
+			else
+			{
+				break;
+			} 
+			cnt= cnt*2+1;
+			sta = (cnt + 1) * cnt / 2;
+		}
+		cout<<sum<<endl;
+	}
+	
+	
+	return 0;
+ } 
