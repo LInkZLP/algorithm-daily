@@ -1,0 +1,163 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int t;
+int m;
+const int maxn = 1e5+10;
+vector<long long>v0(maxn);
+vector<long long>v1(maxn);
+vector<long long>s0(maxn<<2);
+vector<long long>s1(maxn<<2);
+vector<long long>ans(maxn<<2);
+long long tes = 0;
+long long ge(string s,int k)
+{
+	long long res = 0;
+	int sta = 1;
+	for(int i = s.size()-1;i>=0;i--)
+	{
+		if(s[i] == '1'&&k == 1)
+		{
+			res +=sta;
+		}
+		else if(s[i] == '0' && k == 0)
+		{
+			res +=sta;
+		}
+		sta*=2; 
+	}
+	return res;
+}
+long long cnt(long long h,long long u)
+{
+	int res = 0;
+	for(int i = 0;i<=n-1;i++)
+	{
+		if(h & (1<<i))
+		{
+			res++;
+		}
+	}
+	for(int i = 0;i<=n-1;i++)
+	{
+		if(u & (1<<i))
+		{
+			res++;
+		}
+	}
+	return n - res;
+}
+void build(int l,int r,int i)
+{
+	if(l == r)
+	{
+		s0[i] = v0[l];
+		s1[i] = v1[l];
+		return;
+	}
+	int mid = (l + r)>>1;
+	build(l,mid,i<<1);
+	build(mid+1,r,i<<1|1);
+	long long p0 = s0[i<<1] | s0[i<<1|1];
+	long long p1 = s1[i<<1] | s1[i<<1|1];
+	s0[i] = p0;
+	s1[i] = p1;
+	if(p0 & p1)
+	{
+		ans[i] = 0;
+	} 
+	else
+	{
+		ans[i] = 1<<cnt(p0,p1);
+	}
+}
+void change(int l,int r,int i,int jobl,int jobr,long long u0,long long u1)
+{
+	if(jobl <= l && jobr >= r)
+	{
+		s0[i] = u0;
+		s1[i] = u1;
+		return;
+	}
+	int mid = (l + r)>>1;
+	if(mid >= jobl)
+	{
+		change(l,mid,i<<1,jobl,jobr,u0,u1);
+	}
+	if(mid + 1<=jobr)
+	{
+		change(mid+1,r,i<<1|1,jobl,jobr,u0,u1);
+	}
+	long long p0 = s0[i<<1] | s0[i<<1|1];
+	long long p1 = s1[i<<1] | s1[i<<1|1];
+	s0[i] = p0;
+	s1[i] = p1;
+	if(p0 & p1)
+	{
+		ans[i] = 0;
+	} 
+	else
+	{
+		ans[i] = 1<<cnt(p0,p1);
+	}
+	return;
+}
+void query(int l,int r,int i,int jobl,int jobr,long long &res0,long long &res1)
+{
+	if(l>=jobl && r<=jobr)
+	{
+		res0 |= s0[i];
+		res1 |= s1[i];
+		return;
+	}
+	int mid = (l + r)>>1;
+	if(mid >= jobl)
+	{
+		query(l,mid,i<<1,jobl,jobr,res0,res1);
+	}
+	if(mid+1<= jobr)
+	{
+		query(mid+1,r,i<<1|1,jobl,jobr,res0,res1);
+	}
+	return;
+}
+int main()
+{
+	cin>>n>>m>>t;
+	for(int i = 1;i<=m;i++)
+	{
+		string x;
+		cin>>x;
+		v0[i] = ge(x,0);
+		v1[i] = ge(x,1);
+	}
+	build(1,m,1);
+	while(t--)
+	{
+		int op;
+		cin>>op;
+		if(op & 1)
+		{
+			int pos;
+			string u;
+			cin>>pos>>u;
+			change(1,m,1,pos,pos,ge(u,0),ge(u,1));
+		}
+		else
+		{
+			int x;
+			int y;
+			cin>>x>>y;
+			long long res0 = 0;
+			long long res1 = 0;
+			query(1,m,1,x,y,res0,res1);
+			if((res0 & res1) == 0)
+			{
+				tes ^= (1LL << cnt(res1,res0));
+			}
+			
+		}
+	}
+	cout<<tes<<endl;
+	return 0;
+}
