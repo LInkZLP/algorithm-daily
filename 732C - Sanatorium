@@ -1,0 +1,65 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int main()
+{
+	long long b;
+	long long d;
+	long long s;
+	cin>>b>>d>>s;
+	if(s == b &&b == d)
+	{
+		cout<<0<<endl;
+	}
+	else if(d == s)
+	{
+		if(b > d)
+		{
+			cout<<2*(b - 1 - d)<<endl;
+		}
+		else
+		{
+			cout<<d - 1 - b<<endl;
+		}
+	}
+	else if(b == d)
+	{
+		if(b < s)
+		{
+			cout<<2*(s- 1 - b)<<endl;
+		}
+		else
+		{
+			cout<<b - 1 - s<<endl;
+		}
+	}
+	else if(s == b)
+	{
+		if(d > s)
+		{
+			cout<<2*(d- 1 - s)<<endl;
+		}
+		else
+		{
+			cout<<s - 1 - d<<endl;
+		}
+	}
+	else{
+		long long maxp = max(b,d);
+		maxp = max(maxp,s);
+		if(maxp == b)
+		{
+			cout<<abs(d - maxp+1) + abs(s - maxp + 1)<<endl;
+		}
+		else if(maxp == s)
+		{
+			cout<<abs(d - maxp+1) + abs(b - maxp + 1)<<endl;
+		}
+		else if(maxp == d)
+		{
+			cout<<abs(b - maxp+1) + abs(s - maxp + 1)<<endl;
+		}
+	}
+	
+	return 0;
+ } 
