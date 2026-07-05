@@ -1,0 +1,49 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		long long n;
+		long long m;
+		long long k;
+		cin>>n>>m>>k;
+		//cout<<n*(n-1) / 2<<endl;
+		if(k<2 || m < n-1 || n*(n-1) / 2 < m)//满足可以建图，有最小边和最大边的约束 
+		{
+			cout<<"NO"<<endl;
+			continue; 
+		}
+		if(k == 2)
+		{
+			if(n == 1)
+			{
+				cout<<"yes"<<endl;
+			}
+			else
+			{
+				cout<<"NO"<<endl;
+			}
+			continue;
+		}
+		if(k == 3)
+		{
+			if(m == n*(n-1) / 2)
+			{
+				cout<<"yes"<<endl;
+			}
+			else
+			{
+				cout<<"NO"<<endl;
+			}
+			
+		}
+		else{//星形图一定满足可以建图的，而且最小半径就是2 
+			cout<<"Yes"<<endl;
+		}
+	}
+	return 0;
+}
