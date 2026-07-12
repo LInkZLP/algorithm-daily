@@ -1,0 +1,201 @@
+#include <bits/stdc++.h>		
+using namespace std;
+int n;
+int m;
+const int maxn = 1e5+5;
+vector<int>hcov(maxn<<2,INT_MIN);//目前最高赋值 ,一旦赋值，直接没用 
+vector<int>cov(maxn<<2,INT_MIN);//当前赋值，一旦赋值，直接没用 
+vector<int>add(maxn<<2);//增量 
+vector<int>mx(maxn<<2);
+vector<int>hadd(maxn<<2,0);//处理完当前节点之前的最高增量 
+vector<int>himx(maxn<<2);
+vector<int>v(maxn);
+void up(int i)
+{
+	mx[i] = max(mx[i<<1],mx[i<<1|1]);
+	himx[i] = max(himx[i<<1],himx[i<<1|1]);
+	return;
+}
+void build(int l,int r,int i)
+{
+	if(l == r)
+	{
+		mx[i] = v[l];
+		himx[i] = v[l];
+		return;
+	}
+	int mid = (l + r)>>1;
+	build(l,mid,i<<1);
+	build(mid+1,r,i<<1|1);
+	up(i);
+	return;
+}
+void down(int i,int had,int va,int ad,int hva)
+{
+	himx[i] = max(himx[i],mx[i] + had);//先处理himx，用最大赋值和最大增量 ，最大增量一定是匹配当下的 
+	himx[i] = max(himx[i],hva);
+	if(va == INT_MIN)
+	{
+		mx[i] += ad;
+	}
+	else
+	{
+		mx[i] = va;
+	}
+	if(cov[i] == INT_MIN && va == INT_MIN)//上面没有下放赋值，当前节点没有赋值 
+	{
+		hadd[i] = max(hadd[i],add[i] + had);
+		add[i] += ad;
+	}
+	else if(cov[i] == INT_MIN && va != INT_MIN)
+	{
+		hadd[i] = max(hadd[i],add[i] + had);
+		hcov[i] = max(hcov[i],hva);
+		add[i] += ad;
+		cov[i] = va;
+	}
+	else if(cov[i] != INT_MIN && va == INT_MIN)
+	{
+		hcov[i] = max(hcov[i], cov[i] + had);
+		cov[i] += ad;
+	}
+	else if(cov[i] != INT_MIN && va != INT_MIN)
+	{
+		hcov[i] = max(hcov[i],hva);
+		hcov[i] = max(hcov[i],cov[i] + had);
+		cov[i] = va;
+	}
+	return;
+}
+void push(int i)
+{
+	if(add[i] == 0 && cov[i] == INT_MIN && hadd[i] == 0 && hcov[i] == INT_MIN)
+	{
+		return;
+	}
+	down(i<<1,hadd[i],cov[i],add[i],hcov[i]);
+	down(i<<1|1,hadd[i],cov[i],add[i],hcov[i]);
+	add[i] = 0;
+	hadd[i] = 0;
+	cov[i] = INT_MIN;
+	hcov[i] = INT_MIN;
+}
+void change1(int l,int r,int i,int jobl,int jobr,int x)
+{
+	if(l >= jobl && r <= jobr)
+	{
+		down(i,max(0,x),INT_MIN,x,INT_MIN);
+		return;
+	}
+	int mid = (l + r)>>1;
+	push(i);
+	if(mid>=jobl)
+	{
+		change1(l,mid,i<<1,jobl,jobr,x);
+	}
+	if(mid + 1<=jobr)
+	{
+		change1(mid+1,r,i<<1|1,jobl,jobr,x);
+	}
+	up(i);
+	return;
+}
+void change2(int l,int r,int i,int jobl,int jobr,int x)
+{
+	if(l >= jobl && r <= jobr)
+	{
+		down(i,0,x,0,x);
+		return;
+	}
+	push(i);
+	int mid = (l + r)>>1;
+	if(mid>=jobl)
+	{
+		change2(l,mid,i<<1,jobl,jobr,x);
+	}
+	if(mid + 1<=jobr)
+	{
+		change2(mid+1,r,i<<1|1,jobl,jobr,x);
+	}
+	up(i);
+	return;
+	
+}
+int q1(int l,int r,int i,int jobl,int jobr)
+{
+	if(l >= jobl && r <= jobr)
+	{
+	//	down(i);
+
+		return mx[i];
+	}
+	push(i);
+	int mid = (l + r)>>1;
+	int res = INT_MIN;
+	if(mid>=jobl)
+	{
+		res = max(res,q1(l,mid,i<<1,jobl,jobr));
+	}
+	if(mid + 1<=jobr)
+	{
+		res = max(res,q1(mid+1,r,i<<1|1,jobl,jobr));
+	}
+	return res;
+}
+int q2(int l,int r,int i,int jobl,int jobr)
+{
+	if(l >= jobl && r <= jobr)
+	{
+	//	down(i);
+		return himx[i];
+	}
+	push(i);
+	int mid = (l + r)>>1;
+	int res = INT_MIN;
+	if(mid>=jobl)
+	{
+		res = max(res,q2(l,mid,i<<1,jobl,jobr));
+	}
+	if(mid + 1<=jobr)
+	{
+		res = max(res,q2(mid+1,r,i<<1|1,jobl,jobr));
+	}
+	return res;
+}
+int main()
+{
+	cin>>n;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+	}
+	build(1,n,1);
+	cin>>m;
+	while(m--)
+	{
+		char c;
+		int x;
+		int y;
+		cin>>c>>x>>y;
+		if(c == 'Q')
+		{
+			cout<<q1(1,n,1,x,y)<<endl;
+		}
+		else if(c == 'A')
+		{
+			cout<<q2(1,n,1,x,y)<<endl;
+		}
+		else if(c == 'P')
+		{
+			int t;
+			cin>>t;
+			change1(1,n,1,x,y,t);
+		}
+		else{
+			int t;
+			cin>>t;
+			change2(1,n,1,x,y,t);
+		}
+	}
+	return 0;
+ }  
