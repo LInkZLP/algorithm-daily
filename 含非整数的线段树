@@ -1,0 +1,174 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+const int maxn = 66000 * 2;          // 坐标放大两倍，范围 [0, 131070]
+vector<int> s(maxn << 2, 0);         // 节点代表的区间内被覆盖的段数（以半整数为单位）
+vector<int> se(maxn << 2, -1);       // 赋值标记：-1 无赋值，0/1 表示全部赋值成 0/1
+vector<int> rev(maxn << 2, 0);       // 反转标记：0/1 表示是否需要将区间内状态取反
+
+struct st {
+    int s1, e1;                      // 连续全1段的起点和终点（放大后的坐标）
+};
+
+// 用左右儿子的信息更新当前节点
+void up(int i) {
+    s[i] = s[i << 1] + s[i << 1 | 1];
+}
+
+// 将节点 i 的标记下传给两个儿子
+void down(int i, int l, int r) {
+    int mid = (l + r) >> 1;
+    // 1. 处理赋值标记（优先级高于反转）
+    if (se[i] != -1) {
+        int va = se[i];
+        se[i] = -1;                          // 清空当前标记
+        // 左儿子直接赋值
+        s[i << 1] = (mid - l + 1) * va;
+        se[i << 1] = va;
+        // 右儿子直接赋值
+        s[i << 1 | 1] = (r - mid) * va;
+        se[i << 1 | 1] = va;
+        // 赋值会覆盖之前的反转，清空子节点的反转标记
+        rev[i << 1] = 0;
+        rev[i << 1 | 1] = 0;
+    }
+    // 2. 处理反转标记
+    if (rev[i]) {
+        rev[i] = 0;                           // 清空当前标记
+        // 左儿子：总数减去原有数量
+        s[i << 1] = (mid - l + 1) - s[i << 1];
+        // 如果左儿子有赋值标记，直接翻转赋值值；否则累加反转标记
+        if (se[i << 1] != -1)
+            se[i << 1] ^= 1;
+        else
+            rev[i << 1] ^= 1;
+        // 右儿子同理
+        s[i << 1 | 1] = (r - mid) - s[i << 1 | 1];
+        if (se[i << 1 | 1] != -1)
+            se[i << 1 | 1] ^= 1;
+        else
+            rev[i << 1 | 1] ^= 1;
+    }
+}
+
+// 区间赋值：将 [jobl, jobr] 全部设为 va (0 或 1)
+void change1(int l, int r, int i, int jobl, int jobr, int va) {
+    if (jobl > jobr) return;                  // 空区间直接返回
+    if (l >= jobl && r <= jobr) {             // 当前区间完全包含在目标区间内
+        s[i] = (r - l + 1) * va;              // 更新覆盖段数
+        se[i] = va;                           // 打上赋值标记
+        rev[i] = 0;                           // 赋值覆盖反转
+        return;
+    }
+    down(i, l, r);                            // 下传标记
+    int mid = (l + r) >> 1;
+    if (jobl <= mid) change1(l, mid, i << 1, jobl, jobr, va);
+    if (jobr > mid)  change1(mid + 1, r, i << 1 | 1, jobl, jobr, va);
+    up(i);                                    // 更新当前节点
+}
+
+// 区间取反：将 [jobl, jobr] 的状态取反（0变1，1变0）
+void change2(int l, int r, int i, int jobl, int jobr) {
+    if (jobl > jobr) return;
+    if (l >= jobl && r <= jobr) {
+        s[i] = (r - l + 1) - s[i];            // 覆盖段数取反
+        // 若已有赋值标记，直接翻转赋值值；否则翻转反转标记
+        if (se[i] == -1)
+            rev[i] ^= 1;
+        else
+            se[i] ^= 1;
+        return;
+    }
+    down(i, l, r);
+    int mid = (l + r) >> 1;
+    if (jobl <= mid) change2(l, mid, i << 1, jobl, jobr);
+    if (jobr > mid)  change2(mid + 1, r, i << 1 | 1, jobl, jobr);
+    up(i);
+}
+
+// 遍历线段树，收集所有全 1 的连续段（结果存入 coll）
+void collect(int l, int r, int i, vector<st>& coll) {
+    if (l > r || s[i] == 0) return;           // 空区间或全0则跳过
+    if (s[i] == r - l + 1) {                 // 全1，直接记录该区间
+        coll.push_back({l, r});
+        return;
+    }
+    down(i, l, r);                            // 下传标记，确保子树信息正确
+    int mid = (l + r) >> 1;
+    collect(l, mid, i << 1, coll);
+    collect(mid + 1, r, i << 1 | 1, coll);
+}
+
+// 按左端点排序
+bool cmp(st a, st b) {
+    return a.s1 < b.s1;
+}
+
+int main() {
+    char op;
+    int mx = 65535 * 2;                       // 线段树最大坐标
+    while (scanf(" %c", &op) != EOF) {        // 注意 %c 前的空格，跳过空白符
+        char lb, rb;                          // 左右括号
+        int x, y;
+        scanf(" %c%d,%d%c", &lb, &x, &y, &rb); // 读取区间，如 [1,5] 或 (2,3]
+        // 输入可能直接给出空区间
+        if (x > y) {
+            if (op == 'I' || op == 'C')       // 需要清空集合的操作
+                change1(0, mx, 1, 0, mx, 0);
+            continue;
+        }
+        // 坐标放大两倍，开区间通过端点移动实现
+        x <<= 1;
+        y <<= 1;
+        if (rb == ')') y--;                   // 右开，右端点左移
+        if (lb == '(') x++;                   // 左开，左端点右移
+        // 调整后可能变为空区间（如 (2,2]）
+        if (x > y) {
+            if (op == 'I' || op == 'C')
+                change1(0, mx, 1, 0, mx, 0);
+            continue;
+        }
+        // 根据操作类型执行对应线段树更新
+        if (op == 'S') change2(0, mx, 1, x, y);                  // 对称差（取反）
+        else if (op == 'U') change1(0, mx, 1, x, y, 1);          // 并集（赋值1）
+        else if (op == 'I') {                                     // 交集
+            if (x > 0) change1(0, mx, 1, 0, x - 1, 0);           // 区间外左侧清0
+            if (y < mx) change1(0, mx, 1, y + 1, mx, 0);         // 区间外右侧清0
+        }
+        else if (op == 'D') change1(0, mx, 1, x, y, 0);          // 差集（赋值0）
+        else if (op == 'C') {                                     // 差集（T - S）
+            if (x > 0) change1(0, mx, 1, 0, x - 1, 0);
+            if (y < mx) change1(0, mx, 1, y + 1, mx, 0);
+            change2(0, mx, 1, x, y);                              // 区间内取反
+        }
+    }
+    // 收集所有连续的1段
+    vector<st> coll, co;
+    collect(0, mx, 1, coll);
+    // 按左端点排序
+    sort(coll.begin(), coll.end(), cmp);
+    // 合并相邻的段（坐标差1即代表实际相邻，需合并）
+    for (auto& p : coll) {
+        if (!co.empty() && co.back().e1 + 1 == p.s1)
+            co.back().e1 = p.e1;               // 合并到上一个区间
+        else
+            co.push_back(p);                   // 新建区间
+    }
+    // 输出结果
+    if (co.empty()) {
+        printf("empty set\n");
+    } else {
+        for (int i = 0; i < co.size(); i++) {
+            int L = co[i].s1, R = co[i].e1;
+            // 还原坐标和括号
+            int Lv = L / 2;
+            int Rv = (R + 1) / 2;
+            char lb = (L % 2 == 0) ? '[' : '(';    // 偶数代表闭区间，奇数代表开区间
+            char rb = (R % 2 == 0) ? ']' : ')';
+            printf("%c%d,%d%c", lb, Lv, Rv, rb);
+            if (i != co.size() - 1) printf(" ");    // 区间之间用一个空格分隔
+        }
+        printf("\n");
+    }
+    return 0;
+}
