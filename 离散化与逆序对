@@ -1,0 +1,116 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 1e5+5;
+int n;
+long long cnt = 0;
+void merge(int l,int r,int mid,vector<long long>&v,vector<long long>&temp)
+{
+	if(l >= r)
+	{
+		return;
+	}
+	int i = l;
+	int j = mid + 1;
+	int k = l;
+	while(i <= mid && j <= r)
+	{
+		if(v[i] > v[j])
+		{
+			cnt += mid - i + 1;
+			temp[k++] = v[j++];
+		}
+		else
+		{
+			temp[k++] = v[i++];
+		}
+	}
+	while(i <= mid)
+	{
+		temp[k++] = v[i++];
+	}
+	while(j <=r )
+	{
+		temp[k++] = v[j++];
+	}
+	for(int i = l;i<=r;i++)
+	{
+		v[i] = temp[i];
+	}
+	return;
+}
+void mergesort(int l,int r,vector<long long>&v,vector<long long>&temp)
+{
+	int mid = (l + r)>>1;
+	if(l >= r)
+	{
+		return;
+	}
+	mergesort(l,mid,v,temp);
+	mergesort(mid+1,r,v,temp);
+	merge(l,r,mid,v,temp);
+	return;
+}
+int main()
+{
+	cin>>n;
+	vector<long long>v1(maxn);
+	vector<long long>v2(maxn);
+	vector<long long>v;
+	unordered_map<long long,long long>m;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v1[i]>>v2[i];
+		if(m.find(v1[i]) == m.end())
+		{
+			m[v1[i]] = v1[i];
+			v.push_back(v1[i]);
+		}
+		if(m.find(v2[i]) == m.end())
+		{
+			m[v2[i]] = v2[i];
+			v.push_back(v2[i]);
+		}
+	}
+	sort(v.begin(),v.end());
+	unordered_map<long long, int>id;
+	for(int i = 0;i<v.size();i++)
+	{
+		id[v[i]] = i;
+	}
+	vector<long long>val(v.size());
+	for(int i = 0;i<v.size();i++)
+	{
+		val[i] = v[i];
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		int a = id[v1[i]];
+		int b = id[v2[i]];
+		swap(val[a],val[b]);
+	}
+	vector<long long>temp(v.size());
+	vector<long long>tmp = val;
+	mergesort(0,val.size()-1,tmp,temp);
+	long long ans = cnt;
+	for(int i = 0;i<v.size();i++)
+	{
+		long long p = v[i];
+		long long cur = val[i];
+		if(cur + 1 <= p-1)
+		{
+			long long l = cur+1;
+			long long r = p - 1;
+			int cnt1 = upper_bound(v.begin(),v.end(),r) - lower_bound(v.begin(),v.end(),l);
+			ans+=(r - l+ 1) - cnt1;
+		}
+		if(p + 1 <= cur-1)
+		{
+			long long l = p+1;
+			long long r = cur- 1;
+			int cnt1 = upper_bound(v.begin(),v.end(),r) - lower_bound(v.begin(),v.end(),l);
+			ans+=(r - l+ 1) - cnt1;
+		}
+	}
+	cout<<ans<<endl;
+	return 0;
+ } 
