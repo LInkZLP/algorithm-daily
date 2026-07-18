@@ -1,0 +1,133 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 105;
+int n;
+int timer = 0;
+int scc_cnt = 0;
+vector<int>low(maxn);
+vector<int>dfn(maxn);
+vector<vector<int>>v(maxn);
+vector<int>jd(maxn);
+vector<int>instk(maxn);
+vector<int>scc_id(maxn);
+vector<vector<int>>scc(maxn);
+stack<int>stk;
+vector<int>c(maxn);
+vector<int>od(maxn);
+void tarjan(int u)
+{
+	timer++;
+	low[u] = timer;
+	dfn[u] = timer;
+	stk.push(u);
+	instk[u] = true;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int next = v[u][i];
+		if(!dfn[next])
+		{
+			tarjan(next);
+			low[u] = min(low[u],low[next]);
+		}
+		else if(instk[next])
+		{
+			low[u] = min(low[u],dfn[next]);
+		}
+	}
+	if(low[u] == dfn[u])
+	{
+		scc_cnt++;
+		//cout<<u<<endl;
+		int next;
+		do{
+			next = stk.top();
+			stk.pop();
+			instk[next] = false;
+			scc_id[next] = scc_cnt;
+			c[scc_cnt]++;
+		}while(u != next);
+	}
+}
+int main()
+{
+	cin>>n;
+	for(int i = 1;i<=n;i++)
+	{
+		while(1)
+		{
+			int x;
+			cin>>x;
+			if(!x)
+			{
+				break;
+			}			
+			v[i].push_back(x);
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		if(!dfn[i])
+		{
+			tarjan(i);
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 0;j<v[i].size();j++)
+		{
+			int next = scc_id[ v[i][j]];
+			int sta = scc_id[i];
+			if(sta != next)
+			{
+				scc[sta].push_back(next);
+			}
+		}
+	}
+	for(int i = 1;i<=scc_cnt;i++)
+	{
+		sort(scc[i].begin(),scc[i].end());
+		scc[i].erase(unique(scc[i].begin(),scc[i].end()),scc[i].end());
+		for(int j = 0;j<scc[i].size();j++)
+		{
+			jd[scc[i][j]] ++;
+			od[i] ++;
+		}
+	}
+	int ans1 = 0;
+	int ans2 = 0;
+	int io = 0;
+	int oo = 0;
+	for(int i = 1;i<=scc_cnt;i++)
+	{
+		if(!jd[i])
+		{
+			io ++;
+		}
+		if(!od[i])
+		{
+			oo++;	
+		}
+	}
+	ans1 = io;
+	if(scc_cnt == 1)
+	{
+		ans2 = 0;
+	}
+	else
+	{
+		ans2 = max(oo,io);
+	}
+	cout<<ans1<<endl<<ans2<<endl;
+	return 0;
+}
+/*
+要让整个图强连通，必须满足两个条件：
+
+没有入度为 0 的 SCC（每个点都能从外部到达）
+
+没有出度为 0 的 SCC（每个点都能到达外部）
+每个入度为 0 的 SCC，在最终强连通图中，必须至少有 一条边进入它，否则其他点无法到达它。
+每个出度为 0 的 SCC，必须至少有 一条边离开它，否则它无法到达其他点。
+我们每添加一条边，最多只能解决一个入度 0 和一个出度 0**（如果这条边恰好从一个出度 0 的 SCC 指向一个入度 0 的 SCC）。
+因此，无论怎么加边，需要的最小边数不可能低于 max(in0, out0)
+*/
