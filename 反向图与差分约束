@@ -1,0 +1,160 @@
+#include <bits/stdc++.h>
+using namespace std;
+//A to B :
+// 9>=x>=1,disB - disA = x;disA - disB <= -1
+//disB - disA <=9
+#define pli pair<int,int>
+const int maxn = 1e4+5;
+int n;
+int m;
+vector<vector<pli>>v(maxn);
+vector<int>t1(maxn);
+vector<int>t2(maxn);
+vector<int>cnt(maxn);
+vector<int>vis(maxn);
+vector<int>dist(maxn,INT_MAX);
+vector<vector<int>>g(maxn);
+vector<vector<int>>rg(maxn);
+void dfs1(int x,vector<bool>&vi)
+{
+	vi[x] = true;
+	for(int i = 0;i<g[x].size();i++)
+	{
+		if(vi[g[x][i]])
+		{
+			continue;
+		}
+		dfs1(g[x][i],vi);
+	}
+	return;
+}
+void dfs2(int x,vector<bool>&vi)
+{
+	vi[x] = true;
+	for(int i = 0;i<rg[x].size();i++)
+	{
+		if(vi[rg[x][i]])
+		{
+			continue;
+		}
+		dfs2(rg[x][i],vi);
+	}
+	return;
+}
+bool spfa()
+{
+	int sta =1;
+	queue<int>q;
+	dist[sta] = 0;
+	vis[sta] = 1;
+	q.push(sta);
+	while(!q.empty())
+	{
+		int u = q.front();
+		q.pop();
+		vis[u] = 0;
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int next = v[u][i].second;
+			int w = v[u][i].first;
+			if(dist[next] > dist[u] + w && dist[u] != INT_MAX)
+			{
+				dist[next] = dist[u] + w;
+				cnt[next] = cnt[u] + 1;
+				if(cnt[next] > n)
+				{
+					return 0;
+				}
+				if(!vis[next])
+				{
+					q.push(next);
+				}
+			}
+		}
+	}
+	return 1;
+}
+int main()
+{
+	cin>>n>>m;
+	//用 DFS/BFS 从 1 出发正向遍历，标记 vis1；从 n 出发反向遍历，标记 vis2。
+	//只有 vis1[x] && vis2[x] 的点才参与差分约束。
+	for(int i = 1;i<=m;i++)
+	{
+		cin>>t1[i]>>t2[i];
+		g[t1[i]].push_back(t2[i]);
+		rg[t2[i]].push_back(t1[i]);
+	}
+	vector<bool>v1(maxn,false);
+	vector<bool>v2(maxn,false);
+	dfs1(1,v1);
+	dfs2(n,v2);
+	for(int i = 1;i<=m;i++)
+	{
+		if(v1[t1[i]] && v2[t2[i]] && v2[t1[i]] && v1[t2[i]])
+		{
+			v[t1[i]].push_back({9,t2[i]});
+			v[t2[i]].push_back({-1,t1[i]});
+		}
+	}
+	if(!spfa() || dist[n] == INT_MAX)
+	{
+		cout<<-1<<endl;
+		return 0;
+	}
+	cout<<n<<" "<<m<<endl;
+	for(int i = 1;i<=m;i++)
+	{
+		if(v1[t1[i]] && v2[t2[i]] && v2[t1[i]] && v1[t2[i]])
+		{
+			cout<<t1[i]<<" "<<t2[i]<<" "<<dist[t2[i]] - dist[t1[i]]<<endl;
+		}
+		else
+		{
+			cout<<t1[i]<<" "<<t2[i]<<" "<<1<<endl;
+		}
+	}
+	return 0;
+ } 
+ /*为什么输出1是必要的，为什么反向图在这个差分约束是必要的，什么差分约束要反向建图，反向建图目的是什么
+1. 为什么无关边输出 1 是必要的？
+题目要求每条边的权值必须是 1 到 9 的整数。
+你的差分约束只对 “从 1 可达且能到达 n” 的点之间的边生效，这些边的权值由 dist[v] - dist[u] 给出，一定在 1~9 内。
+
+但是，那些不在这个有用子图中的边（比如与 1 到 n 的路径完全无关的边，或者只在死胡同里的边），它们没有参与差分约束，dist 值仍然是初始的 INT_MAX 或者未定义的值。如果强行输出 dist[v] - dist[u]，结果会溢出、为负数、或大于 9，严重违反题目要求。
+
+因此，必须给这些无关边一个任意的合法值（比如最简单的 1），它们不会影响任何 1 到 n 的路径长度，但保证了输出格式的正确性。
+2. 为什么反向图在这个差分约束中是必要的？
+你的差分约束系统必须恰好覆盖所有可能出现在 1→n 路径上的点，既不能多，也不能少。
+
+正向图 DFS 从 1 出发，可以找到所有“从 1 可达”的点。
+
+但是，从 1 可达的点中，有些可能根本无法到达 n（比如走进了死胡同）。这些点如果也加入约束，它们内部可能形成矛盾的环（比如你的样例中 2-3-4-2 的环），导致全图无解，而实际上它们根本不影响 1→n 的任何路径。
+
+反向图（从 n 出发，沿反向边走）能够找出所有能到达 n 的点。
+只有同时满足 “从 1 可达”且“能到达 n” 的点，才是真正“有用”的点。对它们的边加约束，才能保证不引入无关矛盾，同时正确限制所有 1→n 路径的长度。
+
+3. 什么差分约束需要反向建图？反向建图的目的？
+当约束只需要作用在“从起点 S 到终点 T 的路径集合”上时，就需要用反向图来修剪点集。
+典型的场景：
+
+只要求 S→T 的所有路径满足某种条件，而非全图。
+（看题目描述是否明确指定了起点和终点，并且约束的是这两点之间的路径，而不是全图所有边或所有点。）
+明确给出起点和终点
+比如：“从点 1 出发开往点 n”、“从 S 到 T 的所有路径”、“1 到 n 的每条路径”。
+
+强调路径集合，而非整个图
+比如：“保证任意一条从 1 到 n 的路径长度相等”、“无论怎么走，从入口到出口的耗时都相同”、“所有从源点到汇点的路径权值和相等”。
+
+允许其他部分有任意性
+题目通常会说“其他边可以任意赋值，只要满足范围”或者“无关边随意”。这说明约束只针对起终点路径。
+图中存在大量与 S→T 无关的环或分支，若不加筛选会导致差分约束系统出现本不应有的矛盾。
+
+反向建图的目的就是：
+从终点反向搜索，找出所有“能到达终点”的节点，与正向可达点取交集，得到精确的“S→T 有效子图”，然后只在这个子图上建立差分约束。
+
+这样可以：
+
+避免无关环的干扰（防止误判无解）。
+
+减小问题规模，提高算法效率（SPFA 或缩点 DP 的复杂度与有效点数相关）。*/
