@@ -1,0 +1,132 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+const int maxn = 1e4+5;
+int timer = 0;
+int scc_cnt = 0;
+stack<int>stk;
+vector<int>low(maxn);
+vector<int>dfn(maxn);
+vector<vector<int>>v(maxn);
+vector<int>instk(maxn);
+vector<vector<int>>scc(maxn);
+vector<int>va(maxn,1);
+vector<int>scc_id(maxn,0);
+vector<int>scc_va(maxn);
+vector<int>jd(maxn);
+vector<int>dp(maxn,-1);
+vector<int>od(maxn);
+int dfs(int x)
+{
+	if(dp[x] != -1)
+	{
+		return dp[x];
+	}
+	dp[x] = scc_va[x];
+	for(int i = 0;i<scc[x].size();i++)
+	{
+		int nxt = scc[x][i];
+		dp[x] += dfs(nxt);
+	}
+	return dp[x];
+}
+void tarjan(int u)
+{
+	timer++;
+	low[u] = timer;
+	dfn[u] = timer;
+	stk.push(u);
+	instk[u] = true;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(!dfn[nxt])
+		{
+			tarjan(nxt);
+			low[u] = min(low[u],low[nxt]);
+		}
+		else if(instk[nxt])
+		{
+			low[u] = min(low[u],dfn[nxt]);
+		}
+	}
+	if(low[u] == dfn[u])
+	{
+		scc_cnt++;
+		int next;
+		do{
+			next = stk.top();
+			stk.pop();
+			instk[next] = false;
+			scc_id[next] = scc_cnt;
+			scc_va[scc_cnt] += va[next];
+		}while(next != u);
+	}
+}
+int main()
+{
+	cin>>n;
+	for(int i = 1;i<=n;i++)
+	{
+		while(1)
+		{
+			int x;
+			cin>>x;
+			if(x == 0)
+			{
+				break;
+			}
+			v[i].push_back(x);
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		if(!dfn[i])
+		{
+			tarjan(i);
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 0;j<v[i].size();j++)
+		{
+			int nxt = scc_id[v[i][j]];
+			int u = scc_id[i];
+			if(nxt != u)
+			{
+				scc[u].push_back(nxt);
+			}
+		}
+	}
+	for(int i = 1;i<=scc_cnt;i++)
+	{
+		sort(scc[i].begin(),scc[i].end());
+		scc[i].erase(unique(scc[i].begin(),scc[i].end()),scc[i].end());
+		for(int j = 0;j<scc[i].size();j++)
+		{
+			jd[scc[i][j]]++;
+			od[i]++;
+		}
+	}
+	int s1 = 0;
+	int s2 = 0;
+	for(int i = 1;i<=scc_cnt;i++)
+	{
+		if(!jd[i])
+		{
+			s1++;
+		}
+		if(!od[i])
+		{
+			s2++;
+		}
+	}
+	if(scc_cnt == 1)
+	{
+		cout<<s1<<endl<<0<<endl;
+		return 0;
+	}
+	cout<<s1<<endl<<max(s1,s2)<<endl;
+	return 0;
+}
