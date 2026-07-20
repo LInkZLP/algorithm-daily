@@ -1,0 +1,34 @@
+#include <bits/stdc++.h>
+using namespace std;
+long long gcd(long long m,long long n)
+{
+	return n == 0 ? m : gcd(n,m%n);
+}
+long long lcm(long long a,long long b)
+{
+	return a * b / gcd(a,b);
+}
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		int n;
+		cin>>n;
+		vector<long long>v(n+5);
+		for(int i = 1;i<=n;i++)
+		{
+			cin>>v[i];
+		}
+		long long ans = 1;
+		for(int i = 1;i<=n-1;i++)
+		{
+			ans = lcm(ans,v[i] / gcd(v[i],v[i+1]));
+			//v[i] / gcd(v[i],v[i+1]最小是1，ans>=1所以前后项大小对答案没有影响 
+			//ans 也就是x一定是b[i] / gcc(b[i],b[i+1])的倍数 
+			//题目保证了存在性 
+		cout<<ans<<endl;
+	}
+	return 0;
+}
