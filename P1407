@@ -1,0 +1,98 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+const int maxn = 8e3+10;//数组开两倍 
+int timer = 0;
+int scc_cnt = 0;
+vector<bool>instk(maxn);
+vector<int>low(maxn);
+vector<int>dfn(maxn);
+vector<vector<int>>v(maxn);
+vector<int>scc_id(maxn);
+stack<int>stk;
+unordered_map<string,int>cp;
+void tarjan(int u)
+{
+	timer++;
+	low[u] = timer;
+	dfn[u] = timer;
+	stk.push(u);
+	instk[u] = true;;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int next = v[u][i];
+		if(!dfn[next])
+		{
+			tarjan(next);
+			low[u] = min(low[u],low[next]);
+		}
+		else if(instk[next])
+		{
+			low[u] = min(low[u],dfn[next]);
+		}
+	}
+	if(low[u] == dfn[u])
+	{
+		int next = 0;
+		scc_cnt++;
+		do{
+			next = stk.top();
+			stk.pop();
+			instk[next] = false;
+			scc_id[next] = scc_cnt;
+		}while(next != u);
+	}
+}
+//关键思路是先女连接男，再男连接女，只要成环就unsafe 
+int main()
+{
+	cin>>n;
+	int ptr = 1;
+	vector<int>t1(maxn);
+	vector<int>t2(maxn);
+	for(int i = 1;i<=n;i++)
+	{
+		string s1;
+		string s2;
+		cin>>s1>>s2;
+		cp[s1] = ptr;
+		t1[i] = ptr;
+		ptr++;
+		cp[s2] = ptr;
+		t2[i] = ptr;
+		ptr++;
+		v[cp[s1]].push_back(cp[s2]);
+	}
+	int m;
+	cin>>m;
+	for(int i = 1;i<=m;i++)
+	{
+		string s1;
+		string s2;
+		cin>>s1>>s2;
+		v[cp[s2]].push_back(cp[s1]);
+	}
+	for(int i = 1;i<=2*n;i++) //节点是两倍 
+	{
+		if(!dfn[i])
+		{
+			tarjan(i);
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		//cout<<scc_id[t1[i]]<<" "<<scc_id[t2[i]]<<endl;
+	//	cout<<t1[i]<<" "<<t2[i]<<endl;
+		if(scc_id[t1[i]] == scc_id[t2[i]])
+		{
+			cout<<"Unsafe"<<"\n";
+		}
+		else
+		{
+			cout<<"Safe"<<"\n";
+		}
+	}
+	
+	return 0;
+ } 
