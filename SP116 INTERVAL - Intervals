@@ -1,0 +1,89 @@
+#include <bits/stdc++.h>
+using namespace std;
+#define pli pair<long long ,int>
+int n;
+int m;
+int t;
+const int maxn = 5e4+5;
+int main()
+{
+	cin>>t;
+	while(t--)
+	{
+		cin>>n;
+		vector<vector<pli>>v(maxn);
+		int sta = 0;
+		for(int i = 1;i<=n;i++)
+		{
+			int x;
+			int y;
+			int c;
+			cin>>x>>y>>c;
+			v[x].push_back({c,y+1});
+			//v[y+1].push_back({-c,x});不能，两条边存在， S[y+1] - S[x] = c 
+			sta = max(y+1,sta);
+		}
+		for(int i = 1;i<=sta;i++)
+		{
+			// S[i] >= S[i-1] + 1
+			// S[i-1] >= S[i] - 1
+			//并没有要求每个整数点都必须被选中
+			//S[i] 表示从 0 到 i 这 i+1 个整数点中，已经选取的总个数
+			//显然，随着 i 增加，S[i] 不会减少，所以必须满足：
+			//S[i] >= S[i-1]（即边 i-1 -> i 权值为 0）
+			//如果强行写成 S[i] >= S[i-1] + 1，那就意味着每个点都必须选
+			v[i].push_back({-1,i-1});
+			v[i-1].push_back({0,i});
+			//因为差值 不是固定的 1，而是在 [0, 1] 这个范围内
+		}
+	
+		queue<int>q;
+		vector<int>cnt(maxn);
+		vector<int>inv(maxn,0);
+		vector<long long >dp(maxn,LLONG_MIN);
+		dp[0] = 0;
+		q.push(0);
+		inv[0] = 1;
+		bool cyc = false;
+		while(!q.empty())
+		{
+			int u = q.front();
+			q.pop();
+			inv[u] =  0;
+			for(int i = 0;i<v[u].size();i++)
+			{
+				int next = v[u][i].second;
+				if(dp[next] < dp[u] + v[u][i].first)
+				{
+				
+					dp[next] = dp[u] + v[u][i].first;
+					cnt[next] = cnt[u] +1 ;
+					if(cnt[next] > 50002)
+					{
+						cyc = true;
+						break;
+					}
+					if(!inv[next])
+					{
+						q.push(next);
+						inv[next] = 1;
+					} 
+				}
+			}
+			if(cyc)
+			{
+				break;
+			}
+		}
+		if(cyc)
+		{
+			cout<<0<<endl;
+		}
+		else{
+			cout<<dp[sta]<<endl;
+		}
+	}
+	
+	
+	return 0;
+ } 
