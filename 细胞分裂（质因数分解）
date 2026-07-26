@@ -1,0 +1,119 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+/*
+ * 题目：细胞分裂（NOIP 2009 普及组 T3）
+ * 题意：有 N 种细胞，第 i 种每秒分裂成 S_i 个。试管总数 M = m1^m2。
+ *       问选择哪种细胞，使得经过 t 秒后细胞数 S_i^t 能被 M 整除，
+ *       求最小的 t。若所有细胞都不可行，输出 -1。
+ *
+ * 核心思路：质因数分解
+ *   1. 将 m1 分解质因数：m1 = p1^e1 * p2^e2 * ... * pk^ek
+ *      则 M = m1^m2 = p1^(e1*m2) * p2^(e2*m2) * ... * pk^(ek*m2)
+ *   2. 对于细胞 i，设其分裂速度 S_i 中质因子 pj 的指数为 c_j
+ *      经过 t 秒后，S_i^t 中 pj 的指数为 c_j * t
+ *      要能被 M 整除，必须对于每个 pj，有 c_j * t >= ej * m2
+ *      即 t >= ceil( (ej * m2) / c_j )
+ *   3. 该细胞所需的最短时间就是所有质因子要求的最大值。
+ *      若某个 pj 在 S_i 中不存在（c_j = 0），则永远无法满足，该细胞不可行。
+ *   4. 对所有细胞取最小可行时间，若无可行则输出 -1。
+ *
+ * 为什么只关注 m1 的质因子？
+ *   因为 M 的质因子完全由 m1 决定。若 S_i 不含 m1 的某个质因子，
+ *   则 S_i^t 也永远不含该因子，无法整除 M。
+ *   因此我们只需检查 m1 的质因子即可。
+ */
+
+using namespace std;
+
+int n;
+long long m1, m2;
+vector<int> vis(100005, 1); // 素数筛标记数组
+
+// 线性筛（实际是埃氏筛）预处理 1e5 内的素数
+void work() {
+    vis[1] = 0;
+    for (int i = 2; i <= 1e5; i++) {
+        if (vis[i]) {
+            for (int j = 2; j * i <= 1e5; j++) {
+                vis[j * i] = 0;
+            }
+        }
+    }
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    cin >> n;
+    cin >> m1 >> m2;
+    vector<long long> s(n + 5);
+    for (int i = 1; i <= n; i++) cin >> s[i];
+
+    // 特判：若 m1 == 1，则 M = 1^m2 = 1，任何细胞在 0 秒时细胞数为 1，可以被 1 整除
+    if (m1 == 1) {
+        cout << 0 << '\n';
+        return 0;
+    }
+
+    work(); // 预先生成素数表
+
+    long long ans = LLONG_MAX;   // 最终答案（最小时间）
+    vector<int> p, er;          // p 存储 m1 的质因子，er 存储对应指数
+
+    // 分解 m1 的质因数
+    for (int i = 2; i <= m1; i++) {
+        if (m1 % i == 0 && vis[i]) { // i 是素数且能整除 m1
+            int r = 0;
+            long long sta = i;
+            // 统计 i 在 m1 中的指数
+            while (m1 % sta == 0) {
+                r++;
+                sta *= i;   // 这里 m1 <= 30000，不会溢出 long long
+            }
+            p.push_back(i);
+            er.push_back(r);
+        }
+    }
+
+    // 遍历每种细胞
+    for (int i = 1; i <= n; i++) {
+        long long need = 0;        // 该细胞所需的最短时间
+        bool bad = false;          // 标记是否缺少某个质因子
+
+        for (int j = 0; j < (int)p.size(); j++) {
+            long long pi = p[j];
+            long long cnt = 0;
+            long long t = s[i];
+
+            // 统计 s[i] 中质因子 pi 的指数 cnt
+            while (t % pi == 0) {
+                t /= pi;
+                cnt++;
+            }
+
+            // 若 cnt == 0，说明该细胞不含这个质因子，永远不可能满足条件
+            if (cnt == 0) {
+                bad = true;
+                break;
+            }
+
+            // M 中该质因子的总指数 = er[j] * m2
+            long long target = er[j] * m2;
+            // 需要 c * t >= target => t >= ceil(target / c)
+            long long cur = (target + cnt - 1) / cnt; // 上取整
+            need = max(need, cur);
+        }
+
+        if (!bad) { // 如果该细胞拥有所有必需的质因子，则更新答案
+            ans = min(ans, need);
+        }
+    }
+
+    // 如果 ans 没有被更新，说明所有细胞都不可行
+    if (ans == LLONG_MAX) cout << -1 << '\n';
+    else cout << ans << '\n';
+
+    return 0;
+}
