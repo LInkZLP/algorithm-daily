@@ -1,0 +1,69 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		int n;
+		int k;
+		cin>>n>>k;
+		if(k == n-1)
+		{
+			cout<<-1<<endl;
+			continue;
+		}
+		if(k == 0)
+		{
+			int od = 1;
+			for(int i = 1;i<=n;i++)
+			{
+				if(od)
+				{
+					cout<<"1";
+					od ^= 1;
+				}
+				else
+				{
+					cout<<"0";
+					od ^= 1;
+				}
+			}
+			cout<<endl;
+			continue;
+		}
+		string s1 = "";
+		string s2 = "";
+		int r1 = k / 2;
+		for(int i = 0;i<=r1;i++)
+		{
+			s1 += "1";
+		}
+		for(int i = 0;i<=k-r1;i++)
+		{
+			s2+="0";
+		}
+		int sot = n - s1.size() - s2.size();
+		int nd = 1;
+		string ans = s1+s2;
+		while(sot)
+		{
+			if(nd)
+			{
+				nd ^= 1;
+				ans = ans + "1";
+			}
+			else
+			{
+				nd ^= 1;
+				ans = ans+"0";
+			}
+			sot-=1;
+		}
+		cout<<ans<<endl;
+	}
+	
+	return 0;
+}
