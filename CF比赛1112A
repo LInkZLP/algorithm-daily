@@ -1,0 +1,53 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		int n;
+		cin>>n;
+		vector<long long>v(n+5);
+		for(int i = 1;i<=n;i++)
+		{
+			cin>>v[i];
+		}
+		if(n == 1 || n % 2 != 0)
+		{
+			cout<<"no"<<endl;
+			continue;
+		}
+		long long r = 0;
+		long long l = 0;
+		bool ok = true;
+		for(int i = 2;i<=n;i+=2)
+		{
+			cout<<v[i]<<" "<<v[i-1]<<endl;
+			if(v[i] < v[i-1] && v[i-1] - v[i] > 1)
+			{
+				r = max(r,v[i-1]);
+				l = max(l,v[i]);
+			}
+			else
+			{
+				//cout<<"ppp"<<endl;
+				ok = false;
+				break;
+			}
+		}
+		cout<<r<<" "<<l<<endl;
+		if(ok && r > l)
+		{
+			cout<<"yes"<<endl;
+		}
+		else
+		{
+			//cout<<"ppp"<<endl;
+			cout<<"no"<<endl;
+		}
+	}
+	
+	return 0;
+}
