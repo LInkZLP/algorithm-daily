@@ -1,0 +1,157 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 1e5+5;
+int n;
+int m;
+vector<vector<int>>v(maxn);
+vector<int>scc_id(maxn);
+vector<int>jd(maxn);
+int timer = 0;
+int scc_cnt = 0;
+vector<vector<int>>scc(maxn);
+vector<vector<int>>rscc(maxn);
+vector<bool>instk(maxn);
+vector<int>low(maxn);
+vector<int>dfn(maxn);
+stack<int>stk;
+vector<int>va(maxn);
+vector<vector<int>>dp(maxn,vector<int>(3,0));
+#define pli pair<int,int>
+void tarjan(int u)
+{
+	timer++;
+	instk[u] = true;
+	stk.push(u);
+	low[u] = timer;
+	dfn[u] = timer;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(!dfn[nxt])
+		{
+			tarjan(nxt);
+			low[u] = min(low[u],low[nxt]);
+		}
+		else if(instk[nxt])
+		{
+			low[u] = min(low[u],dfn[nxt]);
+		}
+	}
+	if(low[u] == dfn[u])
+	{
+		scc_cnt++;
+		int nxt;
+		do{
+			nxt = stk.top();
+			stk.pop();
+			instk[nxt] = false;
+			scc_id[nxt] = scc_cnt;
+			va[scc_cnt]++;
+		}while(nxt != u);
+	}
+}
+void work(int sta)
+{
+	dp[sta][0] = va[sta];
+	queue<pli>pq;
+	pq.push({va[sta],sta*2+1});
+	while(!pq.empty())
+	{
+		pli r = pq.front();
+		pq.pop();
+		int u = r.second / 2;
+		int k = r.second % 2;
+		if(k == 1)
+		{
+			for(int i = 0;i<scc[u].size();i++)
+			{
+				int nxt = scc[u][i];
+				
+				if(dp[nxt][0] < dp[u][0] + va[nxt])
+				{
+					dp[nxt][0] = dp[u][0] + va[nxt];
+					pq.push({dp[nxt][0],nxt *2+1 });
+				}
+			}
+			for(int i = 0;i<rscc[u].size();i++)
+			{
+				int nxt = rscc[u][i];
+				if(nxt == sta)
+				{
+					if(dp[nxt][1] < dp[u][0])
+					{
+						dp[nxt][1] = dp[u][0];
+                        pq.push({dp[u][0], nxt * 2});
+					}
+				}
+				else if(dp[nxt][1] < dp[u][0] + va[nxt])
+				{
+					dp[nxt][1] = dp[u][0] + va[nxt];
+					pq.push({dp[nxt][1],nxt *2+0 });
+				}
+			}
+		}
+		else
+		{
+			for(int i = 0;i<scc[u].size();i++)
+			{
+				int nxt = scc[u][i];
+				int val = (nxt == sta) ? 0 : va[nxt];
+				if(dp[nxt][1] < dp[u][1] + val)
+				{
+					dp[nxt][1] = dp[u][1] + val;
+					pq.push({dp[nxt][1],nxt *2 });
+				}
+			}
+		}
+	}
+	return;
+}
+int main()
+{
+	cin>>n>>m;	
+	while(m--)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back(y);
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		if(!dfn[i])
+		{
+			tarjan(i);
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		//cout<<scc_id[i]<<endl;
+		for(int j =0;j<v[i].size();j++)
+		{
+			int u = scc_id[i];
+			int nxt = scc_id[v[i][j]];
+			if(u != nxt)
+			{
+				scc[u].push_back(nxt);
+				rscc[nxt].push_back(u);
+			//	jd[nxt]++;
+			}
+		}
+	}
+	for(int i = 1;i<=scc_cnt;i++)
+	{
+		sort(scc[i].begin(),scc[i].end());
+		scc[i].erase(unique(scc[i].begin(),scc[i].end()),scc[i].end());
+	}
+	for(int i = 1;i<=scc_cnt;i++)
+	{
+		sort(rscc[i].begin(),rscc[i].end());
+		rscc[i].erase(unique(rscc[i].begin(),rscc[i].end()),rscc[i].end());
+	}
+	int sta = scc_id[1];
+	work(sta);
+	int ans = 0;
+	cout<<max(dp[sta][0],dp[sta][1])<<endl;
+	return 0;
+}
