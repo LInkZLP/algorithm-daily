@@ -1,0 +1,181 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+const int maxn = 1e5 + 5;
+int n, m;
+
+// 原图邻接表
+vector<vector<int>> v(maxn);
+
+// ---------- Tarjan 缩点所需 ----------
+int timer = 0, scc_cnt = 0;
+vector<int> dfn(maxn), low(maxn), scc_id(maxn);
+vector<bool> instk(maxn);
+stack<int> stk;
+
+// ---------- 缩点后的 DAG ----------
+// scc[u]  : 从 u 出发能直接到达的 SCC 集合（正向边）
+// rscc[u] : 能直接到达 u 的 SCC 集合（反向边，即前驱）
+// ★ rscc 是必不可少的！原因详见下方注释。
+vector<vector<int>> scc(maxn), rscc(maxn);
+
+// va[i] 表示第 i 个 SCC 的权值（本题每个原始节点权值为1）
+vector<int> va(maxn);
+
+// dp[i][0] : 未使用反向边，到达 i 的最大权值和
+// dp[i][1] : 已经使用过一次反向边，到达 i 的最大权值和
+vector<vector<int>> dp(maxn, vector<int>(3, 0));
+
+#define pli pair<int, int>   // <权值, 编码>，编码奇偶表示状态
+
+// ---------- Tarjan 求强连通分量 ----------
+void tarjan(int u) {
+    dfn[u] = low[u] = ++timer;
+    instk[u] = true;
+    stk.push(u);
+    for (int nxt : v[u]) {
+        if (!dfn[nxt]) {
+            tarjan(nxt);
+            low[u] = min(low[u], low[nxt]);
+        } else if (instk[nxt]) {
+            low[u] = min(low[u], dfn[nxt]);
+        }
+    }
+    if (low[u] == dfn[u]) {
+        ++scc_cnt;
+        int x;
+        do {
+            x = stk.top(); stk.pop();
+            instk[x] = false;
+            scc_id[x] = scc_cnt;
+            va[scc_cnt]++;          // 每个原始节点权值为 1
+        } while (x != u);
+    }
+}
+
+// ---------- DP 计算最长路（允许一次逆向）----------
+void work(int sta) {
+    // sta 是节点 1 所属的 SCC 编号
+    dp[sta][0] = va[sta];           // 起点分量权值
+    queue<pli> pq;
+    pq.push({va[sta], sta * 2 + 1}); // 编码：奇数 → 状态0（未使用反向边）
+
+    while (!pq.empty()) {
+        pli r = pq.front(); pq.pop();
+        int u = r.second / 2;        // 当前 SCC 编号
+        int state = r.second % 2;    // 1=未使用反向边, 0=已使用
+
+        if (state == 1) {
+            // ---- 状态0：尚未使用反向边 ----
+
+            // 1) 走正向边，状态仍为0
+            for (int nxt : scc[u]) {
+                int val = dp[u][0] + va[nxt];
+                if (dp[nxt][0] < val) {
+                    dp[nxt][0] = val;
+                    pq.push({val, nxt * 2 + 1});
+                }
+            }
+
+            // 2) ★ 走一次反向边：从 u 沿入边逆向走到其前驱 nxt
+            //    状态变为1（已使用反向边）
+            //    ★ 这里必须遍历 rscc[u]（前驱集合），因为只有前驱才对应原图中
+            //       指向 u 的边，沿这些边反向走才是合法的“逆向通过一条道路”。
+            //    ★ 如果我们没有 rscc，就无法快速得到 u 的所有前驱，
+            //       也就无法执行逆向跳转，从而会漏掉许多可能访问到的节点。
+            for (int nxt : rscc[u]) {
+                if (nxt == sta) {
+                    // 如果反向边直接回到起点，则回到起点时不应再累加 va[sta]
+                    // 因为 dp[u][0] 中已经包含了起点权值
+                    if (dp[nxt][1] < dp[u][0]) {
+                        dp[nxt][1] = dp[u][0];
+                        pq.push({dp[u][0], nxt * 2});   // 偶数 → 状态1
+                    }
+                } else {
+                    // 走到其他前驱，正常累加权值
+                    int val = dp[u][0] + va[nxt];
+                    if (dp[nxt][1] < val) {
+                        dp[nxt][1] = val;
+                        pq.push({val, nxt * 2});
+                    }
+                }
+            }
+
+            /* ---------- 为什么必须用 rscc，而不能省略？ ----------
+             * 错误思路：试图仅通过 scc[u]（正向边）来模拟反向边。
+             * 例如，在遍历 scc[u] 时对每个后继 nxt 执行：
+             *     dp[u][1] = max(dp[u][1], dp[nxt][0] + va[u])
+             * 这相当于“先走到 nxt，再沿同一条边跳回 u”，
+             * 但这是非法的，因为：
+             *   1. 原图中不一定存在 nxt → u 的边（反向边不一定存在）。
+             *   2. 即使存在，这也是一条不同的边，而且您实际上走了两条边
+             *      （正向+反向），而题目只允许最多一条逆向边。
+             *   3. 最重要的是，这种“跳回”只能访问那些已经是 u 的后继的节点，
+             *      而无法访问那些只有入边、没有出边的前驱节点。
+             *      例如原图有边 5→4，您若在 4 处想逆向走到 5，
+             *      但 5 不在 scc[4] 中（因为 scc[4] 存的是后继），
+             *      因此您永远无法从 4 到达 5，导致漏解。
+             * 反例：1→2→3→4，5→4，5→1  （起点1）
+             *   正确可访问 {1,2,3,4,5} 共5个点；
+             *   但若没有 rscc，您在 4 处找不到前驱 5，最多访问 {1,2,3,4}。
+             * 结论：必须显式存储前驱集合 rscc，才能正确实现“逆向走一次”的操作。
+             * ------------------------------------------------------------- */
+        } else {
+            // ---- 状态1：已经使用过反向边 ----
+            // 只能继续走正向边，状态保持为1
+            for (int nxt : scc[u]) {
+                // 如果回到起点，不再累加 va[sta]（起点权值早已计入）
+                int val = dp[u][1] + (nxt == sta ? 0 : va[nxt]);
+                if (dp[nxt][1] < val) {
+                    dp[nxt][1] = val;
+                    pq.push({val, nxt * 2});
+                }
+            }
+        }
+    }
+}
+
+// ---------- 主函数 ----------
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(0);
+
+    cin >> n >> m;
+    while (m--) {
+        int x, y;
+        cin >> x >> y;
+        v[x].push_back(y);
+    }
+
+    // 1. Tarjan 缩点
+    for (int i = 1; i <= n; i++)
+        if (!dfn[i]) tarjan(i);
+
+    // 2. 建缩点后的 DAG
+    //    正向边 scc[u] 和反向边 rscc[nxt] 同时构建。
+    //    ★ rscc 存储的是每个节点的前驱，是逆向走边的唯一信息来源。
+    for (int i = 1; i <= n; i++) {
+        for (int j : v[i]) {
+            int u = scc_id[i], nxt = scc_id[j];
+            if (u != nxt) {
+                scc[u].push_back(nxt);
+                rscc[nxt].push_back(u);   // 原图有 u→nxt，则 nxt 的前驱是 u
+            }
+        }
+    }
+
+    // 去重，避免重复边影响
+    for (int i = 1; i <= scc_cnt; i++) {
+        sort(scc[i].begin(), scc[i].end());
+        scc[i].erase(unique(scc[i].begin(), scc[i].end()), scc[i].end());
+        sort(rscc[i].begin(), rscc[i].end());
+        rscc[i].erase(unique(rscc[i].begin(), rscc[i].end()), rscc[i].end());
+    }
+
+    int sta = scc_id[1];   // 起点所在 SCC 编号
+    work(sta);
+
+    // 最终答案必须是回到起点 SCC 的状态（0 或 1）
+    cout << max(dp[sta][0], dp[sta][1]) << '\n';
+    return 0;
+}
