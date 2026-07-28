@@ -1,0 +1,19 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int main()
+{
+	int n;
+	int cnt =0 ;
+	int h  = 1;
+	cin>>n;
+	cout<<(int)log2(n) + 1<<endl;
+	//对于前面和为sum,增加x,我们希望范围尽可能大同时也要满足条件
+	//可以表示x + 1,x+2...x+sum 
+	//最大可表示为x + sum,同时为了连续，x <= sum + 1来补上 
+	//也就是我们最大能表示2*sum + 1
+	//sum= 1是，n = 1
+	//我们可以得到1,2,4,8,16...
+	//也就是求等比数列的多少项的和 
+	return 0;
+}
