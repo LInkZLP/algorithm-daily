@@ -1,0 +1,30 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int main()
+{
+	int n;
+	int m;
+	cin>>n>>m;
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;	
+	}
+	int od = 0;
+	//假设取 l ,r 对数函数知道l,r里面的数量差为1,0最优，则交替最优 
+	while(n--)
+	{
+		if(od&1)
+		{
+			cout<<"1";
+		}
+		else
+		{
+			cout<<"0";
+		}
+		od ^= 1;
+	}
+	return 0;
+ } 
