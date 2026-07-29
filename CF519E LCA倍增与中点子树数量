@@ -1,0 +1,136 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 1e5+5;
+const int LOG = 23;
+vector<vector<int>>up(maxn,vector<int>(LOG,0));
+vector<int>dep(maxn);
+vector<int>sz(maxn);
+vector<vector<int>>v(maxn);
+int n;
+int m;
+void dfs(int u,int p)
+{
+	up[u][0] = p;
+	sz[u] = 1;
+	for(int i = 1;i<LOG;i++)
+	{
+		up[u][i] = up[up[u][i-1]][i-1];
+	}
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(nxt == p)
+		{
+			continue;
+		}
+		dep[nxt] = dep[u] + 1;
+		dfs(nxt,u);
+		sz[u] += sz[nxt];
+		
+	}
+	return;
+}
+int lca(int a,int b)
+{
+	if(dep[a] < dep[b])
+	{
+		swap(a,b);
+	}
+	int dh = dep[a] - dep[b];
+	for(int i = LOG-1;i>=0;i--)
+	{
+		if(dh & (1<<i))
+		{
+			a = up[a][i];
+		}
+	}
+	if(a == b)
+	{
+		return a;
+	}
+	for(int i = LOG-1;i>=0;i--)
+	{
+		if(up[a][i] != up[b][i])
+		{
+			a = up[a][i];
+			b = up[b][i];
+		}
+	}
+	return up[a][0]; 
+}
+int jump(int u,int k)
+{
+	for(int i = 0;i<LOG;i++)
+	{
+		if(k&(1<<i))
+		{
+			u = up[u][i];
+		}
+	}
+	return u;
+}
+int work(int u,int s,int r)
+{
+	return dep[u] + dep[s] - dep[r] * 2;
+}
+int bra(int mid,int node)//以 mid 为根，node 所在分支的节点个数。
+{
+	if(mid == node)
+	{
+		return 0;
+	}
+	if(dep[node] > dep[mid] && jump(node,dep[node] - dep[mid] ) == mid)
+	{
+		int son = jump(node,dep[node] - dep[mid] - 1);
+		return sz[son];
+	}
+	else
+	{
+		return n - sz[mid];
+	}
+}
+int main()
+{
+	cin>>n;
+	for(int i = 1;i<=n-1;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back(y);
+		v[y].push_back(x);
+	}
+	cin>>m;
+	dfs(1,1);
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		int r = lca(x,y);
+		int h = work(x,y,r);
+		if(h& 1)
+		{
+			cout<<0<<endl;
+		}
+		else
+		{
+			int ans =0;
+			int ha = h / 2;
+			int mid = 0;
+			if(dep[x] - dep[r] >= ha)
+			{
+				mid = jump(x,ha);
+			}
+			else
+			{
+				mid = jump(y,ha);
+			}
+			int bx = bra(mid,x);
+			int by = bra(mid,y);
+			ans = n - bx - by;
+			cout<<ans<<endl;
+		}
+	}
+	return 0;
+}
