@@ -1,0 +1,48 @@
+#include <bits/stdc++.h>
+using namespace std;
+long long n;
+long long m;
+const int maxn = 1e6+5;
+vector<int>fa(maxn);
+vector<int>ans(maxn);
+vector<int>v(maxn);
+long long p;
+long long q;
+int find(int x)
+{
+	if(x == fa[x])
+	{
+		return x;
+	}
+	return fa[x]  =find(fa[x]);
+}
+
+int  main()
+{
+	cin>>n>>m>>p>>q;
+	for(int i = 1;i<=n+1;i++)
+	{
+		fa[i] = i;
+	}
+	for(long long i = m;i>=1;i--)
+	{
+		long long l;
+		long long r;
+		long long x;
+		l = (i*p + q) % n + 1; 
+		r = (i*q + p) % n + 1;
+		if (l > r) swap(l, r);
+		int k = find(l);
+		while(k<=r)
+		{
+			ans[k] = i;
+			fa[k] = find(k+1);
+			k = find(k+1);
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		cout<<ans[i]<<"\n";
+	}
+	return 0;
+}
