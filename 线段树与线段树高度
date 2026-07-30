@@ -1,0 +1,121 @@
+#include  <bits/stdc++.h>
+using namespace std;
+const int maxn = 1<<17;
+vector<int>v(maxn);
+int n;
+int m;
+vector<int>sum(maxn<<2);
+int ptr = 0;//1为 | 
+void up1(int i)
+{
+	sum[i] = sum[i<<1] ^ sum[i<<1|1];
+}
+void up2(int i)
+{
+	sum[i] = sum[i<<1] | sum[i<<1|1];
+}
+void build(int l,int r,int i)
+{
+	if(l == r)
+	{
+		sum[i] = v[l];
+		return;
+	}
+	int mid = (l + r)>>1;
+	build(l,mid,i<<1);
+	build(mid+1,r,i<<1|1);
+	int h = (int)log2(i);
+	if(ptr & 1)
+	{
+		if(h & 1)
+		{
+			up2(i);
+		}
+		else
+		{
+			up1(i);
+		}
+	}
+	else
+	{
+		if(h & 1)
+		{
+			up1(i);
+		}
+		else
+		{
+			up2(i);
+		}
+	}
+	
+	return;
+}
+void change(int l,int r,int i,int jobl,int jobr,int jobv)
+{
+	if(l >= jobl && r <=jobr)
+	{
+		sum[i] = jobv;
+		return;	
+	}
+	int mid = (l + r)>>1;
+	if(mid >= jobl)
+	{
+		change(l,mid,i<<1,jobl,jobr,jobv);
+	}
+	else
+	{
+		change(mid+1,r,i<<1|1,jobl,jobr,jobv);
+	}
+	int h = (int)log2(i);
+	if(ptr & 1)
+	{
+		if(h & 1)
+		{
+			up2(i);
+		}
+		else
+		{
+			up1(i);
+		}
+	}
+	else
+	{
+		if(h & 1)
+		{
+			up1(i);
+		}
+		else
+		{
+			up2(i);
+		}
+	}
+	return;
+}
+int main()
+{
+	cin>>n>>m;
+	int len = 1<<n;
+	if(n & 1) // n是奇数，偶数层开始| 
+	{
+		ptr = 0;
+	}
+	else
+	{
+		ptr = 1;
+	}
+	for(int i = 1;i<=len;i++)
+	{
+		cin>>v[i];
+	}
+	build(1,len,1);
+	//cout<<sum[1]<<endl;
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		change(1,len,1,x,x,y);
+		cout<<sum[1]<<endl;
+	}
+	return 0;
+}
