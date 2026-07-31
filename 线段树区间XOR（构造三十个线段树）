@@ -1,0 +1,133 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+const int maxn = 1e5+5;
+int m;
+vector<vector<int>>v(35,vector<int>(maxn,0));
+vector<vector<int>>sum(35,vector<int>(maxn<<2));
+vector<vector<int>>add(35,vector<int>(maxn<<2));
+void up(int i,int idx)
+{
+	sum[idx][i] = sum[idx][i<<1] + sum[idx][i<<1|1];
+	return;
+}
+void build(int l,int r,int i,int idx)
+{
+	if(l ==r )
+	{
+		sum[idx][i] = v[idx][l];
+		return;
+	}
+	int mid = (l + r)>>1;
+	build(l,mid,i<<1,idx);
+	build(mid+1,r,i<<1|1,idx);
+	up(i,idx);
+	return;
+ } 
+void down(int i,int idx,int ln,int rn)
+{
+	if(add[idx][i] &1)
+	{
+		add[idx][i<<1]++;
+		add[idx][i<<1|1] ++;
+		sum[idx][i<<1] = ln - sum[idx][i<<1];
+		sum[idx][i<<1|1] = rn - sum[idx][i<<1|1];
+		add[idx][i] = 0;
+	}
+	return;
+}
+void change(int l,int r,int i,int idx,int jobl,int jobr)
+{
+	if(l>=jobl && r <= jobr)
+	{
+		sum[idx][i] = (r - l + 1) - sum[idx][i];
+		add[idx][i]++;
+		return;
+	}
+	int mid = (l + r)>>1;
+	down(i,idx,mid - l + 1,r - mid);
+	if(mid >= jobl)
+	{
+		change(l,mid,i<<1,idx,jobl,jobr);
+	}
+	if(mid + 1 <=jobr)
+	{
+		change(mid+1,r,i<<1|1,idx,jobl,jobr);
+	}
+	up(i,idx);
+	return;
+}
+long long query(int l,int r,int i,int idx,int jobl,int jobr)
+{
+	if(l>=jobl && r <= jobr)
+	{
+		return sum[idx][i];
+	}
+	long long ans = 0;
+	int mid = (l+r)>>1;
+	down(i,idx,mid - l + 1,r - mid);
+	if(mid>=jobl)
+	{
+		ans+=query(l,mid,i<<1,idx,jobl,jobr);
+	}
+	if(mid+1<=jobr)
+	{
+		ans+=query(mid+1,r,i<<1|1,idx,jobl,jobr);
+	}
+	return ans;
+}
+int main()
+{
+	cin>>n;
+	for(int i = 1;i<=n;i++)
+	{
+		int x;
+		cin>>x;
+		for(int j = 0;j<=30;j++)
+		{
+			if(x & (1<<j))
+			{
+				v[j][i] = 1;
+			}
+		}
+	}
+	for(int i = 0;i<=30;i++)
+	{
+		build(1,n,1,i);
+	}
+	cin>>m;
+	while(m--)
+	{
+		int op;
+		cin>>op;
+		if(op == 1)
+		{
+			long long res = 0;
+			long long sta = 1;
+			int x;
+			int y;
+			cin>>x>>y;
+			for(int i = 0;i<=30;i++)
+			{
+				res += query(1,n,1,i,x,y) * sta;
+				sta*=2;
+			}
+			cout<<res<<"\n";
+		}
+		else
+		{
+			int x;
+			int y;
+			long long tar;
+			cin>>x>>y>>tar;
+			for(int i = 0;i<30;i++)
+			{
+				if(tar & (1<<i))
+				{
+					change(1,n,1,i,x,y);
+				}
+			}
+		}
+	}
+	return 0;
+}
