@@ -1,0 +1,139 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+const int maxn = 2e5+5;
+vector<long long>mx(maxn<<2,LLONG_MIN);
+vector<long long>dp(maxn);
+vector<long long>add(maxn<<2);
+vector<long long>sum(maxn);
+long long INF = LLONG_MIN;
+struct st{
+	int l;
+	long long p;
+};
+vector<vector<st>>so(maxn);
+void up(int i)
+{
+	mx[i] = max(mx[i<<1],mx[i<<1|1]);
+}
+struct lr{
+	int l;
+	int r;
+	long long p;
+};
+void down(int i)
+{
+	if(add[i] != 0)
+	{
+		long long t = add[i];
+		add[i] = 0;
+		add[i<<1|1] += t;
+		add[i<<1] += t;
+		mx[i<<1] += t;
+		mx[i<<1|1]+=t;
+	}
+}
+void change(int l,int r,int i,int jobl,int jobr,long long jobv)
+{
+	if(l >= jobl && r <=jobr)
+	{
+		mx[i] += jobv;
+		add[i] += jobv;
+		return;
+	}
+	int mid = (l + r)>>1;
+	down(i);
+	if(mid >= jobl)
+	{
+		change(l,mid,i<<1,jobl,jobr,jobv);
+	}
+	if(mid + 1 <=jobr)
+	{
+		change(mid+1,r,i<<1|1,jobl,jobr,jobv);
+	}
+	up(i);
+}
+void change2(int l,int r,int i,int jobl,int jobr,long long jobv)
+{
+	if(l >= jobl && r <=jobr)
+	{
+		mx[i] = jobv;
+		add[i] =0;
+		return;
+	}
+	int mid = (l + r)>>1;
+	down(i);
+	if(mid >= jobl)
+	{
+		change2(l,mid,i<<1,jobl,jobr,jobv);
+	}
+	if(mid + 1 <=jobr)
+	{
+		change2(mid+1,r,i<<1|1,jobl,jobr,jobv);
+	}
+	up(i);
+}
+long long query(int l,int r,int i,int jobl,int jobr)
+{
+	if(l >= jobl && r <=jobr)
+	{
+		return mx[i];
+	}
+	int mid = (l + r)>>1;
+	down(i);
+	long long ans = LLONG_MIN;
+	if(mid >= jobl)
+	{
+		ans = max(ans,query(l,mid,i<<1,jobl,jobr) );
+	}
+	if(mid + 1 <=jobr)
+	{
+		ans = max(ans,query(mid+1,r,i<<1|1,jobl,jobr));
+	}
+	up(i);
+	return ans;
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+    cin.tie(0);
+	cin>>n>>m;
+	for(int i = 1;i<=n;i++)
+	{
+		long long x;
+		cin>>x;
+		sum[i]  =sum[i-1] + x;
+	}
+	for(int i = 1;i<=m;i++)
+	{
+		int l;
+		int r;
+		long long p;
+		cin>>l>>r>>p;
+		so[r].push_back({l,p});
+	}
+	change2(1,n,1,1,1,0);
+	dp[0] = 0;
+	for(int i = 1;i<=n;i++)
+	{
+		if(so[i].size() != 0)
+		{
+			for(int j = 0;j<so[i].size();j++)
+			{
+				int l =  so[i][j].l;
+				long long w = so[i][j].p;
+				change(1,n,1,1,l,w);
+			}
+		}
+		long long tr = query(1,n,1,1,i);
+		dp[i] = max(dp[i-1],tr - sum[i]);
+		if(i + 1<=n)
+		{
+			long long val = dp[i] + sum[i];
+			change2(1,n,1,i+1,i+1,val);
+		}
+	}
+	cout<<max(dp[n],0LL);
+	return 0;
+}
