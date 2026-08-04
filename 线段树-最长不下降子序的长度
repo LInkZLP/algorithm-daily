@@ -1,0 +1,102 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 1e6+5;
+int n;
+int m;
+vector<long long>cnt1(maxn<<2);
+vector<long long>cnt0(maxn<<2);
+vector<long long>lds(maxn<<2);
+vector<long long>lis(maxn<<2);
+vector<long long>add(maxn<<2);
+vector<long long>v(maxn<<2);
+void up(int i)
+{
+	cnt0[i] = cnt0[i<<1] + cnt0[i<<1|1];
+	cnt1[i] = cnt1[i<<1]+ cnt1[i<<1|1];
+	lds[i] = max(lds[i<<1],max(lds[i<<1|1],max(cnt0[i<<1] + lds[i<<1|1],lds[i<<1] + cnt1[i<<1|1])));
+	lis[i] = max(lis[i<<1|1],max(lis[i<<1],max(cnt1[i<<1] + lis[i<<1|1],cnt0[i<<1|1]+lis[i<<1])));
+	return;
+}
+void down(int i)
+{
+	if(add[i] & 1)
+	{
+		swap(lds[i<<1],lis[i<<1]);
+		swap(lds[i<<1|1],lis[i<<1|1]);
+		swap(cnt1[i<<1],cnt0[i<<1]);
+		swap(cnt0[i<<1|1],cnt1[i<<1|1]);
+		add[i<<1]++;
+		add[i<<1|1]++;
+		add[i] = 0;
+	}
+	return;
+}
+void build(int l,int r,int i)
+{
+	if(l == r)
+	{
+		lds[i] = 1;
+		lis[i] = 1;
+		cnt1[i] = (v[l] == 0) ? 0 : 1;
+		cnt0[i] = (v[l] == 0) ? 1 : 0;
+		return;
+	}
+	int mid = (l + r)>>1;
+	build(l,mid,i<<1);
+	build(mid+1,r,i<<1|1);
+	up(i);
+	return;
+}
+void change(int l,int r,int i,int jobl,int jobr)
+{
+	if(l>=jobl && r <=jobr)
+	{
+		swap(lds[i],lis[i]);
+		swap(cnt1[i],cnt0[i]);
+		add[i]++;
+		return;
+	}
+	int mid = (l + r)>>1;
+	down(i);
+	if(mid >= jobl)
+	{
+		change(l,mid,i<<1,jobl,jobr);
+	}
+	if(mid + 1<=jobr)
+	{
+		change(mid+1,r,i<<1|1,jobl,jobr);
+	}
+	up(i);
+	return;
+}
+
+int main()
+{
+	ios::sync_with_stdio(false);
+    cin.tie(0);
+	cin>>n>>m;
+	string s;
+	cin>>s;
+	for(int i = 0;i<s.size();i++)
+	{
+		v[i+1] = (s[i] == '4') ? 0 : 1;
+	}
+	build(1,n,1);
+	while(m--)
+	{
+		string s;
+		cin>>s;
+		if(s == "count")
+		{
+			cout<<lds[1]<<'\n';
+		}
+		else
+		{
+			int x;
+			int y;
+			cin>>x>>y;
+			change(1,n,1,x,y);
+		}
+	}
+	return 0;
+}
