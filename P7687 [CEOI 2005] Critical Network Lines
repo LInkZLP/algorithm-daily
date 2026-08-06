@@ -1,0 +1,100 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int k;
+int l;
+const int maxn = 1e5+5;
+struct st{
+	int nxt;
+	int id;
+};
+vector<int>acnt(maxn);
+vector<int>bcnt(maxn);
+vector<bool>cutedge(2e6+5);
+vector<vector<st>>v(maxn);
+vector<int>low(maxn);
+vector<int>dfn(maxn);
+int cutcnt = 0;
+int timer = 0;
+vector<int>ans1(2e6+5);
+vector<int>ans2(2e6+5);
+void tarjan(int u,int pu)
+{
+	timer++;
+	low[u] = timer;
+	dfn[u] = timer;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i].nxt;
+		int id = v[u][i].id;
+		if((id ^ 1) == pu)
+		{
+			continue;
+		}
+		if(!dfn[nxt])
+		{
+			tarjan(nxt,id);
+			low[u] = min(low[u],low[nxt]);
+			acnt[u] += acnt[nxt];
+			bcnt[u] += bcnt[nxt];
+			if(low[nxt] > dfn[u])
+			{
+				if(acnt[nxt] == 0 || acnt[nxt] == k || bcnt[nxt] == 0 || bcnt[nxt] == l)
+				{
+					cutcnt++;
+					cutedge[id>>1] = true;
+					ans1[cutcnt] = nxt;
+					ans2[cutcnt] = u;
+				}
+			}
+		}
+		else
+		{
+			low[u] = min(low[u],dfn[nxt]);
+		}
+	}
+	
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+	cin>>n>>m>>k>>l;
+	for(int i = 1;i<=k;i++)
+	{
+		int x;
+		cin>>x;
+		acnt[x] = 1;
+	}
+	for(int i = 1;i<=l;i++)
+	{
+		int x;
+		cin>>x;
+		bcnt[x] = 1;
+	}
+	int cnt = 2;
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back({y,cnt});
+		cnt++;
+		v[y].push_back({x,cnt});
+		cnt++;
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		if(!dfn[i])
+		{
+			tarjan(i,0);
+		}
+	}
+	cout<<cutcnt<<endl;
+	for(int i = 1;i<=cutcnt;i++)
+	{
+		cout<<ans1[i]<<" "<<ans2[i]<<endl;
+	}
+	return 0;
+}
