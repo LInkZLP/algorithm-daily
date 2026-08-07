@@ -1,0 +1,237 @@
+#include <iostream>
+#include <vector>
+#include <stack>
+#include <algorithm>
+using namespace std;
+int timer = 0;
+int n;
+int m;
+const int maxn = 1e5+5;
+const int LOG = 23;
+int ebc_cnt = 0;
+struct st{
+	int nxt;
+	int id;
+};
+vector<int>ebc_id(maxn<<2);
+vector<vector<int>>ebc(maxn<<2);
+vector<int>ebc_va(maxn);
+vector<int>dfn(maxn);
+vector<int>low(maxn);
+vector<vector<st>>v(maxn);
+stack<int>stk;
+vector<bool>cutedge(maxn<<2);
+int cut_cnt = 0;
+vector<int>fa(maxn);
+vector<int>dep(maxn);
+vector<vector<int>>up(maxn,vector<int>(LOG,0));
+void Initial(int n)
+{
+	for(int i = 1;i<=n;i++)
+	{
+		fa[i] = i;
+	}
+	return;
+}
+int find(int x)
+{
+	if(x == fa[x])
+	{
+		return x;
+	}
+	return fa[x] = find(fa[x]);
+}
+void Union(int x,int y)
+{
+	int r1 = find(x);
+	int r2 = find(y);
+	fa[r1] = r2;
+	return;
+}
+void dfs(int u,int p)
+{
+	up[u][0] = p;
+	for(int i = 1;i<LOG;i++)
+	{
+		up[u][i] = up[up[u][i-1]][i-1];
+	}
+	for(int i = 0;i<ebc[u].size();i++)
+	{
+		int nxt = ebc[u][i];
+		if(nxt != p)
+		{
+			dep[nxt] = dep[u] + 1;
+			dfs(nxt,u);
+		}
+	}
+	return;
+}
+int lca(int a,int b)
+{
+	if(dep[a] < dep[b])
+	{
+		swap(a,b);
+	}
+//	Union(a,b);
+	int dh = dep[a] - dep[b];
+	for(int i = LOG-1;i>=0;i--)
+	{
+		if(dh & ( 1<<i))
+		{
+		//	Union(a,up[a][i]);
+			a = up[a][i];
+		}
+	}
+	if(a == b)
+	{
+		return a;
+	}
+	for(int i = LOG-1;i>=0;i--)
+	{
+		if(up[a][i] != up[b][i])
+		{
+		//	Union(a,up[a][i]);
+		//	Union(b,up[b][i]);
+		//	Union(a,b);
+			a = up[a][i];
+			b = up[b][i];
+		}
+	}
+	return up[a][0];
+}
+
+void tarjan(int u,int pu)
+{
+	timer ++;
+	low[u] = dfn[u] = timer;
+	stk.push(u);
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i].nxt;
+		int id = v[u][i].id;
+		if((id ^ 1) == pu)
+		{
+			continue;
+		}
+		if(!dfn[nxt])
+		{
+			tarjan(nxt,id);
+			low[u] = min(low[u],low[nxt]);
+			if(low[nxt] > dfn[u])
+			{
+				cutedge[id>>1] = true;
+				cut_cnt++;
+			}
+		}
+		else
+		{
+			low[u] = min(low[u],dfn[nxt]);
+		}
+	}
+	if(low[u] == dfn[u])
+	{
+		int nxt;
+		ebc_cnt++;
+		do{
+			nxt = stk.top();
+		//	Union(nxt,u);
+			stk.pop();
+			ebc_id[nxt] = ebc_cnt;
+			ebc_va[ebc_cnt] ++;
+		}while(nxt != u);
+	}
+	return;
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+	cin>>n>>m;
+	int cnt = 2;
+	Initial(n);
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back({y,cnt});
+		cnt++;
+		v[y].push_back({x,cnt});
+		cnt++;
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		if(!dfn[i])
+		{
+			tarjan(i,0);
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 0;j<v[i].size();j++)
+		{
+			int u = ebc_id[i];
+			int nxt = ebc_id[v[i][j].nxt];
+			if(u != nxt)
+			{
+				ebc[u].push_back(nxt);
+				ebc[nxt].push_back(u);
+			}
+		}
+	}
+	for(int i = 1;i<=ebc_cnt;i++)
+	{
+		sort(ebc[i].begin(),ebc[i].end());
+		ebc[i].erase(unique(ebc[i].begin(),ebc[i].end()),ebc[i].end());
+	}
+	int q;
+	cin>>q;
+	dfs(1,1);
+	int count = ebc_cnt - 1;
+	while(q--)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		int ex = ebc_id[x];
+		int ey = ebc_id[y];
+		int r = lca(ex,ey);
+		if(ex == ey)
+		{
+			cout<<count<<endl;
+			continue;
+		}
+		while(dep[ex] > dep[r])
+		{
+			int f = find(ex);
+			if(dep[f] <= dep[r])
+			{
+				break;
+			}
+			int p = find(up[f][0]);
+			if(f != p)
+			{
+				count--;
+				Union(f,up[f][0]);
+			}
+			ex = find(ex);
+		}
+		while(dep[ey] > dep[r])
+		{
+			int f = find(ey);
+			if(dep[f] <= dep[r])
+			{
+				break;
+			}
+			int p = find(up[f][0]);
+			if(f != p)
+			{
+				count--;
+				Union(f,up[f][0]);
+			}
+			ey = find(ey);
+		}
+		cout<<count<<'\n';
+	}
+	return 0;
+ } 
