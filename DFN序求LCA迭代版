@@ -1,0 +1,285 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+inline int read() {
+    static char buf[1 << 20], *p1 = buf, *p2 = buf;
+    auto fill = [&]() {
+        p2 = (p1 = buf) + fread(buf, 1, 1 << 20, stdin);
+        return p1 != p2;
+    };
+    if (p1 == p2 && !fill()) return 0;   
+    int x = 0;
+    while (true) {
+        while (p1 != p2 && (*p1 < '0' || *p1 > '9')) ++p1;
+        if (p1 != p2) break;
+        if (!fill()) return 0;
+    }
+    while (true) {
+        while (p1 != p2 && *p1 >= '0' && *p1 <= '9') {
+            x = x * 10 + (*p1++ - '0');
+        }
+        if (p1 != p2) break;
+        if (!fill()) break;
+    }
+    return x;
+}
+
+char out_buf[1 << 20];
+char *out_p = out_buf;
+
+inline void write(long long x) {
+    if (x == 0) {
+        *out_p++ = '0';
+        *out_p++ = '\n';
+        if (out_p - out_buf >= (1 << 20) - 10) {
+            fwrite(out_buf, 1, out_p - out_buf, stdout);
+            out_p = out_buf;
+        }
+        return;
+    }
+    char s[25];
+    int len = 0;
+    while (x) {
+        s[len++] = x % 10 + '0';
+        x /= 10;
+    }
+    while (len--) *out_p++ = s[len];
+    *out_p++ = '\n';
+    if (out_p - out_buf >= (1 << 20) - 10) {
+        fwrite(out_buf, 1, out_p - out_buf, stdout);
+        out_p = out_buf;
+    }
+}
+
+int n;
+int m;
+const int LOG = 23;
+const int maxn = 5e5+5;
+int timer = 0;
+int timer2 = 0;
+int ebc_cnt = 0;
+struct st{
+	int nxt;
+	int id;
+};
+vector<vector<int>>up(maxn,vector<int>(LOG,0));
+vector<vector<st>>v(maxn);
+vector<vector<int>>ebc(maxn);
+vector<int>low(maxn);
+vector<int>dfn(maxn);
+vector<int>out(maxn);
+vector<int>dfn2(maxn);
+vector<int>dep(maxn);
+vector<int>ebc_va(maxn);
+vector<int>ebc_c(maxn);
+vector<int>ebc_id(maxn);
+vector<int>va(maxn);
+vector<int>diff(maxn);
+vector<int>vis(maxn);
+stack<int>stk;
+void tarjan(int u,int pu)
+{
+	timer ++;
+	dfn[u] = timer;
+	low[u] = timer;
+	stk.push(u);
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i].nxt;
+		int id = v[u][i].id;
+		if((id ^ 1) == pu)
+		{
+			continue;
+		}
+		if(!dfn[nxt])
+		{
+			tarjan(nxt,id);
+			low[u] = min(low[u],low[nxt]);
+		}
+		else
+		{
+			low[u] = min(low[u],dfn[nxt]);
+		}
+	}
+	if(low[u] == dfn[u])
+	{
+		ebc_cnt++;
+		int nxt;
+		do{
+			nxt = stk.top();
+			stk.pop();
+			ebc_id[nxt] = ebc_cnt;
+			ebc_c[ebc_cnt] ++;
+			ebc_va[ebc_cnt] += va[nxt];
+		}while(nxt != u);
+	}
+	return ;
+}
+void dfs(int root)
+{
+	dfn2[0] = out[0] = 0;
+	for(int j = 0;j<LOG;j++)
+	{
+		up[0][j] = 0;
+	}
+	up[root][0] = root;
+	dep[root] = 0;
+	stack<pair<int,int>>ss;
+	ss.push({root,0});
+	while(!ss.empty())
+	{
+		int u = ss.top().first;
+		int state = ss.top().second;
+		ss.pop();
+		if(state == 0)
+		{
+			timer2++;
+			dfn2[u] = timer2;
+			for(int j = 1;j<LOG;j++)
+			{
+				up[u][j] = up[up[u][j-1]][j-1];
+			}
+			ss.push({u,1});
+			for(int i = 0;i<ebc[u].size();i++)
+			{
+				int nxt = ebc[u][i];
+				if(nxt == up[u][0])
+				{
+					continue;
+				}
+				dep[nxt] = dep[u] + 1;
+				up[nxt][0] = u;
+				ss.push({nxt,0});
+			}
+		}
+		else
+		{
+			out[u] = timer2;
+		}
+	}
+}
+bool islca(int u,int nxt)
+{
+	return dfn2[u] <= dfn2[nxt] && out[nxt] <= out[u];
+}
+int lca(int u,int nxt)
+{
+	if(islca(u,nxt))
+	{
+		return u;
+	}
+	if(islca(nxt,u))
+	{
+		return nxt;
+	}
+	for(int j = LOG-1;j>=0;j--)
+	{
+		if(!islca(up[u][j],nxt))
+		{
+			u = up[u][j];
+		}
+	}
+	return up[u][0];
+}
+void dfs_sum(int u,int p)
+{
+	vis[u] = 1;
+	for(int i = 0;i<ebc[u].size();i++)
+	{
+		int nxt = ebc[u][i];
+		if(nxt == p)
+		{
+			continue;
+		}
+		dfs_sum(nxt,u);
+		diff[u] += diff[nxt];
+	}
+	return;
+}
+int main()
+{
+	n = read();
+	m = read();
+	for(int i = 1;i<=n;i++)
+	{
+		va[i] = read();
+	}
+	int cnt = 2;
+	while(m--)
+	{
+		int x = read();
+		int y = read();
+		v[x].push_back({y,cnt});
+		cnt++;
+		v[y].push_back({x,cnt});
+		cnt++;
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		if(!dfn[i])
+		{
+			tarjan(i,0);
+		}
+	}
+	
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 0;j<v[i].size();j++)
+		{
+			int u = ebc_id[i];
+			int nxt = ebc_id[v[i][j].nxt];
+			if(u == nxt)
+			{
+				continue;
+			}
+			else
+			{
+				ebc[u].push_back(nxt);
+				ebc[nxt].push_back(u);
+			}
+		}
+	}
+	for(int i = 1;i<=ebc_cnt;i++)
+	{
+		sort(ebc[i].begin(),ebc[i].end());
+		ebc[i].erase(unique(ebc[i].begin(),ebc[i].end()),ebc[i].end());
+	}
+	int q = read();
+	for(int i = 1;i<=ebc_cnt;i++)
+	{
+		if(dep[i] == 0)
+		{
+			dfs(i);
+		}
+	}
+	while(q--)
+	{
+		int x = read();
+		int y = read();
+		int ex = ebc_id[x];
+		int ey = ebc_id[y];
+		int r = lca(ex,ey);
+		diff[ex] ++;
+		diff[ey]++;
+		diff[r]--;
+		if(r != up[r][0])
+		{
+			diff[up[r][0]]--;
+		}
+	}
+	long long sum = 0;
+	for(int i = 1;i<=ebc_cnt;i++)
+	{
+		if(vis[i] == 0)
+		{
+			dfs_sum(i,i);
+		}
+	}
+	for(int i = 1;i<=ebc_cnt;i++)
+	{
+		sum += (diff[i] ? 1: 0)* ebc_va[i];
+	}
+	write(sum);
+	fwrite(out_buf, 1, out_p - out_buf, stdout);
+	return 0;
+}
