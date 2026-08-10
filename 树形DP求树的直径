@@ -1,0 +1,50 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+const int maxn = 1e5+5;
+vector<vector<int>>v(maxn);
+vector<int>dist(maxn);
+int diameter = 0;
+//对于树上的任意一个节点 u，经过 u 的最长路径，一定是由 u 的两条最长向下分支拼接而成的。
+//记录每个节点向下走能到达的最远距离（max1）和次远距离（max2）
+int dfs(int u,int fa)
+{
+	int mx1= 0;
+	int mx2 = 0;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(nxt == fa)
+		{
+			continue;
+		}
+		int len =dfs(nxt,u) + 1;
+		if(len > mx1)
+		{
+			mx2 =mx1;
+			mx1 = len;
+		}
+		else if(len > mx2)
+		{
+			mx2 = len;
+		}
+	}
+	diameter = max(diameter,mx1 + mx2);
+	return mx1;
+}
+int main()
+{
+	cin>>n;
+	for(int i = 1;i<=n-1;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back(y);
+		v[y].push_back(x);
+	}
+	dfs(1,1);
+	cout<<diameter<<endl;
+	return 0;
+}
