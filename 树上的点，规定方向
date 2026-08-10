@@ -1,0 +1,246 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int q;
+const int maxn = 2e5+5;
+const int LOG = 23;
+int ebc_cnt = 0;
+int timer = 0;
+struct st{
+	int nxt;
+	int id;
+};
+vector<vector<st>>v(maxn);
+vector<int>low(maxn);
+vector<int>dfn(maxn);
+vector<vector<int>>ebc(maxn);
+vector<int>ebc_id(maxn);
+vector<int>upcnt(maxn);
+vector<int>downcnt(maxn);
+vector<vector<int>>up(maxn,vector<int>(LOG,0));
+vector<int>dep(maxn);
+vector<int>vis(maxn);
+stack<int>stk;
+vector<int>fa(maxn);
+void work(int n)
+{
+	for(int i = 1;i<=n;i++)
+	{
+		fa[i] = i;
+	}
+	return;
+}
+int find(int x)
+{
+	if(x == fa[x])
+	{
+		return x;
+	}
+	return fa[x] = find(fa[x]);
+}
+void Union(int x,int y)
+{
+	int r1 = find(x);
+	int r2 = find(y);
+	fa[r1] = r2;
+	return;
+}
+void tarjan(int u,int pu,int last)
+{
+	timer ++;
+	low[u] = timer;
+	dfn[u] = timer;
+	stk.push(u);
+	Union(u,last);
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i].nxt;
+		int id = v[u][i].id;
+		if((id ^ 1) == pu)
+		{
+			continue;
+		}
+		if(!dfn[nxt])
+		{
+			tarjan(nxt,id,u);
+			low[u] = min(low[u],low[nxt]);
+		}
+		else
+		{
+			low[u] = min(low[u],dfn[nxt]);
+		}
+	}
+	if(low[u] == dfn[u])
+	{
+		int nxt = 0;
+		ebc_cnt++;
+		do{
+			nxt = stk.top();
+			stk.pop();
+			ebc_id[nxt] = ebc_cnt;
+		}while(u != nxt);
+	}
+	return;
+}
+void dfs(int u,int p)
+{
+	up[u][0] = p;
+	for(int i =1;i<LOG;i++)
+	{
+		up[u][i] = up[up[u][i-1]][i-1];
+	}
+	for(int i = 0;i<ebc[u].size();i++)
+	{
+		int nxt = ebc[u][i];
+		if(nxt == p)
+		{
+			continue;
+		}
+		dep[nxt] = dep[u] + 1;
+		dfs(nxt,u);
+	}
+	return;
+}
+int lca(int a,int b)
+{
+	if(dep[a] < dep[b])
+	{
+		swap(a,b);
+	}
+	int dh = dep[a] - dep[b];
+	for(int i = LOG-1;i>=0;i--)
+	{
+		if(dh & (1<<i))
+		{
+			a = up[a][i];
+		}
+	}
+	if(a == b)
+	{
+		return a;
+	}
+	for(int i = LOG-1;i>=0;i--)
+	{
+		if(up[a][i] != up[b][i])
+		{
+			a = up[a][i];
+			b = up[b][i];
+		}
+	}
+	return up[a][0];
+}
+void dfs2(int u,int p)
+{
+	vis[u] = 1;
+	for(int i = 0;i<ebc[u].size();i++)
+	{
+		int nxt = ebc[u][i];
+		if(nxt == p)
+		{
+			continue;
+		}
+		dfs2(nxt,u);
+		upcnt[u] += upcnt[nxt];
+		downcnt[u] += downcnt[nxt];
+	}
+	return;
+}
+int main()
+{
+	//对于树上的点，规定方向x - > y用up[x]++up[lca(x,y)]-- down[y]++ down[lca{x,y)]--，之后判断是否矛盾 up[i] * down[i] > 0即可
+	//若是森林可以用并查集提前规划连通区
+	ios::sync_with_stdio(false); cin.tie(nullptr);
+	cin>>n>>m>>q;;
+	work(n);
+	int cnt = 2;
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back({y,cnt});
+		cnt++;
+		v[y].push_back({x,cnt});
+		cnt++;
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		if(!dfn[i])
+		{
+			tarjan(i,0,i);
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 0;j<v[i].size();j++)
+		{
+			int u = ebc_id[i];
+			int nxt = ebc_id[v[i][j].nxt];
+			if(u != nxt)
+			{
+				ebc[u].push_back(nxt);
+				ebc[nxt].push_back(u);
+			}
+		}
+	}
+	for(int i = 1;i<=ebc_cnt;i++)
+	{
+		sort(ebc[i].begin(),ebc[i].end());
+		ebc[i].erase(unique(ebc[i].begin(),ebc[i].end()),ebc[i].end());
+	}
+	for(int i = 1;i<=ebc_cnt;i++)
+	{
+		if(!dep[i])
+		{
+			dfs(i,i);
+		}
+	}
+	bool ok = true;
+	while(q--)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		if(find(x) != find(y) || !ok) 
+		{
+			ok = false;
+			continue;
+		}
+		int ex =  ebc_id[x];
+		int ey = ebc_id[y];
+		if(ex == ey)
+		{
+			continue;
+		}
+		int r = lca(ex,ey);
+		upcnt[ex] ++;
+		upcnt[r]--;
+		downcnt[ey] ++;
+		downcnt[r] --; 
+	}
+	for(int i = 1;i<=ebc_cnt;i++)
+	{
+		if(!vis[i])
+		{
+			dfs2(i,i);
+		}
+	}
+	for(int i = 1;i<=ebc_cnt;i++)
+	{
+		if(upcnt[i] > 0 && downcnt[i] > 0)
+		{
+			ok = false;
+			break;
+		}
+	}
+	if(!ok)
+	{
+		cout<<"No"<<endl;
+	}
+	else
+	{
+		cout<<"Yes"<<endl;
+	}
+	return 0;
+}
