@@ -1,0 +1,140 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 1e5+5;
+struct st{
+	int nxt;
+	int w;
+};
+int n;
+int k;
+vector<int>dist(maxn);
+vector<bool>diam(maxn);
+vector<int>last(maxn);
+vector<int>d1(maxn);
+vector<int>d2(maxn);
+vector<vector<st>>v(maxn);
+int sta = 0;
+int end1 = 0;
+int mx2 = 0;
+int mx1 = 0;
+void dfs(int u,int fa)
+{
+	last[u] = fa;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i].nxt;
+		if(nxt  == fa)
+		{
+			continue;
+		}
+		dist[nxt] = dist[u] + 1;
+		dfs(nxt,u);
+	}
+	return;
+}
+void dfs2(int u,int fa)
+{
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i].nxt;
+		if(nxt ==fa)
+		{
+			continue;
+		}
+		if(diam[nxt])
+		{
+			v[u][i].w = -1;
+			for(int j = nxt;j<v[nxt].size();j++)
+			{
+				if(v[nxt][j].nxt == u)
+				{
+					v[nxt][j].w = -1;
+					break;
+				}
+			}
+		}
+		dfs2(nxt,u);
+	}
+	return;
+}
+void dfs3(int u,int fa)
+{
+	d1[u] = d2[u] = 0;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i].nxt;
+		if(nxt ==fa)
+		{
+			continue;
+		}
+		dfs3(nxt,u);
+		int len = d1[nxt] + v[u][i].w;
+		if(len > d1[u])
+		{
+			d2[u] = d1[u];
+			d1[u] = len;
+		}
+		else if(len > d2[u])
+		{
+			d2[u] = len;
+		}
+	}
+}
+int main()
+{
+	cin>>n>>k;
+	for(int i = 1;i<=n-1;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back({y,1});
+		v[y].push_back({x,1});
+	}
+	sta = 1;
+	dfs(1,0);
+	for(int i = 2;i<=n;i++)
+	{
+		if(dist[i] >dist[sta])
+		{
+			sta = i;
+		}
+	}
+	dist.assign(n+5,0);
+	dfs(sta,0);
+	for(int i = 1;i<=n;i++)
+	{
+		//cout<<dist[i]<<endl;
+		if(dist[i] >dist[end1])
+		{
+			end1 = i;
+		}
+	}
+	diam[sta] = true;
+	for(int i = end1;i!= 0;i = last[i])
+	{
+	//	cout<<1<<endl;
+		diam[i] = true;
+	}
+	mx1 = dist[end1];
+	//cout<<mx1<<endl;
+	if(k == 1)
+	{
+	//	cout<<mx1<<endl;
+		cout<<2*(n-1) - dist[end1] + 1<<endl;
+		return 0;
+	}
+	else
+	{
+		mx1 = dist[end1];
+		dfs2(sta,0);
+		dfs3(sta,0);
+		for(int i= 1;i<=n;i++)
+		{
+			mx2 = max(mx2,d1[i] + d2[i]);
+		}
+		//cout<<mx2<<endl;
+		cout<<2*(n-1) - mx2 - mx1 + 2<<endl;
+	}
+	return 0;
+}
