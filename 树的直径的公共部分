@@ -1,0 +1,110 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+struct xy{
+	int nxt;
+	long long w;
+};
+const int maxn = 2e5+5;
+vector<vector<xy>>v(maxn);
+vector<int>last(maxn);
+vector<long long>dist(maxn);
+vector<bool>diam(maxn);
+long long mxl = 0;
+int sta  =0;
+int end1 = 0; 
+void dfs(int u,int fa,long long c)
+{
+	last[u] = fa;
+	dist[u] = c;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i].nxt;
+		if(nxt == fa)
+		{
+			continue;
+		}
+		dfs(nxt,u,c + v[u][i].w);
+	}
+	return ;
+}
+long long md(int u,int fa,long long c)
+{
+	long long ans = c;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i].nxt;
+		if(nxt == fa || diam[nxt])
+		{
+			continue;
+		}
+		ans = max(ans,md(nxt,u,c + v[u][i].w));
+	}
+	return ans;
+}
+int main()
+{
+	cin>>n;
+	for(int i = 1;i<=n-1;i++)
+	{
+		int x;
+		int y;
+		long long w;
+		cin>>x>>y>>w;
+		v[x].push_back({y,w});
+		v[y].push_back({x,w});
+	}
+	dfs(1,1,0);
+	sta = 1;
+	for(int i = 2;i<=n;i++)
+	{
+		if(dist[i] > dist[sta])
+		{
+			sta = i;
+		}	
+	}
+	dfs(sta,0,0);
+	end1 = 1;
+	for(int i = 2;i<=n;i++)
+	{
+		if(dist[i] > dist[end1])
+		{
+			end1 = i;
+		}
+	}
+	mxl = dist[end1];
+	for (int i = end1; i != 0; i = last[i]) {
+        diam[i] = true;
+    }
+	int l = sta;
+	int r= end1;
+	for(int i = last[end1] ;i!= sta;i = last[i])
+	{
+		long long mxd = md(i,0,0);
+		if(mxd == mxl - dist[i])
+		{
+			r = i;
+		}
+		if(mxd == dist[i] && l == sta)
+		{
+			l = i;
+		}
+	}
+	int ce = 0;
+	cout<<mxl<<endl;
+	if(l == r)
+	{
+		cout<<0<<endl;
+	}
+	else
+	{
+		ce = 1;
+		for(int i = last[r] ;i!= l;i = last[i])
+		{
+			ce++;
+		}
+		cout<<ce<<endl;
+	}
+	return 0;
+}
