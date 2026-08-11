@@ -1,0 +1,223 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int timer = 0;
+int ebc_cnt = 0;
+const int maxn = 1e5+5;
+const int LOG = 23;
+struct st{
+	int nxt;
+	int id; 
+};
+vector<vector<st>>v(maxn);
+vector<int>low(maxn);
+vector<int>dfn(maxn);
+vector<int>ebc_id(maxn);
+vector<vector<st>>ebc(maxn);
+stack<int>stk;
+vector<int>upcnt(maxn);
+vector<int>downcnt(maxn);
+vector<int>edge(maxn);
+vector<int>dep(maxn);
+vector<int>vis(maxn);
+vector<int>qa(maxn);
+vector<int>qb(maxn);
+vector<int>needl(maxn);
+vector<int>needr(maxn);
+vector<vector<int>>up(maxn,vector<int>(LOG,0));
+void tarjan(int u,int pu)
+{
+	timer ++;
+	low[u] = dfn[u] = timer;
+	stk.push(u);
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i].nxt;
+		int id = v[u][i].id;
+		if((id ^ 1) == pu)
+		{
+			continue;
+		}
+		if(!dfn[nxt])
+		{
+			tarjan(nxt,id);
+			low[u] = min(low[u],low[nxt]);
+		}
+		else{
+			low[u] = min(low[u],dfn[nxt]);
+		}
+	}
+	if(low[u] == dfn[u])
+	{
+		ebc_cnt++;
+		int nxt = 0;
+		do{
+			nxt = stk.top();
+			stk.pop();
+			ebc_id[nxt] = ebc_cnt;
+		}while(u != nxt);
+	}
+	return ;
+}
+void dfs(int u,int p)
+{
+	up[u][0] = p;
+	for(int i = 1;i<LOG;i++)
+	{
+		up[u][i] = up[up[u][i-1]][i-1];
+	}
+	for(int i = 0;i<ebc[u].size();i++)
+	{
+		int nxt = ebc[u][i].nxt;
+		if(nxt == p)
+		{
+			continue;
+		}
+		dep[nxt] = dep[u] + 1;
+		dfs(nxt,u);
+	}
+	return ;
+}
+int lca(int a,int b)
+{
+	if(dep[a] < dep[b])
+	{
+		swap(a,b);
+	}
+	int dh = dep[a] - dep[b];
+	for(int i = LOG-1;i>=0;i--)
+	{
+		if(dh & (1<<i))
+		{
+			a = up[a][i];
+		}
+	}
+	if(a == b)
+	{
+		return a;
+	}
+	for(int i = LOG-1;i>=0;i--)
+	{
+		if(up[a][i] != up[b][i])
+		{
+			a = up[a][i];
+			b = up[b][i];
+		}
+	}
+	return up[a][0];
+}
+void dfs_sum(int u,int p)
+{
+	vis[u] = 1;
+	for(int i = 0;i<ebc[u].size();i++)
+	{
+		int nxt = ebc[u][i].nxt;
+		if(nxt == p)
+		{
+			continue;
+		}
+		int id = ebc[u][i].id;
+		dfs_sum(nxt,u);
+		int up1 = upcnt[nxt];
+		int down1 = downcnt[nxt];
+		if (up1 > 0 && down1 == 0) 
+		{          
+		    if (id % 2 == 0) needl[id/2] = 1; 
+		    else             needr[id/2] = 1; 
+		} else if (down1 > 0 && up1 == 0) 
+		{   
+		    if (id % 2 == 0) needr[id/2] = 1;
+		    else             needl[id/2] = 1;
+		}
+		upcnt[u] += upcnt[nxt];
+        downcnt[u] += downcnt[nxt];
+	}
+	return ;
+}
+int main()
+{
+	cin>>n>>m;
+	int cnt = 2;
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		qa[i] = x;
+		qb[i] = y;
+		v[x].push_back({y,cnt});
+		cnt++;
+		v[y].push_back({x,cnt});
+		cnt++;
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		if(!dfn[i])
+		{
+			tarjan(i,0);
+		}
+	}
+	for (int i = 1; i <= m; i++) {
+	    int u = ebc_id[qa[i]];
+	    int v = ebc_id[qb[i]];
+	    if (u != v) {
+	        ebc[u].push_back({v, 2*i});   
+	        ebc[v].push_back({u, 2*i+1}); 
+	    }
+	}
+	for(int i = 1;i<=ebc_cnt;i++)
+	{
+		if(dep[i] == 0)
+		{
+			dfs(i,i);
+		}
+	}
+	int q;
+	cin>>q;
+	for(int i = 1;i<=q;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+	
+		int ex = ebc_id[x];
+		int ey = ebc_id[y];
+		if(ex == ey)
+		{
+			continue;
+		}
+		int r = lca(ex,ey);
+		upcnt[ex] ++;
+		upcnt[r]--;
+		downcnt[ey] ++;
+		downcnt[r] --;
+	}
+//	cout<<ebc_cnt<<endl;
+	for(int i = 1;i<=ebc_cnt;i++)
+	{
+		if(!vis[i])
+		{
+			dfs_sum(i,i);
+		}
+	//	cout<<upcnt[i]<<" "<<downcnt[i]<<endl;
+	}
+	string ans = "";
+	for(int i = 1;i<=m;i++)
+	{
+		if(needr[i] && !needl[i])
+		{
+			ans += "R";
+		}
+		else if(needl[i] && !needr[i])
+		{
+			ans += "L";
+		}
+		else
+		{
+			ans += "B";
+		}
+	}
+	cout<<ans<<endl;
+	return 0;
+ } 
