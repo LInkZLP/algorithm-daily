@@ -1,0 +1,102 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+/* ---------- 全局变量 ---------- */
+int timer;                    // DFS 时间戳计数器
+int n, m;                     // n: 车站数, m: 线路数
+vector<int> low;              // low[u]: 从 u 出发能回溯到的最早 dfn 值
+vector<int> dfn;              // dfn[u]: DFS 访问顺序编号
+vector<vector<int>> v;        // 邻接表（同时包含车站节点和线路节点）
+vector<int> po;               // po[i] = 1 表示节点 i 是割点
+const int maxn = 2e5 + 5;     // 单类节点最大数量（车站或线路）
+
+/* ---------- 初始化函数 ---------- */
+void Initial() {
+    timer = 0;
+    // 节点总数最多为 n + m，而 n 和 m 最大均为 2e5，故分配 2*maxn+5 足够
+    low.assign(2 * maxn + 5, 0);
+    dfn.assign(2 * maxn + 5, 0);
+    // 邻接表每个元素初始化为空的 vector<int>
+    v.assign(2 * maxn + 5, vector<int>());
+    po.assign(2 * maxn + 5, 0);
+}
+
+/* ---------- Tarjan 割点算法 ----------
+ * 在二分图上求割点（节点编号：1~n 为车站，n+1~n+m 为线路）
+ * u: 当前节点, fa: 父节点（根节点 fa=0）
+ */
+void tarjan(int u, int fa) {
+    timer++;
+    low[u] = dfn[u] = timer;    // 初始化 dfn 和 low
+    int son = 0;                // 记录 DFS 树中 u 的子节点数量（仅根节点用）
+
+    for (int i = 0; i < (int)v[u].size(); i++) {
+        int nxt = v[u][i];
+        if (nxt == fa) continue;   // 忽略回连父节点的边
+
+        if (!dfn[nxt]) {           // 若 nxt 未被访问，则是树边
+            son++;
+            tarjan(nxt, u);        // 递归处理子节点
+            low[u] = min(low[u], low[nxt]); // 用子树的 low 更新当前节点
+
+            // 判定割点的核心条件：子节点 nxt 无法绕回 u 的祖先
+            if (low[nxt] >= dfn[u]) {
+                // 若 u 不是根节点（fa != 0），则 u 是割点
+                // 若 u 是根节点（fa == 0），则只有当它至少有两个子树时才是割点
+                if (fa != 0 || son >= 2) {
+                    po[u] = 1;     // 标记 u 为割点
+                }
+            }
+        } else {
+            // 遇到非树边（回边或横叉边），用 dfn[nxt] 更新 low[u]
+            // 注意：这里必须用 dfn[nxt] 而非 low[nxt]（标准 Tarjan 写法）
+            low[u] = min(low[u], dfn[nxt]);
+        }
+    }
+}
+
+/* ---------- 处理单个测试用例 ----------
+ * 读入数据、建图、执行 Tarjan，返回关键线路的数量
+ */
+int solve() {
+    cin >> n >> m;
+    Initial();                     // 清空全局数据结构
+
+    // 建图：每条线路 i 对应一个虚拟节点 n+i
+    // 将该虚拟节点与它服务的所有车站连边（无向）
+    for (int i = 1; i <= m; i++) {
+        int k;
+        cin >> k;
+        while (k--) {
+            int x;
+            cin >> x;
+            // 线路节点 n+i 与车站 x 之间连边
+            v[n + i].push_back(x);
+            v[x].push_back(n + i);
+        }
+    }
+
+    // 从第一个节点开始 DFS（假设图连通；若可能不连通，需对每个连通分量分别调用）
+    tarjan(1, 0);
+
+    // 统计所有线路节点（编号 n+1 ~ n+m）中被标记为割点的数量
+    int ans = 0;
+    for (int i = n + 1; i <= n + m; i++) {
+        if (po[i]) ans++;
+    }
+    return ans;
+}
+
+/* ---------- 主函数 ---------- */
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int T;
+    cin >> T;
+    for (int i = 1; i <= T; i++) {
+        // 按题目格式输出：Case #x: y
+        cout << "Case #" << i << ": " << solve() << '\n';
+    }
+    return 0;
+}
