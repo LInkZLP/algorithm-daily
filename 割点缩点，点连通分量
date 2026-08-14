@@ -1,0 +1,93 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+const int maxn = 5e5+5;
+vector<vector<int>>v(maxn);
+vector<int>low(maxn);
+vector<int>dfn(maxn);
+vector<int>bcc_id(maxn*2);
+int bcc_cnt = 0;
+int timer = 0;
+stack<int>stk;
+vector<vector<int>>ans(maxn);
+void tarjan(int u,int fa)
+{
+	timer ++;
+	low[u] = dfn[u] = timer;
+	int son = 0;
+	stk.push(u);
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(nxt == fa)
+		{
+			continue;
+		}
+		if(!dfn[nxt])
+		{
+			son ++;
+			tarjan(nxt,u);
+			low[u] = min(low[u],low[nxt]);
+			if(low[nxt] >= dfn[u])
+			{
+				bcc_cnt++;
+				int nt = 0;
+				do{
+					nt = stk.top();
+					stk.pop();
+					bcc_id[nt] = bcc_cnt;
+					//cout<<nt<<" ";
+					ans[bcc_cnt].push_back(nt);
+				}while(nt != nxt);
+				ans[bcc_cnt].push_back(u);
+			}
+		}
+		else
+		{
+			low[u] = min(low[u],dfn[nxt]);
+		}
+	}
+		
+}
+int main()
+{
+	cin>>n>>m;
+	while(m--)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		if(x == y)
+		{
+			continue;
+		}
+		v[x].push_back(y);
+		v[y].push_back(x);
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		if(!dfn[i])
+		{
+			if(v[i].empty()) //没有自环并且孤立点 
+			{
+				bcc_cnt++;
+				ans[bcc_cnt].push_back(i);
+				dfn[i] = 1;
+				continue;
+			}
+			tarjan(i,0);
+		}
+	}
+	cout<<bcc_cnt<<endl;
+	for(int i = 1;i<=bcc_cnt;i++)
+	{
+		cout<<ans[i].size()<<" ";
+		for(int j = 0;j<ans[i].size();j++)
+		{
+			cout<<ans[i][j]<<" ";
+		}
+		cout<<"\n";
+	}
+	return 0;
+ } 
