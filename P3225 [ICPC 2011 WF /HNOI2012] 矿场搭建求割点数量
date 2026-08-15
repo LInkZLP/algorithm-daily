@@ -1,0 +1,164 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int timer;
+int bcc_cnt;
+vector<int>low;
+vector<int>dfn;
+vector<int>bcc_id;
+vector<vector<int>>bcc;
+vector<vector<int>>v;
+vector<int>bcc_sz;
+vector<int>bcc_cut;
+vector<int>cut;
+stack<int>stk;
+int tar = 0;
+int mx;
+void Initial()
+{
+	int n1 = 1e3+5;
+	timer = 0;
+	tar = 0;
+	mx = 0;
+	low.assign(n1+5,0);
+	dfn.assign(n1+5,0);
+	cut.assign(n1+5,0);
+	bcc_id.assign(n1+5,0);
+	bcc_sz.assign(2*n1+10,0);
+	bcc_cut.assign(2*n1+10,0);
+	bcc.assign(2*n1+5,vector<int>());
+	v.assign(n1+5,vector<int>());
+	bcc_cnt = 0;
+	while(!stk.empty())
+	{
+		stk.pop();
+	}
+}
+void tarjan(int u,int fa)
+{
+	timer++;
+	low[u] = dfn[u] = timer;
+	stk.push(u);
+	int son = 0;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(nxt == fa)
+		{
+			continue;
+		}
+		if(!dfn[nxt])
+		{
+			son++;
+			tarjan(nxt,u);
+			low[u] = min(low[u],low[nxt]);
+			if(low[nxt] >= dfn[u])
+			{
+				bcc_cnt++;
+				int nt;
+				do{
+					nt = stk.top();
+					stk.pop();
+					bcc[bcc_cnt].push_back(nt);
+					bcc_sz[bcc_cnt]++;
+					bcc_id[nt] = bcc_cnt;
+				}while(nt != nxt);
+				bcc_sz[bcc_cnt]++;
+				bcc[bcc_cnt].push_back(u);
+				if(fa != 0 || son >=2)
+				{
+					cut[u] = 1;
+				}
+			}
+		}
+		else
+		{
+			low[u]  =min(low[u],dfn[nxt]);
+		}
+	}
+	return ;
+}
+long long solve()
+{
+	Initial();
+	int mx = 0;
+	for(int i = 1;i<=n;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		mx = max(x,mx);
+		mx = max(y,mx);
+		v[x].push_back(y);
+		v[y].push_back(x);
+	}
+	for(int i = 1;i<=mx;i++)
+	{
+		if(!dfn[i])
+		{
+			if(v[i].empty())
+			{
+				bcc_cnt++;
+				bcc[bcc_cnt].push_back(i);
+				bcc_sz[bcc_cnt] = 1;
+				continue;
+			}
+			tarjan(i,0);
+		}
+	}
+	if(bcc_cnt == 1)
+	{
+		tar = 2;
+		if(mx == 1)
+		{
+			tar = 1;
+			return 1;
+		}
+		return 1LL*(mx-1) * mx / 2;
+	} 
+	else
+	{
+		long long ans = 1;
+		//割点为1为叶子点 
+		for(int i = 1;i<=bcc_cnt;i++)
+		{
+			//cout<<i<<bcc_id[i]<<bcc_sz[i]
+			for(int j = 0;j<bcc[i].size();j++)
+			{
+				if(cut[bcc[i][j]])
+				{
+					bcc_cut[i]++;
+				}
+			}
+			if(bcc_cut[i] == 1)
+			{
+			//	cout<<i<<endl;
+				ans = ans * (bcc_sz[i] - 1);
+				tar++;
+			}
+		}
+		return ans;
+	}
+}
+//一个 BCC 的割点，不一定就是触发它生成的节点 u
+///链状图 1 - 2 - 3 - 4
+//一个 BCC 可以连接多个割点（如上例 BCC?），
+//或者一个割点作为子节点出现在多个 BCC 中但未被根节点统计（如星型图根节点的第一个子树）。
+int main()
+{
+	int cnt = 0;
+	while(1)
+	{
+		cnt++;
+		cin>>n;
+		if(n == 0)
+		{
+			break;
+		}	
+		long long ans = solve();
+	//	cout<<bcc_cnt<<endl;
+		cout<<"Case "<<cnt<<": "<<tar<<" "<<ans<<endl;
+	}
+	return 0;
+}
