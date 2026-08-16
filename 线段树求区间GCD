@@ -1,0 +1,130 @@
+/*
+    思路证明（差分 + 两棵线段树）
+
+    1. 设原数组为 a[1..n]，定义差分数组 d[i] = a[i] - a[i-1] (a[0]=0)。
+       区间加操作 a[l..r] += k 等价于：
+       - d[l] += k
+       - 若 r+1 <= n，则 d[r+1] -= k
+       其余差分值不变。因此区间加转化为差分数组上的两次单点修改。
+
+    2. 原数组的任意值 a[x] = sum_{i=1}^{x} d[i]（前缀和）。
+       所以我们用第一棵线段树维护差分数组的区间和，支持前缀和查询。
+
+    3. 区间 gcd 的性质：
+       gcd(a[l], a[l+1], ..., a[r])
+       = gcd(a[l], a[l+1]-a[l], a[l+2]-a[l+1], ..., a[r]-a[r-1])
+       = gcd(a[l], d[l+1], d[l+2], ..., d[r])
+       因此查询 [l, r] 的 gcd 时，只需计算 gcd( a[l], gcd(d[l+1..r]) )，
+       其中 a[l] 通过前缀和获得，d[l+1..r] 的 gcd 由第二棵线段树维护。
+
+    4. 两棵线段树：
+       - d 线段树：维护差分数组的区间和（用于前缀和）
+       - g 线段树：维护差分数组的区间 gcd（用于差分区间 gcd 查询）
+       每次单点修改差分数组时，同步更新两棵树，确保一致性。
+
+    5. 复杂度：建树 O(n)，每次操作 O(log n)，总 O((n+m)log n)，可过 5e5。
+*/
+
+#include <bits/stdc++.h>
+using namespace std;
+
+// 取绝对值后的最大公约数（避免负数影响）
+long long gcd(long long a, long long b) {
+    if (a < 0) a = -a;
+    if (b < 0) b = -b;
+    return b == 0 ? a : gcd(b, a % b);
+}
+
+const int maxn = 5e5 + 5;
+int n, m;
+vector<long long> d(maxn << 2); // 线段树1：维护差分数组的区间和，用于求原数组值（前缀和）
+vector<long long> g(maxn << 2); // 线段树2：维护差分数组的区间gcd
+vector<long long> v(maxn);      // 原数组（仅用于建树）
+
+// 向上更新两个线段树节点
+void up(int i) {
+    d[i] = d[i << 1] + d[i << 1 | 1];          // 区间和
+    g[i] = gcd(g[i << 1], g[i << 1 | 1]);      // 区间gcd
+}
+
+// 建树：叶子存差分值 d[i] = v[i] - v[i-1]
+void build(int l, int r, int i) {
+    if (l == r) {
+        d[i] = v[l] - v[l - 1];
+        g[i] = d[i];
+        return;
+    }
+    int mid = (l + r) >> 1;
+    build(l, mid, i << 1);
+    build(mid + 1, r, i << 1 | 1);
+    up(i);
+}
+
+// 单点修改（实际调用时总是 jobl == jobr，但写成区间形式便于扩展）
+// 在差分数组位置 [jobl, jobr] 上增加 jobv（实际为单点）
+void change(int l, int r, int i, int jobl, int jobr, long long jobv) {
+    if (l >= jobl && r <= jobr) {   // 叶子节点，直接修改
+        d[i] += jobv;
+        g[i] += jobv;
+        return;
+    }
+    int mid = (l + r) >> 1;
+    if (mid >= jobl) change(l, mid, i << 1, jobl, jobr, jobv);
+    if (mid + 1 <= jobr) change(mid + 1, r, i << 1 | 1, jobl, jobr, jobv);
+    up(i);
+}
+
+// 查询差分数组区间 [jobl, jobr] 的 gcd
+long long query(int l, int r, int i, int jobl, int jobr) {
+    if (l >= jobl && r <= jobr) return g[i];
+    long long ans = 0;
+    int mid = (l + r) >> 1;
+    if (mid >= jobl) ans = gcd(ans, query(l, mid, i << 1, jobl, jobr));
+    if (mid + 1 <= jobr) ans = gcd(ans, query(mid + 1, r, i << 1 | 1, jobl, jobr));
+    return ans;
+}
+
+// 查询差分数组前缀和（即原数组 a[pos]）
+long long querypoint(int l, int r, int i, int jobl, int jobr) {
+    if (l >= jobl && r <= jobr) return d[i];
+    long long ans = 0;
+    int mid = (l + r) >> 1;
+    if (mid >= jobl) ans += querypoint(l, mid, i << 1, jobl, jobr);
+    if (mid + 1 <= jobr) ans += querypoint(mid + 1, r, i << 1 | 1, jobl, jobr);
+    return ans;
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(0);
+
+    cin >> n >> m;
+    for (int i = 1; i <= n; i++) cin >> v[i];
+
+    // 构建差分数组线段树
+    build(1, n, 1);
+
+    while (m--) {
+        char x;
+        cin >> x;
+        if (x == 'Q') {
+            int l, r;
+            cin >> l >> r;
+            if (l == r) {
+                // 单点直接输出原值 a[l] = 差分前缀和
+                cout << querypoint(1, n, 1, 1, l) << '\n';
+                continue;
+            }
+            // 区间 [l, r] 的 gcd = gcd(a[l], gcd(diff[l+1..r]))
+            cout << gcd(querypoint(1, n, 1, 1, l), query(1, n, 1, l + 1, r)) << '\n';
+        } else {   // 操作 'C'：区间加
+            int l, r;
+            long long k;
+            cin >> l >> r >> k;
+            // 差分修改：d[l] += k, d[r+1] -= k（若 r+1 <= n）
+            change(1, n, 1, l, l, k);
+            if (r < n) change(1, n, 1, r + 1, r + 1, -k);
+        }
+    }
+    return 0;
+}
