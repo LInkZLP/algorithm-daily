@@ -1,0 +1,179 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int bcc_cnt = 0;
+int timer = 0;
+const int maxn = 2e5+5;
+struct st{
+	int nxt;
+	int id;
+};
+const int LOG = 23;
+vector<vector<int>>up(maxn<<1,vector<int>(LOG,0));
+vector<vector<st>>v(maxn);
+vector<vector<int>>bcc(maxn<<1);
+vector<int>low(maxn);
+vector<int>dfn(maxn);
+vector<int>bcc_id(maxn<<1);
+vector<int>sum(maxn<<1);
+vector<int>val(maxn<<1);
+vector<int>dep(maxn<<1);
+stack<int>stk;
+int cntn = 0;
+vector<int>eu;
+vector<int>ev;
+void tarjan(int u,int fa)
+{
+	timer ++;
+	dfn[u] = low[u] = timer;
+	int son = 0;
+	for(int i= 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i].nxt;
+		int id = v[u][i].id;
+		if((id ^ 1)== fa)
+		{
+			continue;
+		}
+		if(!dfn[nxt])
+		{
+			stk.push(id);
+			tarjan(nxt,id);
+			son++;
+			low[u] = min(low[u],low[nxt]);
+			if(low[nxt] >= dfn[u])
+			{
+				bcc_cnt++;
+				int nt;
+				cntn++;
+				int cnt = 0;
+				vector<int>verts;
+				while(true)
+				{
+					int eid = stk.top();
+					stk.pop();
+					cnt ++;
+					verts.push_back(eu[eid]);
+					verts.push_back(ev[eid]);
+					if(eid == id)
+					{
+						break;
+					}
+				}
+				sort(verts.begin(),verts.end());
+				verts.erase(unique(verts.begin(),verts.end()),verts.end());
+				val[cntn] =  (cnt == 1 ? 0 : cnt);
+				for(int j = 0;j<verts.size();j++)
+				{
+					int x = verts[j];
+					bcc[cntn].push_back(x);
+					bcc[x].push_back(cntn);
+				}
+			}
+		}
+		else if(dfn[nxt] < dfn[u])
+		{
+			stk.push(id);
+			low[u] = min(low[u],dfn[nxt]);
+		}
+	}
+}
+void dfs(int u,int p)
+{
+	up[u][0] = p;
+	sum[u] += val[u];
+	for(int i = 1;i<LOG;i++)
+	{
+		up[u][i] = up[up[u][i-1]][i-1];
+	}
+	for(int i = 0;i<bcc[u].size();i++)
+	{
+		int nxt = bcc[u][i];
+		if(nxt  == p)
+		{
+			continue;
+		}
+		dep[nxt] = dep[u] + 1;
+		sum[nxt] += sum[u];
+		dfs(nxt,u);
+	}
+	return ;
+}
+int lca(int a,int b)
+{
+	if(dep[a] < dep[b])
+	{
+		swap(a,b);
+	}
+	int dh = dep[a] - dep[b];
+	for(int i = LOG-1;i>=0;i--)
+	{
+		if(dh &(1<<i))
+		{
+			a = up[a][i];
+		}
+	}
+	if(a == b)
+	{
+		return a;
+	}
+	for(int i = LOG-1;i>=0;i--)
+	{
+		if(up[a][i] != up[b][i])
+		{
+			a = up[a][i];
+			b = up[b][i];
+		}
+	}
+	return up[a][0];
+}
+int dist(int u,int nxt,int r)
+{
+	return sum[u] + sum[nxt] - 2 * sum[r] + val[r];
+}
+int main()
+{
+	cin>>n>>m;
+	cntn = n;
+	int cnt = 0;
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		eu.push_back(x);
+		ev.push_back(y);
+		
+		eu.push_back(y);
+		ev.push_back(x);
+		v[x].push_back({y,cnt});
+		cnt++;
+		v[y].push_back({x,cnt});
+		cnt++;
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		if(!dfn[i])
+		{
+			tarjan(i,-1);
+		}
+	}
+	int k;
+	cin>>k;
+	for(int i = 1;i<=cntn;i++)
+	{
+		if(!dep[i])
+		{
+			dfs(i,0);
+		}
+	}
+	while(k--)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		cout<<dist(x,y,lca(x,y))<<endl;
+	}
+	return 0;
+}
