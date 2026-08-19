@@ -1,0 +1,126 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int timer = 0;
+int bcc_cnt = 0;
+int cntn = 0;
+const int maxn = 1e5+5;
+vector<vector<int>>v(maxn);
+vector<int>low(maxn);
+vector<int>dfn(maxn);
+vector<long long>sz(maxn<<1);
+vector<vector<int>>bcc(maxn<<1);
+stack<int>stk;
+vector<int>jd(maxn<<1);
+vector<long long>ans(maxn<<1);
+vector<int>vis(maxn<<1);
+long long total = 0;
+void tarjan(int u,int fa)
+{
+	timer ++;
+	total ++;
+	low[u] = dfn[u] = timer;
+	stk.push(u);
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(nxt == fa)
+		{
+			continue;
+		}
+		if(!dfn[nxt])
+		{
+			tarjan(nxt,u);
+			low[u] = min(low[nxt],low[u]);
+			if(low[nxt] >= dfn[u])
+			{
+				cntn++;
+				int nt;
+				do{
+					nt = stk.top();
+					stk.pop();
+					bcc[cntn].push_back(nt);
+					bcc[nt].push_back(cntn);
+					jd[cntn] ++;
+				}while(nt !=nxt);
+				bcc[cntn].push_back(u);
+				jd[cntn] ++;
+				bcc[u].push_back(cntn);
+			}
+		}
+		else
+		{
+			low[u] = min(low[u],dfn[nxt]);
+		}
+	} 
+	return;
+}
+void dfs(int u,int fa)
+{
+
+	vis[u] = 1;
+	for(int i = 0;i<bcc[u].size();i++)
+	{
+		int nxt = bcc[u][i];
+		if(nxt == fa)
+		{
+			continue;
+		}
+		//1
+		dfs(nxt,u);
+		sz[u] += sz[nxt];
+		if(u <= n)
+		{
+			ans[u] += sz[nxt] * (total - sz[nxt] - 1);
+		}
+		else
+		{
+			ans[u] += sz[nxt] * (jd[u] - 2) * (total - sz[nxt]);
+		}
+	}
+	if(u <= n)
+	{
+		sz[u] +=1;
+	}
+	if(u <= n)
+	{
+		ans[u] += (sz[u] - 1) * (total - sz[u]);
+	}
+	else
+	{
+		ans[u] += (sz[u]) * (jd[u] - 2) * (total - sz[u]);
+	}
+	return;
+}
+int main()
+{
+	cin>>n>>m;
+	cntn =  n;
+	while(m--)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back(y);
+		v[y].push_back(x);
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		total = 0;
+		if(!dfn[i])
+		{
+			tarjan(i,0);
+			dfs(i,0);
+		}
+	}
+	
+	long long sum =0;
+	for(int i = 1;i<=cntn;i++)
+	{
+		sum += ans[i];
+	//	cout<<ans[i]<<endl;
+	}
+	cout<<sum<<endl;
+	return 0;
+}
