@@ -1,0 +1,98 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+vector<int>son;
+vector<int>top;
+vector<int>len;
+vector<int>fa;
+vector<vector<int>>v;
+void dfs1(int u,int p)
+{
+	int tar = 0;
+	int mxl = 0;
+	fa[u] = p;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(nxt == p)
+		{
+			continue;
+		}
+		dfs1(nxt,u);
+		if(mxl < len[nxt])
+		{
+			tar= nxt;
+			mxl = len[nxt];
+		}
+	}
+	son[u] = tar;
+	len[u] = len[tar] + 1;
+	return ;
+}
+void dfs2(int u,int p)
+{
+	top[u] = p;
+	if(son[u] == 0)
+	{
+		return;
+	}
+//	cout<<"ppp"<<endl;
+	dfs2(son[u],p);
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(nxt == fa[u] || son[u] == nxt)
+		{
+			continue;
+		}
+		dfs2(nxt,nxt);
+	}
+	return;
+}
+int main()
+{
+	//不同长链之间，不存在祖先关系（因为如果一条链的顶端是另一条链的祖先，
+	//那它们会被合并成一条更长的链，所以剖分后链顶互不祖先）。
+	//从长链中选择若干条作为“链集合”，剩下的节点用“独立集合”覆盖
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		int n;
+		cin>>n;
+		fa.assign(n+5,0);
+		son.assign(n+5,0);
+		len.assign(n+5,0);
+		v.assign(n+5,vector<int>());
+		top.assign(n+5,0);
+		for(int i = 1;i<=n-1;i++)
+		{
+			int x;
+			cin>>x;
+			v[i+1].push_back(x);
+			v[x].push_back(1+i);
+		}
+		dfs1(1,0);
+		dfs2(1,1);
+		int ans = n;
+		vector<int>temp;
+		for(int i = 1; i<=n;i++)
+		{
+			if(top[i] == i)
+			{
+				temp.push_back(len[i]);
+			}
+		}
+		sort(temp.begin(),temp.end(),greater<int>());
+		int l = temp.size();
+		for(int i = 0;i<l;i++)
+		{
+			ans = min(ans,i+temp[i]);
+		}
+		ans = min(ans, l); 
+		cout<<ans<<endl;
+	}
+	
+	return 0;
+}
