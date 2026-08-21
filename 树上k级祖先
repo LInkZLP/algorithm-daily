@@ -1,0 +1,162 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 5e5+5;
+const int LOG = 23;
+int n;
+int m;
+vector<int>dep(maxn);
+vector<vector<int>>v(maxn);
+vector<vector<int>>stjump(maxn,vector<int>(LOG,0));
+vector<int>son(maxn);
+vector<int>top(maxn);
+vector<int>len(maxn);
+int timer = 0;
+vector<int>high(maxn);
+vector<int>up(maxn);
+vector<int>dfn(maxn);
+vector<int>down(maxn);
+int root = 0;
+#define ui unsigned int
+ui s;
+inline ui get(ui x) {
+	x ^= x << 13;
+	x ^= x >> 17;
+	x ^= x << 5;
+	return s = x; 
+}
+void setup(int u,int i,int nxt)
+{
+	up[dfn[u] + i] = nxt;
+	return;
+}
+int getup(int u,int i)
+{
+	return up[dfn[u] + i];
+}
+int getdown(int u,int i)
+{
+	return down[dfn[u] + i];
+}
+void setdown(int u,int i,int nxt)
+{
+	down[dfn[u] + i] = nxt;
+	return;
+}
+void dfs1(int u,int p)
+{
+	stjump[u][0] = p;
+	for(int i = 1;i<LOG;i++)
+	{
+		stjump[u][i] = stjump[stjump[u][i-1]][i-1];
+	}
+	dep[u] = dep[p] + 1;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(nxt == p)
+		{
+			continue;
+		}
+		dfs1(nxt,u);
+	}
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(nxt == p)
+		{
+			continue;
+		}
+		if(son[u] == 0 || len[son[u]] < len[nxt])
+		{
+			son[u] = nxt;
+		}
+	}
+	len[u] = len[son[u]] + 1;
+	return;
+}
+void dfs2(int u,int p)
+{
+	timer ++;
+	dfn[u] = timer;
+	top[u] = p;
+	if(son[u] == 0)
+	{
+		return;
+	}
+	dfs2(son[u],p);
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(nxt != stjump[u][0] && nxt != son[u])
+		{
+			dfs2(nxt,nxt);
+		}
+	}
+}
+void pre(int r)
+{
+	dfs1(r,0);
+	dfs2(r,r);
+	high[0] = -1;
+	for(int i = 1;i<=n;i++)
+	{
+		high[i] = high[i/2] + 1;
+	} 
+	for(int i = 1;i<=n;i++)
+	{
+		if(top[i] == i)
+		{
+			int t = i;
+			for(int j = 0,a = t,b = t;j < len[t];j++,a = stjump[a][0],b = son[b])
+			{
+				setup(t,j,a);
+				setdown(t,j,b);
+			}
+		}
+	}
+	return;
+}
+int query(int x,int k)
+{
+	if(k == 0)
+	{
+		return x;
+	}
+	if(k == (1<<high[k]))
+	{
+		return stjump[x][high[k]];
+	}
+	x = stjump[x][high[k]];
+	k -= (1<<high[k]);
+	k -= (dep[x] - dep[top[x]]); 
+	x = top[x];
+	return (k>=0) ? getup(x,k) : getdown(x,-k);
+}
+int main()
+{
+	cin>>n>>m>>s;
+	long long ans = 0;
+	for(int i = 1,fa = 0;i<=n;i++)
+	{
+		cin>>fa;
+		if(fa == 0)
+		{
+			root = i;
+		}
+		else
+		{
+			v[fa].push_back(i);
+			v[i].push_back(fa); 
+		}
+	}
+	pre(root);
+	for(int i = 1,x,k,last = 0;i<=m;i++)
+	{
+		x = (int)((get(s) ^ last) % n + 1);
+		k = (int)((get(s) ^ last) % dep[x]);
+		last = query(x,k);
+		ans ^= (long long)i * last;
+	}
+	cout<<ans<<endl;
+	return 0;
+}
