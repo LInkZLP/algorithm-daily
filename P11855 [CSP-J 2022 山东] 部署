@@ -1,0 +1,195 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int timer = 0;
+const int maxn = 1e6+5;
+vector<vector<int>>v(maxn);
+vector<int>dfn(maxn);
+vector<int>sz(maxn);
+vector<int>seg(maxn);
+vector<int>top(maxn);
+vector<int>son(maxn);
+vector<long long>val(maxn);
+vector<int>dep(maxn);
+vector<int>fa(maxn);
+vector<long long>sum(maxn<<2);
+vector<long long>add(maxn<<2);
+vector<long long>tag(maxn);
+void dfs1(int u,int p)
+{
+	sz[u] ++;
+	fa[u] = p;
+	int tar = 0;
+	int mxl = 0;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(nxt == p)
+		{
+			continue;
+		}
+		dep[nxt] = dep[u] + 1;
+		dfs1(nxt,u);
+		sz[u] += sz[nxt];
+		if(mxl < sz[nxt])
+		{
+			mxl = sz[nxt];
+			tar = nxt;
+		}
+	} 
+	son[u] = tar;
+	return;
+}
+void dfs2(int u,int p)
+{
+	timer ++;
+	top[u] = p;
+	seg[timer] = u;
+	dfn[u] = timer;
+	if(son[u] == 0)
+	{
+		return;
+	}
+	dfs2(son[u],p);
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(nxt == fa[u] || nxt == son[u])
+		{
+			continue;
+		}
+		dfs2(nxt,nxt);
+	}
+	return;
+}
+void up(int i)
+{
+	sum[i] = sum[i<<1] + sum[i<<1|1];
+	return;
+}
+void down(int ln,int rn,int i)
+{
+	if(add[i] != 0)
+	{
+		sum[i<<1] += ln * add[i];
+		sum[i<<1|1] += rn * add[i];
+		add[i<<1] += add[i];
+		add[i<<1|1] += add[i];
+		add[i] = 0;
+	}
+	return;
+}
+void build(int l,int r,int i)
+{
+	if(l == r)
+	{
+		sum[i] = val[seg[l]];
+		return;
+	}
+	int mid = (l + r)>>1;
+	build(l,mid,i<<1);
+	build(mid + 1,r,i<<1|1);
+	up(i);
+	return; 
+}
+void change(int l,int r,int i,int jobl,int jobr,long long jobv)
+{
+	if(l>=jobl && r <= jobr)
+	{
+		sum[i] += (r - l + 1) * jobv;
+		add[i] += jobv;
+		return;
+	}
+	int mid = (l + r)>>1;
+//	cout<<"ppp"<<endl;
+	down(mid - l +1,r - mid,i);
+	
+	if(mid >= jobl)
+	{
+		change(l,mid,i<<1,jobl,jobr,jobv);
+	}
+	if(mid + 1 <= jobr)
+	{
+		change(mid + 1,r,i<<1|1,jobl,jobr,jobv);
+	}
+	up(i);
+	
+	return;
+}
+long long query(int l,int r,int i,int jobl,int jobr)
+{
+	if(l>=jobl && r <= jobr)
+	{
+		return sum[i];
+	}
+	int mid = (l + r)>>1;
+	down(mid - l +1,r - mid,i);
+	long long ans = 0;
+	if(mid >= jobl)
+	{
+		ans += query(l,mid,i<<1,jobl,jobr);
+	}
+	if(mid + 1 <= jobr)
+	{
+		ans += query(mid + 1,r,i<<1|1,jobl,jobr);
+	}
+	return ans;
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+	cin.tie(0);
+	cin>>n;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>val[i];
+	}
+	for(int i = 1;i<=n-1;i++)
+	{
+		int x;
+		int y;;
+		cin>>x>>y;
+		v[x].push_back(y);
+		v[y].push_back(x);
+	}
+	int m;
+	dfs1(1,0);
+	dfs2(1,1);
+	build(1,n,1);
+	cin>>m;
+	for(int i = 1;i<=m;i++)
+	{
+		int op;
+		cin>>op;
+		if(op & 1)
+		{
+			int x;
+			long long w;
+			cin>>x>>w;
+			change(1,n,1,dfn[x],dfn[x] + sz[x] - 1,w);
+		}
+		else
+		{
+			int x;
+			long long w;
+			cin>>x>>w;
+			change(1,n,1,dfn[x],dfn[x],w);
+			if(fa[x])
+			{
+				change(1,n,1,dfn[fa[x]],dfn[fa[x]],w);
+			}
+			tag[x] += w;
+		}
+	}
+	int q;
+	cin>>q;
+	for(int i = 1;i<=q;i++)
+	{
+		int x;
+		cin>>x;
+		long long kp = (fa[x]) ? tag[fa[x]] : 0;
+		cout<<query(1,n,1,dfn[x],dfn[x]) + kp<<'\n';
+	}
+	return 0;
+}
