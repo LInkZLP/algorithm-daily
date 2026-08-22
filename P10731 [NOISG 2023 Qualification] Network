@@ -1,0 +1,213 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+struct po{
+	int a;
+	int b;
+	int lca;
+};
+int timer = 0;
+const int maxn = 2e5+5;
+vector<int>dfn(maxn);
+vector<int>dep(maxn);
+vector<int>top(maxn);
+vector<int>seg(maxn);
+vector<int>son(maxn);
+vector<int>fa(maxn);
+vector<int>sz(maxn<<1);
+vector<vector<int>>v(maxn);
+vector<int>sum(maxn<<2);
+vector<int>add(maxn<<2);
+vector<po>so;
+bool cmp(po x, po y)
+{
+	return dep[x.lca] > dep[y.lca];
+}
+void dfs1(int u,int p)
+{
+	fa[u] = p;
+	sz[u] += 1;
+	int tar = 0;
+	int mxl = 0;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(nxt == p)
+		{
+			continue;
+		}
+		dep[nxt] = dep[u] + 1;
+		dfs1(nxt,u);
+		sz[u] += sz[nxt]; 
+		if(sz[nxt] > mxl)
+		{
+			tar = nxt;
+			mxl = sz[nxt];
+		}
+	}
+	son[u] = tar;
+	return;
+}
+void dfs2(int u,int p)
+{
+	timer ++;
+	top[u] = p;
+	seg[timer] = u;
+	dfn[u] = timer;
+	if(son[u] == 0)
+	{
+		return;
+	}
+	dfs2(son[u],p);
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(nxt == fa[u] || son[u] == nxt)
+		{
+			continue;
+		}
+		dfs2(nxt,nxt);
+	}
+	return;
+}
+void up(int i)
+{
+	sum[i] = sum[i<<1] + sum[i<<1|1];
+	return;
+}
+void build(int l,int r,int i)
+{
+	if(l == r)
+	{
+		sum[i] = 1;
+		return;
+	}
+	int mid = (l + r)>>1;
+	build(l,mid,i<<1);
+	build(mid + 1,r,i<<1|1);
+	up(i);
+}
+void down(int ln,int rn,int i)
+{
+	if(add[i] != 0)
+	{
+		sum[i<<1] += ln * add[i];
+		sum[i<<1|1] += rn * add[i];
+		add[i<<1] += add[i];
+		add[i<<1|1] += add[i];
+		add[i] = 0;
+	}
+	return;
+}
+void change(int l,int r,int i,int jobl,int jobr,int jobv)
+{
+	if(l >= jobl && r <= jobr)
+	{
+		sum[i] = (r - l+ 1) * jobv;
+		return;
+	}
+	int mid = (l+ r)>>1;
+	down(mid - l + 1,r - mid,i);
+	if(mid >= jobl)
+	{
+		change(l,mid,i<<1,jobl,jobr,jobv);
+	}
+	if(mid + 1<=jobr)
+	{
+		change(mid+1,r,i<<1|1,jobl,jobr,jobv);
+	}
+	up(i);
+}
+int query(int l,int r,int i,int jobl,int jobr)
+{
+	if(l >= jobl && r <= jobr)
+	{
+		return sum[i];
+	}
+	int mid = (l+ r)>>1;
+	down(mid - l + 1,r - mid,i);
+	int ans = 0;
+	if(mid >= jobl)
+	{
+		ans += query(l,mid,i<<1,jobl,jobr);
+	}
+	if(mid + 1<=jobr)
+	{
+		ans += query(mid+1,r,i<<1|1,jobl,jobr);
+	}
+	return ans;
+}
+int main()
+{
+	cin>>n>>m;
+	for(int i = 1;i<=n-1;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back(y);
+		v[y].push_back(x);
+	}
+	dfs1(1,0);
+	dfs2(1,1);
+	build(1,n,1);
+	for(int i = 1;i<=m;i++)
+	{
+		int a;
+		int b;
+		cin>>a>>b;
+		int r = 1;
+		int x= a;
+		int y = b;
+		while (top[a] != top[b])
+		 {
+		    if (dep[top[a]] < dep[top[b]]) swap(a, b);
+		    a = fa[top[a]];
+		}
+	 	r = (dep[a] < dep[b]) ? a : b;
+		//cout<<dfn[a]<<" "<<dfn[b]<<endl;
+	//	cout<<r<<endl;
+		so.push_back({x,y,r});
+	}
+	int cnt= 0 ;
+	vector<int>ans;
+	sort(so.begin(),so.end(),cmp);
+	for(int i = 0;i<m;i++)
+	{
+		int x = so[i].a;
+		int y = so[i].b;
+		int r = so[i].lca;
+		int a = x;
+		int b = y;
+		int ce = 0;
+		while(top[x] != top[y])
+		{
+			if(dep[top[x]] <= dep[top[y]])
+			{
+				ce += query(1,n,1,dfn[top[y]],dfn[y]);
+				y = fa[top[y]];
+			}
+			else
+			{
+				ce += query(1,n,1,dfn[top[x]],dfn[x]);
+				x = fa[top[x]];
+			}
+		}
+		ce += query(1,n,1,min(dfn[x],dfn[y]),max(dfn[x],dfn[y]));
+	//	cout<<ce<<" "<<a<<" "<<b<<" "<<r<<" "<<dep[a] + dep[b] - dep[r] * 2 + 1<<endl;
+		if(ce == dep[a] + dep[b] - dep[r] * 2 + 1)
+		{
+			ans.push_back(r);
+			cnt++;
+			change(1,n,1,dfn[r],dfn[r],0);
+		}
+	}
+	cout<<cnt<<endl;
+	for(int i = 0;i<ans.size();i++)
+	{
+		cout<<ans[i]<<" ";
+	}
+	cout<<endl;
+	return 0;
+}
