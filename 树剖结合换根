@@ -1,0 +1,282 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int q;
+//树剖结合换根
+int timer = 0; 
+const int maxn = 1e5+5;
+vector<vector<int>>v(maxn);
+vector<int>dfn(maxn);
+vector<int>top(maxn);
+vector<int>seg(maxn);
+vector<long long>val(maxn);
+vector<int>dep(maxn);
+vector<int>son(maxn);
+vector<int>sz(maxn); 
+vector<int>fa(maxn);
+vector<long long>sum(maxn<<2);
+vector<long long>add(maxn<<2);
+void dfs1(int u,int p)
+{
+	fa[u] = p;
+	sz[u] += 1;
+	int tar = 0;
+	int mxl = 0;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(nxt == p)
+		{
+			continue;
+		}
+		dep[nxt] = dep[u] + 1;
+		dfs1(nxt,u);
+		sz[u] += sz[nxt];
+		if(sz[nxt] > mxl)
+		{
+			tar = nxt;
+			mxl = sz[nxt];
+		}
+	}
+	son[u] = tar;
+	return;
+}
+void dfs2(int u,int p)
+{
+	top[u] = p;
+	timer ++;
+	dfn[u] = timer;
+	seg[timer] = u;	
+	if(son[u] == 0)
+	{
+		return;
+	}
+	dfs2(son[u],p);
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(nxt == fa[u] || nxt == son[u])
+		{
+			continue;
+		}
+		dfs2(nxt,nxt);
+	}
+	return;
+} 
+void up(int i)
+{
+	sum[i] = sum[i<<1|1] + sum[i<<1];
+	return;
+}
+void down(int ln,int rn,int i)
+{
+	if(add[i] != 0)
+	{
+		sum[i<<1] += ln * add[i];
+		sum[i<<1|1] += rn * add[i];
+		add[i<<1] += add[i];
+		add[i<<1|1] += add[i];
+		add[i] = 0;
+	}
+	return;
+}
+void build(int l,int r,int i)
+{
+	if(l == r)
+	{
+		sum[i] = val[seg[l]];
+		return;
+	}
+	int mid = (l + r)>>1;
+	build(l,mid,i<<1);
+	build(mid + 1,r,i<<1|1);
+	up(i);
+	return;
+}
+void change(int l,int r,int i,int jobl,int jobr,long long jobv)
+{
+	if(l >= jobl &&r <= jobr)
+	{
+		sum[i] += (r - l + 1) * jobv;
+		add[i] += jobv;
+		return;
+	}
+	int mid = (l + r)>>1;
+	down(mid - l+ 1,r - mid,i);
+	if(mid >= jobl)
+	{
+		change(l,mid,i<<1,jobl,jobr,jobv);
+	}
+	if(mid + 1 <=jobr)
+	{
+		change(mid+1,r,i<<1|1,jobl,jobr,jobv);
+	}
+	up(i);
+	return;
+}
+long long query(int l,int r,int i,int jobl,int jobr)
+{
+	if(l >= jobl &&r <= jobr)
+	{
+		return sum[i];
+	}
+	int mid = (l + r)>>1;
+	down(mid - l+ 1,r - mid,i);
+	long long ans = 0;
+	if(mid >= jobl)
+	{
+		ans += query(l,mid,i<<1,jobl,jobr);
+	}
+	if(mid + 1 <=jobr)
+	{
+		ans += query(mid+1,r,i<<1|1,jobl,jobr);
+	}
+	return ans;
+}
+int getlca(int x,int y)
+{
+	while(top[x] != top[y])
+	{
+		if(dep[top[x]] <=dep[top[y]])
+		{
+			y = fa[top[y]];
+		}
+		else
+		{
+			x = fa[top[x]];
+		}
+	}
+	return dep[x] < dep[y] ? x : y;
+}
+int find(int l1,int l2,int l3)
+{
+	if(dep[l1] < dep[l2])
+	{
+		swap(l1,l2);
+	}
+	if(dep[l1] <dep[l3])
+	{
+		swap(l1,l3);
+	}
+	return l1;
+}
+int  main()
+{
+	ios::sync_with_stdio(false); cin.tie(0); cout.tie(0);
+	cin>>n>>q;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>val[i];
+	}
+	for(int i = 1;i<=n-1;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back(y);
+		v[y].push_back(x);
+	}
+	int root = 1;
+	dfs1(root,0);
+	dfs2(root,1);
+	build(1,n,1);
+	while(q--)
+	{
+		int op;
+		cin>>op;
+		if(op == 1)
+		{
+			int tar;
+			cin>>tar;
+			root = tar;
+		}
+		else if(op == 2)
+		{
+			int x;
+			int y;
+			long long w;
+			cin>>x>>y>>w;
+			int l1 = getlca(x,y);
+			int l2 = getlca(x,root);
+			int l3 = getlca(y,root);
+			int tar = find(l1,l2,l3);
+			//分析可知，若root 高于 l1,则tar = l1,同高或低于l1也有tar为最优选择，tar只可能在x 到 y路径上 
+			if(tar == root)
+			{
+				change(1,n,1,1,n,w);
+			}
+			else if(!(dfn[tar] <= dfn[root] && dfn[root] <= dfn[tar] + sz[tar] - 1))
+			{
+				change(1,n,1,dfn[tar],dfn[tar] + sz[tar] - 1,w);
+			}
+			else
+			{
+				int ty = 0; 
+				int pr = root;
+				//树的结构可知，如果root在x到上y,必然 高度低于tar,在tar的子树内，root往上爬 
+				//此种情况，root在tar的子树里面 
+				while(top[pr] != top[tar])
+				{
+					if(fa[top[pr]] ==tar)
+					{
+						ty = top[pr];
+						break;
+					}
+					pr = fa[top[pr]];
+				}
+				ty = (ty == 0) ? son[tar] : ty;
+				if (dfn[ty] > 1)
+			    {
+			    	change(1,n,1,1,dfn[ty]-1,w);
+				}
+				if (dfn[ty] + sz[ty] <= n)
+				{
+					change(1,n,1,dfn[ty]+sz[ty],n,w);
+				}
+			    
+			}
+		}
+		else
+		{
+			int tar;
+			cin>>tar;
+			if(tar == root)
+			{
+				cout<<query(1,n,1,1,n)<<'\n';
+			}
+			else if(!(dfn[tar] <= dfn[root] && dfn[root] <= dfn[tar] + sz[tar] - 1))
+			{
+				cout<<query(1,n,1,dfn[tar],dfn[tar] + sz[tar] - 1)<<'\n';
+			}
+			else
+			{
+				int ty = 0; 
+				int pr = root;
+				long long ans = 0;
+				//树的结构可知，如果root在x到上y,必然 高度低于tar,在tar的子树内，root往上爬 
+				//此种情况，root在tar的子树里面 
+				while(top[pr] != top[tar])
+				{
+					if(fa[top[pr]] ==tar)
+					{
+						ty = top[pr];
+						break;
+					}
+					pr = fa[top[pr]];
+				}
+				ty = (ty == 0) ? son[tar] : ty;
+				if (dfn[ty] > 1)
+			    {
+			    	ans += query(1,n,1,1,dfn[ty]-1);
+				}
+				if (dfn[ty] + sz[ty] <= n)
+			    {
+			    	ans += query(1,n,1,dfn[ty]+sz[ty],n);
+				}
+				cout<<ans<<'\n';
+			}
+		} 
+	}
+	return 0;
+}
