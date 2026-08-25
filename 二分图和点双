@@ -1,0 +1,133 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+const int maxn = 1e3+5;
+vector<vector<int>>hate(maxn,vector<int>(maxn));
+vector<vector<int>>v(maxn);
+vector<int>dfn(maxn);
+vector<vector<int>>bcc(maxn);
+vector<int>low(maxn);
+int timer = 0;
+stack<int>stk;
+int bcc_cnt = 0;
+vector<bool>curbcc(maxn);
+vector<int>col(maxn);
+vector<int>ok(maxn);
+bool oddloop(int u,int c)
+{
+	col[u] = c;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(curbcc[nxt])
+		{
+			if(col[nxt] == c)
+			{
+				return true;
+			}
+			if(col[nxt] == 0 && oddloop(nxt,c == 1 ? 2 : 1))
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}
+int compute()
+{
+	for(int i = 1;i<=bcc_cnt;i++)
+	{
+		for(int j = 0;j<bcc[i].size();j++)
+		{
+			curbcc[bcc[i][j]] = true;
+			col[bcc[i][j]] = 0;
+		}
+		bool check = oddloop(bcc[i][0],1);
+		for(int j = 0;j<bcc[i].size();j++)
+		{
+			curbcc[bcc[i][j]] = false;
+			ok[bcc[i][j]] |= check ;
+		}
+	}
+	int res = 0;
+	for(int i = 1;i<=n;i++)
+	{
+		if(!ok[i])
+		{
+			res++;
+		}
+	}
+	return res;
+}
+void tarjan(int u,int p)
+{
+	timer ++;
+	dfn[u] = low[u] = timer;
+	stk.push(u);
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(nxt == p)
+		{
+			continue;
+		}
+		if(!dfn[nxt])
+		{
+			tarjan(nxt,u);
+			low[u] = min(low[u],low[nxt]);
+			if(low[nxt] >= dfn[u])
+			{
+				bcc_cnt++;
+				int nt;
+				do{
+					nt = stk.top();
+					stk.pop();
+					bcc[bcc_cnt].push_back(nt);
+					
+				}while(nt != nxt);
+				bcc[bcc_cnt].push_back(u);
+			}
+		}
+		else
+		{
+			low[u] = min(low[u],dfn[nxt]);
+		}
+		 
+	}
+	return; 
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+	cin.tie(nullptr);
+	cin>>n>>m;
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		hate[x][y] = 1;
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = i + 1;j<=n;j++)
+		{
+			if(!hate[i][j])
+			{
+				v[i].push_back(j);
+				v[j].push_back(i);
+			}
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		if(!dfn[i])
+		{
+			tarjan(i,0);
+		}
+	}
+	int ans = compute();
+	cout<<ans<<endl;
+	return 0;
+} 
