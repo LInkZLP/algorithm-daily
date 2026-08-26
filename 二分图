@@ -1,0 +1,56 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 505;
+vector<vector<int>>v(maxn);
+vector<int>ml(maxn,-1);
+vector<int>mr(maxn,-1);
+int n;
+int m;
+vector<bool>vis(maxn);
+bool dfs(int u)
+{
+	for(int x : v[u])
+	{
+		if(!vis[x])
+		{
+			vis[x] = true;
+			if(mr[x] == -1 || dfs(mr[x]))
+			{
+				ml[u] = x;
+				mr[x] = u;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+//任务分配
+//棋盘染色
+//DAG最小路径覆盖 最小路径覆盖数=∣V∣?最大匹配数
+int hgr()
+{
+	int ans = 0;
+	for(int u = 1;u<=n;u++)
+	{
+		vis.assign(maxn,false);
+		if(dfs(u))
+		{
+			ans++;
+		}
+	}
+	return ans;
+}
+int main()
+{
+	int e;
+	cin>>n>>m>>e;
+	for(int i = 1;i<=e;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back(y);
+	}
+	cout<<hgr()<<endl;
+	return 0;
+} 
