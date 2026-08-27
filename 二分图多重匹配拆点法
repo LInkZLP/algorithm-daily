@@ -1,0 +1,54 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+const int maxn = 2e3+3;
+vector<vector<int>>v(maxn<<1);
+vector<int>ml(maxn<<1,-1);
+vector<int>vis;
+vector<int>mr(maxn<<1,-1);
+bool dfs(int u)
+{
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(!vis[nxt])
+		{
+			vis[nxt] = 1;
+			if(mr[nxt]== -1|| dfs(mr[nxt]))
+			{
+				ml[u] = nxt;
+				mr[nxt] = u;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+	cin>>n;
+	for(int i = 1;i<=2*n;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[i].push_back(x*2-1);
+		v[i].push_back(x*2);
+		v[i].push_back(y*2 -1);
+		v[i].push_back(y*2);
+	}
+	int ans = 0;
+	for(int i = 1;i<=2*n;i++)
+	{
+		vis.assign(2*n+3,0);
+		if(dfs(i))
+		{
+			ans++;
+		}
+	}
+	cout<<ans<<endl;
+	return 0;
+}
