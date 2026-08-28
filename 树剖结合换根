@@ -4,6 +4,7 @@ int n;
 int m;
 int q;
 //树剖结合换根
+//换根后，u 成为新根 root 的祖先（因为 root 在 u 的子树上），那么 u 的子树变成了全树去掉那个“通向 root 的儿子分支”
 int timer = 0; 
 const int maxn = 1e5+5;
 vector<vector<int>>v(maxn);
