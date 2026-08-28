@@ -1,0 +1,32 @@
+#include <bits/stdc++.h>
+using namespace std;
+void solve(){
+    string s;
+    cin >> s;
+    int l1 = 0;
+    int l2 = 0;
+    
+    for (char x : s){
+        if (x == '2'){
+            l1++;
+        } 
+        else if (x == '1' || x == '3'){
+            l2 = max(l1, l2) + 1;
+        }
+    }
+    int mx = max(l1, l2);
+    //为什么这样构造就一定是对的?
+    //因为它保证了是前2后1 3，并且是最长的，那么减少的一定最少 
+    cout << s.length() - mx << "\n";
+}
+
+int main() {
+    ios_base::sync_with_stdio(false);
+    cin.tie(nullptr);
+    int t;
+    cin >> t;
+    while (t--){
+        solve();
+    }
+    return 0;
+}
