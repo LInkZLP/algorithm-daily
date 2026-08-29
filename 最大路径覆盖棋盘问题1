@@ -1,0 +1,96 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int mv = 2506;
+vector<int>ml(mv);
+vector<int>mt(mv);
+vector<int>vis;
+vector<vector<int>>v(mv); 
+vector<vector<char>>mp(55,vector<char>(55));
+vector<vector<int>>mr(55,vector<int>(55));
+vector<vector<int>>mc(55,vector<int>(55));
+bool dfs(int u)
+{
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(!vis[nxt])
+		{
+			vis[nxt] = 1;
+			if(!mt[nxt] || dfs(mt[nxt]))
+			{
+				ml[u] = nxt;
+				mt[nxt] = u;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+int main()
+{
+	int sum = 0;
+	cin>>n>>m;
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 1;j<=m;j++)
+		{
+			char c;
+			cin>>mp[i][j];
+		}
+	}
+	int rp = 0;
+	int cp = 0;
+	for(int i = 1;i<=n;i++)
+	{
+		rp++;
+		for(int j = 1;j<=m;j++)
+		{
+			if(mp[i][j] == '#')
+			{
+				rp ++;
+			}
+			if(mp[i][j] == '*')
+			{
+				mr[i][j] = rp;
+			}
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		cp++;
+		for(int j = 1;j<=m;j++)
+		{
+			if(mp[j][i] == '#')
+			{
+				cp ++;
+			}
+			if(mp[j][i] == '*')
+			{
+				mc[j][i] = cp;
+			}
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 1;j<=m;j++)
+		{
+			if(mp[i][j] == '*')
+			{
+				v[mr[i][j]].push_back(mc[i][j]);
+			}
+		}
+	}
+	int cnt = 0;
+	for(int i = 1;i<=rp;i++)
+	{
+		vis.assign(cp+1,0);
+		if(dfs(i))
+		{
+			cnt++;
+		}
+	}
+	cout<<cnt<<endl;
+	return 0;
+} 
