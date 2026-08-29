@@ -1,0 +1,79 @@
+#include <bits/stdc++.h>
+using namespace std;
+int t;
+int n;
+int m;
+int k;
+const int maxn = 1e3+5;
+vector<int>l(30);
+vector<int>r(30);
+vector<vector<int>>v(maxn*20);
+vector<int>vis;
+vector<int>ml(maxn*20);
+vector<int>mr(maxn);
+bool dfs(int u)
+{
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(!vis[nxt])
+		{
+			vis[nxt] = 1;
+			if(!mr[nxt] || dfs(mr[nxt]))
+			{
+				mr[nxt] = u;
+				ml[u] = nxt;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+	cin.tie(nullptr);
+	cin>>k>>n;
+	for(int i = 1;i<=k;i++)
+	{
+		int x;
+		cin>>x;
+		r[i] = r[i-1] + x;
+		l[i] = r[i-1] + 1;
+	}	
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>t;
+		while(t--)
+		{
+			int x;
+			cin>>x;
+			for(int j = l[x];j<=r[x];j++)
+			{
+				v[j].push_back(i);
+			}
+		}
+	}
+	for(int i = 1;i<=k;i++)
+	{
+		for(int j = l[i];j<=r[i];j++)
+		{
+			vis.assign(n+3,0);
+			if(!dfs(j))
+			{
+				cout<<"No Solution!"<<'\n';
+				return 0;
+			}
+		}
+	}
+	for(int i = 1;i<=k;i++)
+	{
+		cout<<i<<": ";
+		for(int j = l[i];j<=r[i];j++)
+		{
+			cout<<ml[j]<<" ";
+		}
+		cout<<'\n';
+	}
+	return 0;
+}
