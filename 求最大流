@@ -1,0 +1,99 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 1e5+10;
+const int Maxn = 2e5+10;
+const long long INF = 1e15;
+struct edge{
+	int ed;
+	long long len;
+	int id;
+};
+vector<vector<edge>>v(maxn);
+int n;
+int m;
+int s;
+int t;
+vector<int>dep(maxn);
+vector<int>cur(maxn);
+bool bfs()
+{
+	dep.assign(maxn,-1);
+	queue<int>q;
+	q.push(s);
+	dep[s] = 0;
+	while(!q.empty())
+	{
+		int now = q.front();
+		q.pop();
+		for(int i = 0;i<v[now].size();i++)
+		{
+			int ed = v[now][i].ed;
+			if(dep[ed] == -1 && v[now][i].len)
+			{
+				dep[ed] = dep[now] + 1;
+				q.push(ed);
+			}
+		}
+	}
+	cur.assign(maxn,0);
+	return dep[t] != -1;
+}
+long long dfs(int st,long long lim)
+{
+	if(st == t)
+	{
+		return lim;
+	}
+	for(int i = cur[st];i<v[st].size();i++)
+	{
+		cur[st] = i;
+		int ed = v[st][i].ed;
+		if(dep[ed] == dep[st] + 1 && v[st][i].len)
+		{
+			long long res = dfs(ed,min(v[st][i].len,lim));
+			if(res)
+			{
+				v[st][i].len -= res;
+				v[ed][v[st][i].id].len += res;
+				return res;
+			}
+			else
+			{
+				dep[ed] = -1;
+			}
+		}
+	}
+	return 0;
+}
+long long dinic()
+{
+	long long r = 0;
+	long long flow = 0;
+	while(bfs())
+	{
+		while(flow = dfs(s,INF))
+		{
+			r += flow; 
+		}
+	}
+	return r;
+}
+int main()
+{
+	cin>>n>>m>>s>>t;
+	while(m--)
+	{
+		
+		int st;
+		int ed;
+		long long len;
+		cin>>st>>ed>>len;
+		int sti = v[st].size();
+		int edi = v[ed].size();
+		v[st].push_back({ed,len,edi});
+		v[ed].push_back({st,0,sti});
+	}
+	cout<<dinic()<<endl;
+	
+	return 0;
+}
