@@ -1,0 +1,139 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int timer= 0 ;
+const int maxn = 1e5+5;
+vector<int>col(maxn);
+vector<int>top(maxn);
+vector<int>dfn(maxn);
+vector<int>dep(maxn);
+vector<int>sz(maxn);
+vector<int>son(maxn);
+vector<int>fa(maxn);
+vector<vector<int>>pos(maxn);
+vector<int>seg(maxn);
+string ans = "";
+vector<vector<int>>v(maxn);
+void dfs1(int u,int p)
+{
+	fa[u] = p;
+	int tar = 0;
+	int mxl = 0;
+	sz[u] += 1;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(nxt == p)
+		{
+			continue;
+		}
+		dep[nxt] = dep[u] + 1;
+		dfs1(nxt,u);
+		sz[u] += sz[nxt];
+		if(sz[nxt] > mxl)
+		{
+			mxl = sz[nxt];
+			tar = nxt;
+		}
+	}
+	son[u] = tar;
+	return ;
+}
+void dfs2(int u,int p)
+{
+	top[u] = p;	
+	timer ++;
+	dfn[u] = timer;
+	seg[timer] = u;
+	if(son[u] == 0)
+	{
+		return;
+	}
+	dfs2(son[u],p);
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(nxt == fa[u] || nxt == son[u])
+		{
+			continue;
+		}
+		dfs2(nxt,nxt);
+	}
+	return;
+}
+bool el(int c,int l,int r)
+{
+	vector<int>&temp = pos[c];
+	int id = lower_bound(temp.begin(),temp.end(),l) - temp.begin();
+	if(id < temp.size() && temp[id] <= r)
+	{
+		return true;
+	}
+	return false;
+}
+bool query(int x,int y,int c)
+{
+	while(top[x] != top[y])
+	{
+		if(dep[top[x]] <= dep[top[y]])
+		{
+			swap(x,y);
+		}
+		if(el(c,dfn[top[x]],dfn[x]))
+		{
+			return true;
+		}
+		x = fa[top[x]]; 
+	}
+	if(dep[x] > dep[y])
+	{
+		swap(x,y);
+	}
+	return el(c,dfn[x],dfn[y]);
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+	cin.tie(nullptr);
+	cin>>n>>m;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>col[i];
+	}
+	for(int i = 1;i<=n-1;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back(y);
+		v[y].push_back(x);
+	}
+	dfs1(1,0);
+	dfs2(1,1);
+	for(int i = 1;i<=n;i++)
+	{
+		pos[col[i]].push_back(dfn[i]);
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		sort(pos[i].begin(),pos[i].end());
+	}
+	while(m--)
+	{
+		int x;
+		int y;
+		int c;
+		cin>>x>>y>>c;
+		if(query(x,y,c))
+		{
+			ans += '1';
+		}
+		else
+		{
+			ans += '0';
+		}
+	}
+	cout<<ans<<endl;
+	return 0;
+}
