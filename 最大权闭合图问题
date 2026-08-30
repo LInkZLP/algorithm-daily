@@ -1,0 +1,203 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+// ==================== 题目：太空飞行计划问题（最大权闭合图）====================
+// 有 m 个实验，n 个仪器。做实验 i 能赚 p_i 元，但需要购买一些仪器。
+// 仪器 j 的成本为 c_j 元。
+// 我们希望选择一些实验和仪器，使得总收益最大。
+// 这是典型的“最大权闭合子图”模型：
+//   - 实验是正权点（收益 p_i）
+//   - 仪器是负权点（成本 -c_j）
+//   - 实验指向它需要的仪器，表示选了实验就必须选这些仪器
+// 目标：选一个点集，使得如果选了点 u，那么 u 的所有后继也必须被选，
+//       且点集的总权值最大。
+//
+// 建模方法：
+//   - 源点 S 连接所有正权点（实验），容量为收益 p_i
+//   - 所有负权点（仪器）连接汇点 T，容量为成本 c_j
+//   - 实验 -> 它需要的仪器，容量为 INF（保证依赖关系不会被割断）
+// 最小割的容量 = 未选实验的收益 + 已选仪器的成本
+// 最大收益 = 所有实验收益之和 - 最小割
+// 根据最大流最小割定理，最小割 = 最大流，所以求最大流即可。
+// 方案输出：残量网络中从 S 出发可达的点就是最小割的 S 集合，即选中的点。
+
+int n;                 // 仪器数
+int m;                 // 实验数
+int S;                 // 源点
+int T;                 // 汇点
+
+// 边的结构体：终点、反向边在终点的邻接表中的下标、剩余容量
+struct st {
+    int ed;
+    int id;
+    long long w;
+};
+
+vector<int> dep;       // 层次数组，用于 BFS
+vector<int> cur;       // 当前弧优化数组
+const int maxn = 105;
+vector<vector<st>> v(maxn);
+const long long INF = 1e12;
+long long tot;         // 所有实验收益之和
+
+// BFS 分层：判断源点到汇点是否还有增广路，并建立层次图
+bool bfs() {
+    dep.assign(maxn, -1);
+    dep[S] = 0;
+    queue<int> q;
+    q.push(S);
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+        for (int i = 0; i < v[u].size(); i++) {
+            int nxt = v[u][i].ed;
+            if (dep[nxt] == -1 && v[u][i].w) {   // 只走剩余容量 > 0 的边
+                dep[nxt] = dep[u] + 1;
+                q.push(nxt);
+            }
+        }
+    }
+    cur.assign(maxn, 0);     // 分层后重置当前弧
+    return dep[T] != -1;     // 汇点可达则继续增广
+}
+
+// DFS 在层次图上找一条增广路
+long long dfs(int st, long long lim) {
+    if (st == T) return lim;      // 到达汇点，返回可用流量
+    int u = st;
+    for (int i = cur[u]; i < v[u].size(); i++) {
+        cur[u] = i;               // 当前弧优化：记录现在试到哪条边
+        int nxt = v[u][i].ed;
+        if (dep[nxt] == dep[u] + 1 && v[u][i].w) {
+            long long res = dfs(nxt, min(v[u][i].w, lim));
+            if (res) {
+                v[u][i].w -= res;               // 正向边减少
+                v[nxt][v[u][i].id].w += res;    // 反向边增加，允许反悔
+                return res;
+            } else {
+                dep[nxt] = -1;   // 该点已经无法继续增广，剪枝
+            }
+        }
+    }
+    return 0;
+}
+
+// Dinic 主循环，返回最大流
+long long dinic() {
+    long long res = 0;
+    long long flow;
+    while (bfs()) {
+        while ((flow = dfs(S, INF)) > 0) {
+            res += flow;
+        }
+    }
+    return tot - res;   // 最大收益 = 所有正权和 - 最小割（最大流）
+}
+
+int main() {
+    scanf("%d %d", &m, &n);
+    S = 0;                       // 源点编号 0
+    T = m + n + 1;               // 汇点编号
+
+    getchar();                   // 吸收换行符，为 getline 做准备
+
+    // ---- 读入每个实验，并建立源点->实验 和 实验->仪器 的边 ----
+    for (int i = 1; i <= m; i++) {
+        string line;
+        getline(cin, line);
+        stringstream ss(line);
+        long long x;
+        ss >> x;                 // 第一个数是收益
+        tot += x;                // 累加总正权
+
+        // 源点 -> 实验，容量为收益
+        int sti = v[S].size();
+        int edi = v[i].size();
+        v[S].push_back({i, edi, x});
+        v[i].push_back({S, sti, 0});
+
+        // 实验 -> 所需仪器，容量为 INF
+        int po;
+        while (ss >> po) {       // po 是仪器编号
+            int ed = po + m;     // 仪器节点编号映射为 m+1..m+n
+            sti = v[i].size();
+            edi = v[ed].size();
+            v[i].push_back({ed, edi, INF});
+            v[ed].push_back({i, sti, 0});
+        }
+    }
+
+    // ---- 读入每个仪器的成本，并建立仪器->汇点 的边 ----
+    for (int i = m + 1; i <= m + n; i++) {
+        long long w;
+        scanf("%lld", &w);
+        int sti = v[i].size();
+        int edi = v[T].size();
+        v[i].push_back({T, edi, w});   // 仪器 -> 汇点，容量为成本
+        v[T].push_back({i, sti, 0});
+    }
+
+    long long ans = dinic();   // 计算最大收益
+
+    // ---- 输出选择的实验和仪器 ----
+    // 在残量网络中从源点 S 出发，只走剩余容量 > 0 的边，
+    // 所有能到达的节点就是最小割的 S 集合，即选中的点。
+    queue<int> q;
+    vector<int> vis(maxn, -1);
+    q.push(S);
+    vis[S] = 0;
+    vector<int> l1;   // 选中的实验编号
+    vector<int> l2;   // 选中的仪器编号（存储原始编号，即减 m 后）
+
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+        for (int i = 0; i < v[u].size(); i++) {
+            int nxt = v[u][i].ed;
+            if (vis[nxt] == -1 && v[u][i].w) {   // 剩余容量 > 0 才能走
+                vis[nxt] = 0;
+                if (nxt >= 1 && nxt <= m) {
+                    l1.push_back(nxt);           // 是实验
+                } else if (nxt > m && nxt <= m + n) {
+                    l2.push_back(nxt - m);       // 是仪器，还原编号
+                }
+                q.push(nxt);
+            }
+        }
+    }
+
+    // 输出第一行：最大收益
+    cout << ans << '\n';
+
+    // 输出第二行：选择的实验编号
+    if (l1.empty()) {
+        cout << "0\n";
+    } else {
+        for (int k : l1) cout << k << ' ';
+        cout << '\n';
+    }
+
+    // 输出第三行：选择的仪器编号
+    if (l2.empty()) {
+        cout << "0\n";
+    } else {
+        for (int k : l2) cout << k << ' ';
+        cout << '\n';
+    }
+	/*
+	为什么收益与成本能转化为最小割？
+	正权点连源点，容量为收益；负权点连汇点，容量为成本；依赖边为 INF。
+	割断源点到实验的边表示放弃该实验收益，割断仪器到汇点的边表示购买该仪器成本。
+	割容量 = 放弃的收益 + 购买的成本，所以总收益 = 所有收益 - 割容量。最小化割容量就是最大化收益。
+	
+	为什么最大流等于最小割？
+	这是最大流最小割定理保证的。我们不需要直接求割，用最大流即可得到最小割容量。
+	
+	为什么从 S 出发可达点就是选择方案？
+	最大流后，所有割边都已经满流（剩余容量为 0），从 S 出发无法穿过这些边。能到达的点属于 S 集合，也就是选中的实验和仪器。
+	
+	当收益等于成本时为什么有时输出空集？
+	因为净收益为 0，选不选都一样，任意最优方案均可。残量网络可能把所有点都留在 T 集合，输出空集是合法的。
+	*/
+    return 0;
+}
