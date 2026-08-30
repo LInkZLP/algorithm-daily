@@ -1,0 +1,119 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+struct st{
+	int ed;
+	int id;
+	int w;
+};
+int S;
+int T;
+const int maxn = 3e2+5;
+vector<vector<st>>v(maxn);
+vector<int>cur;
+int INF = 300;
+vector<int>dep;
+vector<int>need(maxn);
+bool bfs()
+{
+	dep.assign(maxn,-1);
+	dep[S] = 0;
+	queue<int>q;
+	q.push(S);
+	while(!q.empty())
+	{
+		int u = q.front();
+		q.pop();
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int nxt = v[u][i].ed;
+			if(dep[nxt] == -1 && v[u][i].w)
+			{
+				dep[nxt] = dep[u] + 1;
+				q.push(nxt);
+			}
+		}
+	}
+	cur.assign(maxn,0);
+	return dep[T] != -1;
+}
+int dfs(int st,int lim)
+{
+	if(st == T)
+	{
+		return lim;
+	}
+	for(int i = cur[st];i<v[st].size();i++)
+	{
+		cur[st] = i;
+		int nxt = v[st][i].ed;
+		int u = st;
+		if(dep[nxt] == dep[u] + 1 && v[u][i].w)
+		{
+			int res = dfs(nxt, min( v[u][i].w,lim));
+			if(res)
+			{
+				v[u][i].w -= res;
+				v[nxt][v[u][i].id].w += res;
+				return res;
+			}
+			else
+			{
+				dep[nxt] = -1;
+			}
+		}
+	}
+	return 0;
+}
+int dinic()
+{
+	int res = 0;
+	int flow = 0;
+	while(bfs())
+	{
+		while(flow = dfs(S,INF))
+		{
+			res += flow;
+		}
+	}
+	return res;
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+	cin.tie(nullptr);
+	cin>>n>>m;
+	S = 0;
+	T = n + 1;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>need[i];
+		if(need[i])
+		{
+			int sti = v[S].size();
+			int edi = v[i].size();
+			v[S].push_back({i,edi,1});
+			v[i].push_back({S,sti,0});
+		}
+		else
+		{
+			int sti = v[i].size();
+			int edi = v[T].size();
+			v[i].push_back({T,edi,1});
+			v[T].push_back({i,sti,0});
+		}
+	}
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		int sti = v[x].size();
+		int edi = v[y].size();
+		v[x].push_back({y,edi,1});
+		v[y].push_back({x,sti,1});
+	}
+	cout<<dinic()<<endl;
+	return 0;
+}
