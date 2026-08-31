@@ -1,0 +1,137 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+// ==================== P2774 方格取数问题 ====================
+// 题意：在 n*m 棋盘上每个格子有一个正整数权值，选择若干格子，
+//       要求任意两个被选中的格子没有公共边（不相邻），求最大权值和。
+//
+// 建模：黑白染色 + 最小割
+//   - 将棋盘按 (i+j) 的奇偶染成黑白两色。
+//   - 黑格与白格相邻，因此冲突只发生在黑白格之间，构成二分图。
+//   - 源点 S 连向所有黑格，容量为黑格的权值。
+//   - 所有白格连向汇点 T，容量为白格的权值。
+//   - 对于每对相邻的黑格与白格，从黑格向白格连容量为 INF 的边。
+//
+// 割的含义：
+//   - 割掉 S->黑格 的边：表示放弃该黑格（不选它），损失其权值。
+//   - 割掉 白格->T 的边：表示放弃该白格，损失其权值。
+//   - 相邻边容量为 INF，最小割绝不会割它们，保证选法合法。
+//   最小割 = 最少放弃的权值和。
+//   答案 = 所有格子权值总和 - 最小割。
+//
+// 与最大权闭合图的联系：
+//   本题本质是最大权独立集问题，可以通过补集转化为最小割求解。
+//   最大权独立集 = 总权值 - 最小点覆盖权值，而最小点覆盖可通过最小割求得。
+
+int n, m;
+int S, T;                 // 源点、汇点
+const int maxn = 10005;   // 最大节点数（n*m + 2）
+const long long INF = 1e18; // 无穷大容量，必须远大于权值和
+
+struct Edge {
+    int to, rev;          // to：终点，rev：反向边在终点邻接表中的下标
+    long long cap;        // 剩余容量
+};
+
+vector<vector<Edge>> G(maxn);
+vector<int> level(maxn), iter(maxn);  // 层次数组、当前弧优化
+int dx[] = {0, 0, 1, -1};
+int dy[] = {1, -1, 0, 0};
+
+// 添加一条从 from 到 to 容量为 cap 的边（同时建反向边）
+void add_edge(int from, int to, long long cap) {
+    G[from].push_back({to, (int)G[to].size(), cap});
+    G[to].push_back({from, (int)G[from].size() - 1, 0});
+}
+
+// BFS 分层
+bool bfs() {
+    fill(level.begin(), level.end(), -1);
+    queue<int> q;
+    level[S] = 0;
+    q.push(S);
+    while (!q.empty()) {
+        int u = q.front(); q.pop();
+        for (const auto &e : G[u]) {
+            if (e.cap > 0 && level[e.to] == -1) {
+                level[e.to] = level[u] + 1;
+                q.push(e.to);
+            }
+        }
+    }
+    fill(iter.begin(), iter.end(), 0);
+    return level[T] != -1;
+}
+
+// DFS 找增广路
+long long dfs(int u, long long f) {
+    if (u == T) return f;
+    for (int &i = iter[u]; i < (int)G[u].size(); ++i) {
+        Edge &e = G[u][i];
+        if (e.cap > 0 && level[u] < level[e.to]) {
+            long long d = dfs(e.to, min(f, e.cap));
+            if (d > 0) {
+                e.cap -= d;
+                G[e.to][e.rev].cap += d;
+                return d;
+            }
+        }
+    }
+    return 0;
+}
+
+// Dinic 最大流
+long long max_flow() {
+    long long flow = 0;
+    while (bfs()) {
+        long long f;
+        while ((f = dfs(S, INF)) > 0) flow += f;
+    }
+    return flow;
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    cin >> n >> m;
+    S = 0;
+    T = n * m + 1;
+
+    vector<vector<long long>> val(n + 1, vector<long long>(m + 1));
+    long long total = 0;
+    for (int i = 1; i <= n; ++i) {
+        for (int j = 1; j <= m; ++j) {
+            cin >> val[i][j];
+            total += val[i][j];
+        }
+    }
+
+    // 格子编号函数：1..n*m
+    auto id = [&](int i, int j) {
+        return (i - 1) * m + j;
+    };
+
+    // 建图：源点连黑格，白格连汇点，黑格连相邻白格
+    for (int i = 1; i <= n; ++i) {
+        for (int j = 1; j <= m; ++j) {
+            int cur = id(i, j);
+            if ((i + j) % 2 == 0) {   // 黑格
+                add_edge(S, cur, val[i][j]);          // S -> 黑格
+                for (int k = 0; k < 4; ++k) {
+                    int nx = i + dx[k], ny = j + dy[k];
+                    if (nx >= 1 && nx <= n && ny >= 1 && ny <= m) {
+                        int nxt = id(nx, ny);
+                        add_edge(cur, nxt, INF);       // 黑格 -> 相邻白格
+                    }
+                }
+            } else {                    // 白格
+                add_edge(cur, T, val[i][j]);          // 白格 -> T
+            }
+        }
+    }
+
+    // 答案 = 总和 - 最小割
+    cout << total - max_flow() << '\n';
+    return 0;
+}
