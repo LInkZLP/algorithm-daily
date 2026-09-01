@@ -1,0 +1,75 @@
+#include <bits/stdc++.h>
+using namespace std;
+void solve()
+{
+	int n;
+	cin>>n;
+	vector<int>v(n+5);
+	int cnt = 0;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+	}
+	int l1 = 0;
+	int l2 = 0;
+	int l3 = 0;
+	int l4 = 0;
+	for(int i = 2;i<=n/2; i++)
+	{
+		int nl1;
+		int nl2;
+		int nl3;
+		int nl4;
+		int k1 = l2 + (v[i-1] == v[i]) + l4 + (v[n-i+1] == v[n-i+2]);
+		int k2 = l1 + (v[n-i+2] == v[i]) + l3 + (v[n-i+1] == v[i-1]);
+		if(k1 <= k2)
+		{
+			nl2 = l2 + (v[i-1] == v[i]);
+			nl4 = l4 + (v[n-i+1] == v[n-i+2]);
+		}
+		else
+		{
+			nl2 = l1 + (v[n-i+2] == v[i]);
+			nl4 =  l3 + (v[n-i+1] == v[i-1]);
+		}
+		k1 = l2 + (v[i-1] == v[n-i+1]) + l4 + (v[n-i + 2] == v[i]);
+		k2 = l1 + (v[n-i+1] == v[n-i + 2]) + l3 + (v[i - 1] == v[i]);
+		if(k1 <= k2)
+		{
+			nl1 = l2 + (v[i-1] == v[n-i+1]);
+			nl3 = l4 + (v[n-i + 2] == v[i]);
+		}
+		else
+		{
+			nl1 = l1 + (v[n-i+1] == v[n-i + 2]);
+			nl3 = l3 + (v[i - 1] == v[i]);
+		}
+		swap(l1,nl1);
+		swap(l2,nl2);
+		swap(l3,nl3);
+		swap(l4,nl4);
+	}
+	if(n & 1)
+	{
+		int tar = (n + 1) / 2;
+		cnt += (v[tar] == v[tar-1]) + (v[tar] == v[tar + 1]);
+	}
+	else
+	{
+		cnt += (v[n / 2] == v[n / 2 + 1]);
+	}
+	cout<<min(l1+l3,l2+l4) + cnt<<endl;
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+	cin.tie(nullptr);
+	cout.tie(nullptr);
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+} 
