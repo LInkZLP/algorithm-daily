@@ -1,0 +1,73 @@
+#include <bits/stdc++.h>
+using namespace std;
+long long mod = 998244353;
+void solve()
+{
+	int n;
+	cin>>n;
+	vector<long long>v(n+5);
+	long long res = 0;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+		res ^= v[i];
+	}
+	if(n == 1)
+	{
+		cout<<0<<endl;
+		return;
+	}
+	long long ans = 0;
+	if(res == 0)
+	{
+		ans ++;
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		int xi = res ^ v[i];
+		if(xi < v[i])
+		{
+			ans++;
+		}
+	}
+	cout<<ans % mod<<endl;
+	return;
+}
+
+/*
+1. 必败态：非零元素个数 ≤ 1
+情况一：全是 0
+没有任何石子可以取，无法操作，直接输。
+
+情况二：只有一个非零元素
+2. 必胜态：非零元素个数 ≥ 2
+如果至少有两个正数，先手可以一步把局面变成必败态（即操作后非零元素个数 ≤ 1）。
+
+怎么做到呢？有两种手段：
+
+手段 A：全部取完
+如果所有 a_i 的异或和 xor_all = 0，那么直接取 b_i = a_i（即全取完）。
+此时异或和自然为 0，合法。
+操作后所有元素都是 0，对手必败。
+
+所以当 xor_all = 0 时，有一种必胜操作。
+
+手段 B：只留下一个正数
+我们想保留一个位置 k 的正数，其余位置全部取完。
+
+设原数组异或和为 X = xor_all。
+
+对于位置 k，如果保留 a'_k > 0，其余位置取完，那么：
+
+其他位置 i ≠ k 的 b_i = a_i
+*/
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
