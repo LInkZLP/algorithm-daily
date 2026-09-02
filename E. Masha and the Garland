@@ -1,0 +1,50 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+void solve() {
+    int n, q;
+    string s;
+    cin >> n >> q >> s;
+
+    // 数组开够，n 最大 2e5
+    vector<int> v(n + 5);
+    vector<int> sum(n + 5);
+
+    // 构建前缀和 sum
+    // sum[i] = 前 i 个字符中，坏对的右端点个数
+    // 坏对定义为 s[j] == s[j-1] (j 从 2 到 i)
+    for (int i = 1; i <= n; i++) {
+        v[i] = s[i - 1] - '0';
+        sum[i] = sum[i - 1];
+        if (i >= 2 && v[i] == v[i - 1]) {
+            sum[i]++;
+        }
+    }
+
+    while (q--) {
+        int l, r, k;
+        cin >> l >> r >> k;
+
+        // 区间 [l, r] 内的坏对数 = sum[r] - sum[l]
+        // 因为 sum[l] 包含了 (l-1, l) 这个坏对，应排除
+        int bad = sum[r] - sum[l];
+
+        // 最少操作次数 = ceil(bad / 2) = (bad + 1) / 2
+        int need = (bad + 1) / 2;
+
+        if (need <= k) cout << "YES\n";
+        else cout << "NO\n";
+    }
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int t;
+    cin >> t;
+    while (t--) {
+        solve();
+    }
+    return 0;
+}
