@@ -1,0 +1,57 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 2e3+5;
+void solve()
+{
+	int n;
+	cin>>n;
+	vector<int>v(n+5);
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+	}
+	if(n & 1)
+	{
+		cout<<"Mike"<<endl;
+	}
+	else
+	{
+		int ans = 1;
+		for(int i = 1;i<=n;i++)
+		{
+			if(v[i] < v[ans])
+			{
+				ans = i;
+			}
+		}
+		if(ans & 1)
+		{
+			cout<<"Joe"<<endl;
+		}
+		else
+		{
+			cout<<"Mike"<<endl;
+		}
+	}
+	return;
+}
+/*
+首先，如果 n 是奇数，那一定 Mike 赢，因为他只需要每次把石子拿空即可。因为到了第二轮，
+Joe 变成了拿奇数编号的石头堆的人，而第一轮 Mike 直接把第一堆石头全拿完， 就没得拿了，
+ 也就输了。
+
+其次，如果 n 是偶数，Mike 将一直拿奇数位置的石子，
+Joe 一直拿偶数位置的石子，为了保证拿的次数尽可能的多，所以要保证每次拿的石子尽可能少，
+即每次都只取 1 个。因此只需要找出最先被拿空的石子堆，也就是数组中的下标最靠前的最小值，
+判断如果它为奇数，则 Joe 必胜，反之则 Mike 必胜。
+*/
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
