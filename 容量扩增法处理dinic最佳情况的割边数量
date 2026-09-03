@@ -1,0 +1,106 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int S;
+int T;
+struct st{
+	int ed;
+	int id;
+	long long w;
+	int rev;
+};
+const int maxn = 40;
+vector<int>dep;
+vector<int>cur;
+vector<vector<st>>v(maxn);
+const long long INF = 1e18;
+bool bfs()
+{
+	queue<int>q;
+	q.push(S);
+	dep.assign(maxn,-1);
+	dep[S] = 0;
+	while(!q.empty())
+	{
+		int u = q.front();
+		q.pop();
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int nxt = v[u][i].ed;
+			if(dep[nxt] == -1 && v[u][i].w)
+			{
+				dep[nxt] = dep[u] + 1;
+				q.push(nxt);
+			}
+		}
+	}
+	cur.assign(maxn,0);
+	return dep[T] != -1;
+}
+long long dfs(int u,long long lim)
+{
+	if(u == T)
+	{
+		return lim;
+	}
+	for(int i = cur[u];i<v[u].size();i++)
+	{
+		cur[u] = i;
+		int nxt = v[u][i].ed;
+		if(dep[nxt] == dep[u] + 1 && v[u][i].w)
+		{
+			long long res = dfs(nxt,min(v[u][i].w,lim));
+			if(res)
+			{
+				v[u][i].w -= res;
+				v[nxt][v[u][i].id].w += res;
+				return res;
+			}
+			else
+			{
+				dep[nxt] = -1;
+			}
+		}
+	}
+	return 0;
+}
+long long dinic()
+{
+	long long r = 0;
+	long long f = 0;
+	while(bfs())
+	{
+		while(f = dfs(S,INF))
+		{
+			r += f;
+		}
+	}
+	return r;
+}
+int main()
+{
+	cin>>n>>m;
+	S= 1;
+	T = n;
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		long long w;
+		cin>>x>>y>>w;
+		int sti = v[x].size();
+		int edi = v[y].size();
+		v[x].push_back({y,edi,w*(m+1) + 1,0});
+		v[y].push_back({x,sti,0,1});
+	}
+	long long ans = dinic();
+	dep.assign(maxn,0);
+	dep[S] = 1;
+	queue<int>q;
+	q.push(S);
+	long long res = ans / (m + 1);
+	long long sum = ans % (m + 1);
+	cout<<res<<" "<<sum<<endl;
+	return 0;
+}
