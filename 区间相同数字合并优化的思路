@@ -1,0 +1,85 @@
+#include <bits/stdc++.h>
+using namespace std;
+int cnt(string s)
+{
+	string cur = "1";
+	if(cur == s)
+	{
+		return 0;
+	}
+	for(int i = 0;i<=100;i++)
+	{
+		if(cur == s)
+		{
+			return i;
+		}
+		int carry = 0;
+		for(int j = cur.size() - 1;j>=0;j--)
+		{
+			int t = (cur[j] - '0') * 2 + carry;
+			cur[j] = char(t % 10 + '0');
+			carry = t / 10;
+		}
+		if(carry)
+		{
+			cur = char(carry + '0') + cur;
+		}
+	}
+}
+string pow2(int exp) 
+{
+    string res = "1";
+    while (exp--) 
+	{
+        int carry = 0;
+        for (int i = (int)res.size() - 1; i >= 0; i--)
+		{
+            int t = (res[i] - '0') * 2 + carry;
+            res[i] = char(t % 10 + '0');
+            carry = t / 10;
+        }
+        if (carry) res = char(carry + '0') + res;
+    }
+    return res;
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+	cin.tie(nullptr);
+	int n;
+	cin>>n;
+	vector<int>c(n+5);
+	int maxn = 1005;
+	vector<vector<int>>dp(maxn,vector<int>(maxn,-1));
+	vector<string>v(n+5);
+	int ans = 0;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+		c[i] = cnt(v[i]);
+		ans = max(ans,c[i]);
+		dp[i][i] = c[i];
+	}
+	for(int len = 2;len <= n;len ++)
+	{
+		for(int i = 1;len + i - 1 <= n;i++)
+		{
+			int j = i + len - 1;
+			for(int k = i;k<j;k++)
+			{
+				if(dp[i][k] == dp[k + 1][j] && dp[i][k] != -1)
+				{
+					dp[i][j] = max(dp[i][j],dp[i][k] + 1);
+					ans = max(ans,dp[i][j]);
+				}
+				if(k > i &&dp[i][k-1] == dp[k+1][j] && dp[i][k-1] != -1)
+				{
+					dp[i][j] = max(dp[i][j],dp[i][k-1]+1);
+					ans = max(ans,dp[i][j]);
+				}
+			}
+		}
+	}
+	cout<<pow2(ans)<<endl;
+	return 0;
+}
