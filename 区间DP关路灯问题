@@ -1,0 +1,66 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int c;
+const int maxn = 1e3+5;
+struct st{
+	int x;
+	long long p;
+};
+vector<long long>v(maxn,0);
+vector<long long>w(maxn,0);
+vector<st>a(maxn);
+vector<vector<long long>>dp0(maxn,vector<long long>(maxn,LLONG_MAX));
+vector<vector<long long>>dp1(maxn,vector<long long>(maxn,LLONG_MAX));
+vector<long long >sum(maxn,0);
+//左右扩展，边界扩展，边界方向 
+bool cmp(st c,st b)
+{
+	return c.x < b.x;
+}
+void solve()
+{
+	cin>>n>>c;
+	long long tot = 0;
+	for(int i = 1;i<=n;i++)
+	{
+		int t1;
+		int t2;
+		cin>>t1>>t2;
+		tot += t2;
+		a[i] = {t1,t2};
+	}
+	int uy = 0;
+	uy = a[c].x;
+	//cout<<uy<<endl; 
+	sort(a.begin() + 1,a.begin() + 1 + n,cmp);
+	for(int i = 1;i<=n;i++)
+	{
+		v[i] = a[i].x - uy;
+		w[i] = a[i].p;
+		dp1[i][i] = abs(v[i]) * tot;
+		dp0[i][i] = abs(v[i]) * tot;
+		sum[i] = sum[i-1] + w[i];
+	}
+	for(int len = 2;len <= n;len ++)
+	{
+		for(int i = 1;i + len - 1 <= n;i ++)
+		{
+			int j = i + len - 1;
+			dp0[i][j] = min(dp0[i+1][j] +  (v[i+1] - v[i]) *(tot - (sum[j] - sum[i])) ,dp1[i + 1][j] +  (tot - (sum[j] - sum[i])) *(v[j] - v[i]));
+			dp1[i][j] = min(dp1[i][j - 1] + (tot - (sum[j-1] - sum[i-1])) * (v[j] - v[j-1]),dp0[i][j-1] + (tot - (sum[j-1] - sum[i - 1])) *(v[j] - v[i]));
+		}
+	}
+	cout<<min(dp1[1][n],dp0[1][n])<<endl;
+}
+int main()
+{
+	int t;
+	t = 1;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+} 
