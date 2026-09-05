@@ -1,0 +1,159 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int n1, n2, n3;      // 书、练习册、答案的数量
+int S, T;            // 源点、汇点
+int m;               // 对应关系数量
+
+struct st {
+    int ed, id, w;   // 终点、反向边索引、剩余容量
+};
+
+vector<int> dep, cur;
+const int INF = 1e6;
+const int maxn = 1e4 + 5;
+vector<vector<st>> v(maxn << 2);  // 节点总数最多约 2*n1 + n2 + n3 + 1，这里开大一些
+
+void add(int u, int x, int w) {
+    int sti = v[u].size();
+    int edi = v[x].size();
+    v[u].push_back({x, edi, w});
+    v[x].push_back({u, sti, 0});
+}
+
+bool bfs() {
+    queue<int> q;
+    q.push(S);
+    dep.assign(maxn << 2, -1);
+    dep[S] = 0;
+    while (!q.empty()) {
+        int u = q.front(); q.pop();
+        for (int i = 0; i < v[u].size(); i++) {
+            int ed = v[u][i].ed;
+            if (dep[ed] == -1 && v[u][i].w) {
+                dep[ed] = dep[u] + 1;
+                q.push(ed);
+            }
+        }
+    }
+    cur.assign(maxn << 2, 0);
+    return dep[T] != -1;
+}
+
+int dfs(int u, int lim) {
+    if (u == T) return lim;
+    for (int i = cur[u]; i < v[u].size(); i++) {
+        cur[u] = i;
+        int ed = v[u][i].ed;
+        if (dep[ed] == dep[u] + 1 && v[u][i].w) {
+            int res = dfs(ed, min(v[u][i].w, lim));
+            if (res) {
+                v[u][i].w -= res;
+                v[ed][v[u][i].id].w += res;
+                return res;
+            } else {
+                dep[ed] = -1;
+            }
+        }
+    }
+    return 0;
+}
+
+int dinic() {
+    int r = 0, f;
+    while (bfs()) {
+        while ((f = dfs(S, INF)) > 0) {
+            r += f;
+        }
+    }
+    return r;
+}
+
+int main() {
+    cin >> n1 >> n2 >> n3;
+    cin >> m;
+
+    S = 0;
+    T = 2 * n1 + n2 + n3 + 1;
+
+    // 源点 -> 练习册（容量 1）
+    // 每本练习册至多使用一次
+    for (int i = 1; i <= n2; i++) {
+        add(S, i, 1);
+    }
+
+    // 答案 -> 汇点（容量 1）
+    // 每本答案至多使用一次
+    for (int i = 2*n1 + n2 + 1; i <= 2*n1 + n2 + n3; i++) {
+        add(i, T, 1);
+    }
+
+    // 书拆点：书入点 -> 书出点（容量 1）
+    // 为什么必须拆点？
+    // 如果不拆点，书节点会同时连接练习册和答案，
+    // 由于网络流中节点本身不限制通过的总流量，
+    // 就可能出现一本书同时与多个练习册和多个答案匹配，
+    // 即一本书被重复使用，这是不合法的。
+    //
+    // 拆点后，书入点只负责接收来自练习册的流，
+    // 书出点只负责向答案发送流，
+    // 它们之间用容量为 1 的边连接，
+    // 强制限制每本书最多只能通过 1 的流量，
+    // 从而保证每本书最多被使用一次。
+    //
+    // 证明：任何合法的书册分配方案都对应一个满足此限制的流；
+    // 反过来，任何整数可行流也对应一个合法分配方案。
+    // 因此最大流等于最大完整书册数。
+    for (int i = n2 + 1; i <= n2 + n1; i++) {
+        add(i, i + n1, 1);   // 书入点 -> 书出点
+    }
+    /*
+为什么练习册和答案不需要拆点？
+练习册：源点 S -> 练习册 的容量是 1。
+这意味着每个练习册最多只能从源点接收 1 单位流量。
+即使它后面连接了多本书，但由于入口容量被限制为 1，它最多只能流出 1 单位流量，也就是最多被一本书使用。
+所以练习册不会被多本书同时匹配。
+
+答案：答案 -> 汇点 T 的容量是 1。
+这表示每个答案最多只能向汇点发送 1 单位流量。
+即使多本书连到同一个答案，但由于出口容量为 1，它最多只能接受 1 单位流量，也就是最多被一本书使用。
+所以答案也不会被多本书匹配。
+
+如果对练习册和答案也拆点会怎样？
+如果强行对练习册和答案拆点，就是在它们内部加一条容量为 1 的边，例如：
+
+练习册入点 -> 练习册出点，容量 1
+
+答案入点 -> 答案出点，容量 1
+
+这样做的效果与现在完全一样，因为它们的入口/出口已经通过源汇边限制为 1 了。
+拆点后：
+
+练习册入点只能从源点接收 1 流，再通过容量 1 的内部边流到出点，仍然最多流出 1 流。
+
+答案入点接收流后，通过容量 1 的内部边流到出点，再流到汇点，仍然最多流出 1 流。
+
+结果不会改变，但会增加节点数和边数，使图变大，降低效率。
+因此没有必要对练习册和答案拆点。
+    */
+    // 练习册 -> 书入点（容量 1）
+    for (int i = 0; i < m; i++) {
+        int x, y;
+        cin >> x >> y;       // x: 书编号，y: 练习册编号
+        int book_in = x + n2;          // 书入点
+        add(y, book_in, 1);            // 练习册 -> 书入点
+    }
+
+    cin >> m;
+    // 书出点 -> 答案（容量 1）
+    for (int i = 0; i < m; i++) {
+        int x, y;
+        cin >> x >> y;       // x: 书编号，y: 答案编号
+        int book_out = x + n2 + n1;    // 书出点
+        int ans_node = y + 2*n1 + n2;  // 答案节点
+        add(book_out, ans_node, 1);
+    }
+
+    cout << dinic() << '\n';
+    return 0;
+}
