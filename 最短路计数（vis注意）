@@ -1,0 +1,80 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int maxn = 2005;
+vector<long long>cnt(maxn);
+vector<int>dist(maxn,INT_MAX);
+#define pli pair<int,int>
+vector<vector<pli>>v(maxn);
+vector<int>vis(maxn);
+//不加 vis 标记时，同一个节点可能被多次弹出优先队列，导致对它的出边重复松弛，从而使路径计数错误翻倍。
+void work()
+{
+	int sta = 1;
+	priority_queue<pli,vector<pli>,greater<pli>>pq;
+	pq.push({0,sta});
+	dist[1] = 0;
+	cnt[1] = 1;
+	while(!pq.empty())
+	{
+		pli r = pq.top();
+		int u = r.second;
+		pq.pop();
+		if(vis[u])
+		{
+			continue;
+		}
+		vis[u] = 1;
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int ed = v[u][i].second;
+			int w  = v[u][i].first;
+			if(dist[ed] > dist[u] + w)
+			{
+				dist[ed] = dist[u] + w;
+				cnt[ed] = cnt[u];
+				pq.push({dist[ed],ed});
+			}
+			else if(dist[ed] == dist[u] + w)
+			{
+				cnt[ed] += cnt[u];
+			}
+		} 
+	}
+	if(dist[n] == INT_MAX)
+	{
+		cout<<"No answer"<<endl;
+		return;
+	}
+	cout<<dist[n]<<" "<<cnt[n]<<endl;
+}
+int main()
+{
+	cin>>n>>m;
+	map<pli,int>mp;
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		int c;
+		cin>>x>>y>>c;
+		if(mp.find({x,y}) == mp.end())
+		{
+			mp[{x,y}] = c;
+		}
+		else
+		{
+			mp[{x,y}] = min(mp[{x,y}],c);
+		}
+	}
+	for(auto e : mp)
+	{
+		int x = e.first.first;
+		int y = e.first.second;
+		int c = e.second;
+		v[x].push_back({c,y});
+	}
+	work();
+	return 0;
+} 
