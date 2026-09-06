@@ -1,0 +1,149 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int n, r, c, m, S, T;
+const int maxn = 5055;          // 最大节点数：50×50×2 + 源汇 ≈ 5002
+struct st{
+    int ed, id, w;              // 终点、反向边索引、剩余容量
+};
+
+vector<vector<int>> mp(65, vector<int>(65, 0));  // 网格是否可用
+vector<vector<int>> jd(65, vector<int>(65, 0));  // 入点编号
+vector<vector<int>> od(65, vector<int>(65, 0));  // 出点编号
+vector<vector<st>> v(maxn);
+vector<int> cur, dep;
+int ptr = 0;                    // 节点编号计数器
+int tot = 0;                    // 可用格点总数
+
+void add(int u, int x, int w) {
+    int sti = v[u].size();
+    int edi = v[x].size();
+    v[u].push_back({x, edi, w});
+    v[x].push_back({u, sti, 0});
+}
+
+bool bfs() {
+    queue<int> q;
+    q.push(S);
+    dep.assign(maxn, -1);
+    dep[S] = 0;
+    while (!q.empty()) {
+        int u = q.front(); q.pop();
+        for (int i = 0; i < v[u].size(); i++) {
+            int nxt = v[u][i].ed;
+            if (dep[nxt] == -1 && v[u][i].w) {
+                dep[nxt] = dep[u] + 1;
+                q.push(nxt);
+            }
+        }
+    }
+    cur.assign(maxn, 0);
+    return dep[T] != -1;
+}
+
+int dfs(int u, int lim) {
+    if (u == T) return lim;
+    for (int i = cur[u]; i < v[u].size(); i++) {
+        cur[u] = i;
+        int nxt = v[u][i].ed;
+        if (dep[nxt] == dep[u] + 1 && v[u][i].w) {
+            int res = dfs(nxt, min(lim, v[u][i].w));
+            if (res) {
+                v[u][i].w -= res;
+                v[nxt][v[u][i].id].w += res;
+                return res;
+            } else {
+                dep[nxt] = -1;
+            }
+        }
+    }
+    return 0;
+}
+
+int dinic() {
+    int res = 0, f;
+    while (bfs()) {
+        while ((f = dfs(S, 1e6)) > 0) {
+            res += f;
+        }
+    }
+    return res;
+}
+//本质就是每个点拆成左部右部点
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    cin >> n >> m >> r >> c;
+    S = 0;
+    T = 5050;   // 汇点，远大于最大节点编号
+
+    // ====================
+    // 1. 读入网格，建立拆点
+    // ====================
+    // 每个可用格点 (i,j) 被拆成两个点：
+    //   入点 jd[i][j]：表示路径“进入”这个点
+    //   出点 od[i][j]：表示路径“离开”这个点
+    // 在最小路径覆盖模型中：
+    //   源点 S 连接所有出点（路径起点）
+    //   所有入点连接汇点 T（路径终点）
+    //   原图的边从出点连向入点
+    // 这样流路径就是：S → 出点(u) → 入点(v) → T
+    // 表示：从 u 出发，到达 v
+    for (int i = 1; i <= n; i++) {
+        for (int j = 1; j <= m; j++) {
+            char x;
+            cin >> x;
+            mp[i][j] = (x == '.') ? 1 : 0;
+            if (mp[i][j] == 1) {
+                // 入点
+                ptr++;
+                jd[i][j] = ptr;
+                // 出点
+                ptr++;
+                od[i][j] = ptr;
+
+                // 注意：这里故意先用入点编号 ptr-1，再用出点编号 ptr
+                // 源点连出点
+                add(S, od[i][j], 1);
+                // 入点连汇点
+                add(jd[i][j], T, 1);
+
+                tot++;   // 统计可用格点数
+            }
+        }
+    }
+
+    // ====================
+    // 2. 连接移动边
+    // ====================
+    // 方向数组：向下 r 行走 c 列，或向下 c 行走 r 列
+    int dx[] = {c, -c, c, -c, r, -r, r, -r};
+    int dy[] = {r, r, -r, -r, c, c, -c, -c};
+
+    for (int i = 1; i <= n; i++) {
+        for (int j = 1; j <= m; j++) {
+            if (mp[i][j] == 1) {
+                for (int k = 0; k < 8; k++) {
+                    int nx = i + dx[k];
+                    int ny = j + dy[k];
+                    // 只连向下方或右下方的格点，避免反向边
+                    if (nx >= 1 && nx <= n && ny >= 1 && ny <= m &&
+                        nx != i && jd[i][j] < jd[nx][ny] && mp[nx][ny] == 1) {
+                        // 出点 -> 入点
+                        add(od[i][j], jd[nx][ny], 1);
+                    }
+                }
+            }
+        }
+    }
+
+    // ====================
+    // 3. 最小路径覆盖
+    // ====================
+    // 最小路径覆盖数 = 总点数 - 最大匹配数
+    // 最大匹配数就是 Dinic 求出的最大流
+    cout << tot - dinic() << '\n';
+
+    return 0;
+}
