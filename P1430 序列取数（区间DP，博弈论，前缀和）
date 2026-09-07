@@ -1,0 +1,76 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+void solve() {
+    int n;
+    cin >> n;
+    vector<long long> v(n + 5);                      // 原始序列，1-based
+    vector<vector<long long>> dp(n + 5, vector<long long>(n + 5, LLONG_MIN));
+    // dp[i][j]：当前玩家面对区间 [i, j] 时能获得的最大分数
+
+    vector<vector<long long>> ml(n + 5, vector<long long>(n + 5, LLONG_MIN));
+    // ml[i][j] = min_{k=i..j} dp[i][k]
+    // 固定左端点 i，右端点从 i 到 j 的所有 dp 值的最小值
+    // 用于快速获取“取右端前缀后，后手在 [i, k] 的最小得分”
+
+    vector<vector<long long>> mr(n + 5, vector<long long>(n + 5, LLONG_MIN));
+    // mr[i][j] = min_{k=i..j} dp[k][j]
+    // 固定右端点 j，左端点从 i 到 j 的所有 dp 值的最小值
+    // 用于快速获取“取左端前缀后，后手在 [k, j] 的最小得分”
+
+    vector<long long> pre(n + 5);
+    // pre[i] = v[1] + ... + v[i]，前缀和，用于快速求区间和
+
+    for (int i = 1; i <= n; i++) {
+        cin >> v[i];
+        pre[i] = pre[i - 1] + v[i];
+        dp[i][i] = v[i];
+        ml[i][i] = v[i];
+        mr[i][i] = v[i];
+    }
+
+    // 区间 DP：按长度从小到大枚举
+    for (int len = 2; len <= n; len++) {
+        for (int i = 1; i + len - 1 <= n; i++) {
+            int j = i + len - 1;
+            long long tot = pre[j] - pre[i - 1];   // 区间总和
+
+            // mi 表示后手在剩余区间的最小可能得分
+            long long mi = 0;   // 先假设当前玩家直接取完整个区间，后手得 0
+
+            // 当前玩家取左端若干个数，剩余区间为 [i+1, j]
+            // 后手在该区间的最优得分是 mr[i+1][j]（因为 mr 存的是 dp[k][j] 的最小值）
+            if (i + 1 <= j) {
+                mi = min(mi, mr[i + 1][j]);
+            }
+
+            // 当前玩家取右端若干个数，剩余区间为 [i, j-1]
+            // 后手在该区间的最优得分是 ml[i][j-1]（因为 ml 存的是 dp[i][k] 的最小值）
+            if (i <= j - 1) {
+                mi = min(mi, ml[i][j - 1]);
+            }
+
+            // 当前玩家的最终得分 = 区间总和 - 后手的最低得分
+            dp[i][j] = tot - mi;
+
+            // 更新 mr[i][j]：取 dp[i][j] 和之前 mr[i+1][j] 的较小值
+            mr[i][j] = min(dp[i][j], mr[i + 1][j]);
+
+            // 更新 ml[i][j]：取 ml[i][j-1] 和 dp[i][j] 的较小值
+            ml[i][j] = min(ml[i][j - 1], dp[i][j]);
+        }
+    }
+
+    cout << dp[1][n] << '\n';
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    int T;
+    cin >> T;
+    while (T--) {
+        solve();
+    }
+    return 0;
+}
