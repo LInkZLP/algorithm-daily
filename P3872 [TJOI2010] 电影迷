@@ -1,0 +1,132 @@
+
+//对于一开始的点权，如果是正的，S和它连起来，否则，其和T连起来，因为S连起来的收益，我们是
+//是尽可能想要的，因为负数收益我们是不想要的，之后点对，按顺序连边，x,y,w ,x _>y,w
+// 如果w很大很大，对于S -> x -> y->S,我们宁愿看Y，也不要去碰w,这样的话，只需要减去看负收益电影的绝对值即可
+//最小割肯定发生在这些边之间，
+//哪怕收益很小，代价很大，我们也可以放弃去看与S连的正收益电影 
+//最后考虑非负数 
+
+#include <bits/stdc++.h>
+using namespace std;
+
+/*
+ * 问题模型：最大权闭合子图 + 额外惩罚
+ *
+ * 每部电影是一个点，点权 = 电影评分 v_i。
+ * 若选择一部电影，体验值增加 v_i。
+ * 额外惩罚：对于依赖关系 (X,Y,d)，
+ * 如果选了 X 但不选 Y，则体验值额外减少 d。
+ *
+ * 建图规则：
+ * 1. 源点 S 连接所有正权点（v_i > 0），容量 = v_i。
+ *    意义：如果不选该正权点，则割断这条边，损失 v_i。
+ * 2. 所有负权点（v_i < 0）连接汇点 T，容量 = -v_i。
+ *    意义：如果选择该负权点，则割断这条边，付出 -v_i 的代价。
+ * 3. 对每个依赖关系 (X,Y,d)，添加边 X -> Y，容量 d。
+ *    意义：当 X 被选（在 S 侧）而 Y 不被选（在 T 侧）时，
+ *    这条边从 S 指向 T，会被割断，产生容量 d 的代价，恰好对应惩罚。
+ *
+ * 最小割容量 = 放弃的正收益 + 承担的负收益 + 触发的依赖惩罚。
+ * 答案 = 所有正权值之和 - 最小割。
+ */
+
+int n, m, S, T;
+const int maxn = 150;
+const int INF = 1e5 + 5;
+
+vector<int> cur, dep;
+struct Edge {
+    int ed, id, w;   // 终点，反向边索引，剩余容量
+};
+vector<vector<Edge>> v(maxn);
+
+// BFS 分层
+bool bfs() {
+    dep.assign(maxn, -1);
+    dep[S] = 0;
+    queue<int> q;
+    q.push(S);
+    while (!q.empty()) {
+        int u = q.front(); q.pop();
+        for (int i = 0; i < v[u].size(); i++) {
+            int ed = v[u][i].ed;
+            if (v[u][i].w && dep[ed] == -1) {
+                dep[ed] = dep[u] + 1;
+                q.push(ed);
+            }
+        }
+    }
+    cur.assign(maxn, 0);
+    return dep[T] != -1;
+}
+
+// DFS 增广
+int dfs(int u, int lim) {
+    if (u == T) return lim;
+    for (int i = cur[u]; i < v[u].size(); i++) {
+        cur[u] = i;
+        int ed = v[u][i].ed;
+        if (dep[ed] == dep[u] + 1 && v[u][i].w) {
+            int res = dfs(ed, min(lim, v[u][i].w));
+            if (res) {
+                v[u][i].w -= res;
+                v[ed][v[u][i].id].w += res;
+                return res;
+            } else {
+                dep[ed] = -1;
+            }
+        }
+    }
+    return 0;
+}
+
+// Dinic 最大流
+int dinic() {
+    int r = 0, f;
+    while (bfs()) {
+        while ((f = dfs(S, INF)) > 0) {
+            r += f;
+        }
+    }
+    return r;
+}
+
+// 添加双向边（正向容量 w，反向容量 0）
+void add(int u, int x, int w) {
+    int sti = v[u].size();
+    int edi = v[x].size();
+    v[u].push_back({x, edi, w});
+    v[x].push_back({u, sti, 0});
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    cin >> n >> m;
+    S = 0;
+    T = n + 1;
+
+    int sum_pos = 0;
+    for (int i = 1; i <= n; i++) {
+        int x;
+        cin >> x;
+        if (x > 0) {
+            add(S, i, x);
+            sum_pos += x;
+        } else if (x < 0) {
+            add(i, T, -x);
+        }
+        // x == 0 时不连边
+    }
+
+    for (int i = 1; i <= m; i++) {
+        int x, y, d;
+        cin >> x >> y >> d;
+        add(x, y, d);   // 依赖惩罚边
+    }
+
+    int ans = sum_pos - dinic();
+    cout << max(ans, 0) << '\n';
+    return 0;
+}
