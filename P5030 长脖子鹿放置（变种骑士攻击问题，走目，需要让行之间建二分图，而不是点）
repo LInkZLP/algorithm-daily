@@ -1,0 +1,160 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int S;
+int T;
+int t;
+struct st{
+	int ed;
+	int id;
+	int w;
+};
+vector<int>dep;
+vector<int>cur;
+vector<vector<int>>tar(250,vector<int>(250));
+const int maxn = 40005;
+const int INF = 1e6;
+vector<vector<st>>v(maxn);
+int dx[] = {1, -1, 1, -1, 3, -3, 3, -3};
+int dy[] = {3, 3, -3, -3, 1, 1, -1, -1};
+bool bfs()
+{
+	queue<int>q;
+	q.push(S);
+	dep.assign(maxn,-1);
+	dep[S]  =0;
+	while(!q.empty())
+	{
+		int u = q.front();
+		q.pop();
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int ed=  v[u][i].ed;
+			if(dep[ed] == -1 && v[u][i].w)
+			{
+				q.push(ed);
+				dep[ed] = dep[u]+1;
+			}
+		}
+	}
+	cur.assign(maxn,0);
+	return dep[T] != -1;
+}
+int dfs(int u,int lim)
+{
+	if(u == T)
+	{
+		return lim;
+	}
+	for(int i = cur[u];i<v[u].size();i++)
+	{
+		cur[u] = i;
+		int ed = v[u][i].ed;
+		if(dep[ed] == dep[u] + 1 && v[u][i].w)
+		{
+			int res = dfs(ed,min(v[u][i].w,lim));
+			if(res)
+			{
+				v[u][i].w -= res;
+				v[ed][v[u][i].id].w += res;
+				return res;
+			}
+			else
+			{
+				dep[ed] = -1; 
+			}
+		}
+	}
+	return 0;
+}
+int dinic()
+{
+	int r = 0;
+	int f = 0;
+	while(bfs())
+	{
+		while(f = dfs(S,INF))
+		{
+			r += f;
+		}
+	}
+	return r;
+}
+void add(int u,int x,int w)
+{
+	int sti = v[u].size();
+	int edi = v[x].size();
+	v[u].push_back({x,edi,w});
+	v[x].push_back({u,sti,0});
+}
+int main()
+{
+	cin>>n>>m>>t;
+	int bcnt = 0;
+	
+	int wcnt= (n * m +1) /2 ;
+	int tot = 0;
+	S = 0;
+	T = n * m +1;
+	for(int i = 1;i<=t;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		tar[x][y] = -1;
+	}
+	//按 (i+j)%2 染色时，长颈鹿移动后行变化是奇数（1 或 3），列变化也是奇数（1 或 3），
+	//所以 (i+j) 的奇偶变化是 奇数+奇数=偶数，奇偶性不变。
+	//同色格子之间才会互相攻击，不同色格子之间反而不攻击。
+	//这就不构成二分图，无法直接套用最小割模型。
+	//按行号奇偶染色时，行变化为奇数，所以移动后行号奇偶性一定翻转，
+	//即攻击一定发生在奇数行和偶数行之间，这才是二分图结构。 
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 1;j<=m;j++)
+		{
+			if(tar[i][j] == -1)
+			{
+				continue;
+			}
+			if(i % 2 == 1)
+			{
+				bcnt ++;
+				tot ++;
+				tar[i][j] = bcnt;
+				add(S,bcnt,1);
+			}
+			else
+			{
+				wcnt ++;
+				tot ++;
+				tar[i][j] = wcnt;
+				add(wcnt,T,1);
+			}
+		}
+	}
+	//横纵坐标变化量之和总是偶数,奇数点下一个永远是偶数 
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 1;j<=m;j++)
+		{
+			if(tar[i][j] != -1 && i % 2 == 1)
+			{
+				for(int k = 0;k<8;k++)
+				{
+					int nx = i + dx[k];
+					int ny = j + dy[k];
+					if(nx >= 1 && nx <= n && ny >=1 &&ny <= m &&tar[nx][ny] != -1)
+					{
+						add(tar[i][j],tar[nx][ny],INF);
+					}
+				}
+			}
+		}
+	}
+//	cout<<tot<<endl;
+//	cout<<bcnt<<" "<<wcnt<<endl;
+	cout<<tot - dinic()<<endl;
+	return 0;
+} 
