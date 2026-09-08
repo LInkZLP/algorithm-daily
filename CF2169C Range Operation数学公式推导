@@ -1,0 +1,40 @@
+#include <bits/stdc++.h>
+using namespace std;
+void solve()
+{
+	int n;
+	cin>>n;
+	vector<long long>v(n+5);
+	vector<long long>pre(n+5);
+	vector<long long>inc(n+5);
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+		pre[i] =pre[i-1] +  v[i];
+		if(i == 1)
+		{
+			inc[i] = 0;
+		}
+		else
+		{
+			inc[i] = min(inc[i-1],1LL*i * i-i - pre[i-1]);
+		}
+	}
+	long long res = 0;
+	for(int i = 1;i<=n;i++)
+	{
+		res = max(res,1LL*i * i + i - pre[i] - inc[i]);
+	}
+	cout<<res + pre[n]<<endl;
+	return;
+}
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
