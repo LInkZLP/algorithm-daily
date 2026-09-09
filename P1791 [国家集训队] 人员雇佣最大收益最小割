@@ -1,0 +1,154 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int n;                   // 经理数量
+int S, T;                // 源点、汇点
+vector<int> dep, cur;    // BFS 层次、当前弧优化
+const int maxn = 1e3 + 5;
+struct st {              // 边结构体
+    int ed;              // 终点
+    int id;              // 反向边在终点邻接表中的位置
+    long long w;         // 剩余容量
+};
+const long long INF = 1e18;
+vector<vector<st>> v(maxn);
+vector<vector<long long>> p(maxn, vector<long long>(maxn, 0)); // 贡献矩阵 E
+vector<long long> wi(maxn);   // wi[i] = sum_{j=1..n} E[i][j]，即与经理 i 相关的全部贡献之和
+/*
+问题本质
+我们有一群经理，每个人有两个选择：雇佣或不雇佣。在最大流/最小割模型里，通常把两种选择分别放在源点侧和汇点侧。
+
+如果一个经理在源点侧，表示不雇佣他。
+
+如果一个经理在汇点侧，表示雇佣他。
+
+贡献与损失
+每个经理在团队里都有潜在贡献，但是贡献不是固定不变的，它受其他经理影响。
+
+设经理 i 对所有其他经理的贡献总和为：
+
+i 对所有 j 的 E(i,j) 之和
+
+我们记为 “i 的总潜在贡献”。
+
+当 i 和 j 都在同一边时，他们是一伙的，不会互相拆台，中间那条边不产生额外代价。
+
+但问题出在：
+
+i 在一边，j 在另一边。
+
+这意味着 i 和 j 一个被雇佣，一个不被雇佣。这时 j 会拖累 i：
+
+原本 i 对团队能贡献很多；
+
+但 j 知道 i 的底细；
+
+所以 i 的贡献中，本来应该给 j 的那部分 E(i,j) 不仅没了，反而还要倒扣 E(i,j)；
+
+一来一回，总共损失 2 × E(i,j)。
+
+所以在建图时，i 和 j 之间连的边权就是 2 × E(i,j)。
+
+建图规则
+源点连向每个经理 i，容量 = i 的总潜在贡献。
+
+每个经理 i 连向汇点，容量 = 雇佣 i 的花费。
+
+任意两个经理之间连双向边，容量 = 2 × E(i,j)。
+
+跑一遍最大流，得到最小割。总潜在贡献减去最小割，就是最大净利润。
+
+
+*/
+// BFS 分层
+bool bfs() {
+    queue<int> q;
+    q.push(S);
+    dep.assign(maxn, -1);
+    dep[S] = 0;
+    while (!q.empty()) {
+        int u = q.front(); q.pop();
+        for (auto &e : v[u]) {
+            if (dep[e.ed] == -1 && e.w > 0) {
+                dep[e.ed] = dep[u] + 1;
+                q.push(e.ed);
+            }
+        }
+    }
+    cur.assign(maxn, 0);
+    return dep[T] != -1;
+}
+
+// DFS 增广
+long long dfs(int u, long long lim) {
+    if (u == T) return lim;
+    for (int i = cur[u]; i < v[u].size(); i++) {
+        cur[u] = i;
+        st &e = v[u][i];
+        if (dep[e.ed] == dep[u] + 1 && e.w > 0) {
+            long long res = dfs(e.ed, min(lim, e.w));
+            if (res > 0) {
+                e.w -= res;
+                v[e.ed][e.id].w += res;
+                return res;
+            }
+        }
+    }
+    return 0;
+}
+
+// Dinic 最大流
+long long dinic() {
+    long long r = 0, f;
+    while (bfs()) {
+        while ((f = dfs(S, INF)) > 0) r += f;
+    }
+    return r;
+}
+
+// 添加边（正向容量 w，反向容量 0）
+void add(int u, int x, long long w) {
+    int sti = v[u].size();
+    int edi = v[x].size();
+    v[u].push_back({x, edi, w});
+    v[x].push_back({u, sti, 0});
+}
+
+int main() {
+    cin >> n;
+    S = 0;
+    T = n + 1;
+
+    long long tot = 0;   // 总贡献矩阵所有元素之和，用于最终答案
+
+    // 读入雇佣费用 A_i，并建边 i -> T，容量 A_i
+    for (int i = 1; i <= n; i++) {
+        long long x;      // A_i
+        cin >> x;
+        add(i, T, x);     // 如果雇佣 i，需要割断这条边，付出成本 A_i
+    }
+
+    // 读入贡献矩阵 E[i][j]
+    for (int i = 1; i <= n; i++) {
+        for (int j = 1; j <= n; j++) {
+            cin >> p[i][j];
+            tot += p[i][j];         // 统计总贡献
+            wi[i] += p[i][j];       // 计算 wi[i]
+        }
+        add(S, i, wi[i]);           // 源点 -> i，容量 wi[i]；若不雇佣 i，割断这条边，损失 wi[i]
+    }
+
+    // 添加每对不同经理之间的双向边，容量为 2 * E[i][j]
+    // 这是为了处理“同时雇佣”与“一人雇佣一人不雇佣”之间的差异
+    for (int i = 1; i <= n; i++) {
+        for (int j = 1; j <= n; j++) {
+            if (i == j) continue;
+            add(i, j, 2 * p[i][j]);
+            add(j, i, 2 * p[i][j]);
+        }
+    }
+
+    // 最小割 = 最大流，答案 = 总贡献 - 最小割
+    cout << tot - dinic() << endl;
+    return 0;
+}
