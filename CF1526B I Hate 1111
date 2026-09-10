@@ -1,0 +1,35 @@
+#include <bits/stdc++.h>
+using namespace std;
+//1111 - > 11 * 101
+bool check(long long t) {
+    if (t < 11) return false;
+    long long r = t % 11;
+    if (r == 0) return true;
+    return 111 * r <= t;
+}
+void solve()
+{
+	long long x;
+	cin>>x;
+	if(check(x))
+	{
+		cout<<"YES"<<endl;
+	}
+	else
+	{
+		cout<<"NO"<<endl;
+	}
+	return;
+}
+//原式就可以表示为 11×(x+10y)+y，然后对其进行%11操作，发现余数为 y 说明询问的数对 11 进行取模后，必须保证有 y 个 111，
+//所以我们只需要判断该数对 11 进行取模后的余数乘上 y 是否小于等于该数就可以了
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
