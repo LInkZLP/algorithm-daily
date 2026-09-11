@@ -1,0 +1,194 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+/*
+ * 题目大意：
+ * 给定长度为 n 的数组 a，以及 m 对下标 (i, j)，保证 i+j 为奇数。
+ * 每次操作选一对 (i, j)，选一个 v > 1 同时整除 a_i 和 a_j，然后 a_i /= v, a_j /= v。
+ * 问最多能进行多少次操作。
+ *
+ * 思路：
+ * 1. 每次操作消耗的是 a_i 和 a_j 的公共质因子。
+ *    因为 v 可以分解为多个质因子的乘积，操作等价于对每个质因子分别消耗。
+ *    不同质因子之间完全独立，所以可以按质因子拆开，分别求最大匹配数，最后相加。
+ *
+ * 2. 给定的每一对 (i, j) 都满足 i+j 为奇数，所以 i 和 j 一奇一偶。
+ *    将所有下标按奇偶分成左右两部，每条给定的对就是一条连接奇数点和偶数点的边。
+ *    对于某个质因子 p，问题变成：在二分图上，每条边最多匹配一次，
+ *    每个点的匹配次数不超过它含有的 p 的指数。求最大匹配数。
+ *
+ * 3. 对每个质因子 p 建图：
+ *    - 源点 S 连奇数点 i，容量为 a_i 中 p 的指数。
+ *    - 偶数点 j 连汇点 T，容量为 a_j 中 p 的指数。
+ *    - 对于给定的对 (i, j)，若两端都含有 p，则从奇数点连向偶数点，容量 INF。
+ *    跑最大流，流量即为该质因子能贡献的最大操作次数。
+ *
+ * 4. 将所有质因子的最大流累加，即为答案。
+ */
+
+int n, m;
+int S, T;
+long long INF = 1e10;
+const int maxn = 150;
+
+vector<int> cur, dep;
+
+struct st {
+    int ed;      // 终点
+    int id;      // 反向边在终点邻接表中的位置
+    long long w; // 剩余容量
+};
+
+struct po {
+    long long p; // 质因子
+    long long c; // 指数
+};
+
+vector<vector<st>> v(maxn);
+vector<long long> a(maxn);
+vector<vector<po>> b(maxn); // b[i] 存储 a[i] 的质因数分解结果
+
+// 最大公约数（本题未直接使用，保留）
+long long gcd(long long m, long long n) {
+    return n == 0 ? m : gcd(n, m % n);
+}
+
+// BFS 分层
+bool bfs() {
+    queue<int> q;
+    q.push(S);
+    dep.assign(maxn, -1);
+    dep[S] = 0;
+    while (!q.empty()) {
+        int u = q.front(); q.pop();
+        for (int i = 0; i < v[u].size(); i++) {
+            int ed = v[u][i].ed;
+            if (dep[ed] == -1 && v[u][i].w) {
+                dep[ed] = dep[u] + 1;
+                q.push(ed);
+            }
+        }
+    }
+    cur.assign(maxn, 0);
+    return dep[T] != -1;
+}
+
+// DFS 增广
+long long dfs(int u, long long lim) {
+    if (u == T) return lim;
+    for (int i = cur[u]; i < v[u].size(); i++) {
+        cur[u] = i;
+        int ed = v[u][i].ed;
+        if (dep[ed] == dep[u] + 1 && v[u][i].w) {
+            long long res = dfs(ed, min(lim, v[u][i].w));
+            if (res) {
+                v[u][i].w -= res;
+                v[ed][v[u][i].id].w += res;
+                return res;
+            } else {
+                dep[ed] = -1;
+            }
+        }
+    }
+    return 0;
+}
+
+// Dinic 最大流
+long long dinic() {
+    long long r = 0, f;
+    while (bfs()) {
+        while ((f = dfs(S, INF)) > 0) {
+            r += f;
+        }
+    }
+    return r;
+}
+
+// 添加边 u -> x，容量 w
+void add(int u, int x, long long w) {
+    int sti = v[u].size();
+    int edi = v[x].size();
+    v[u].push_back({x, edi, w});
+    v[x].push_back({u, sti, 0});
+}
+
+// 质因数分解，返回 {质因子, 指数} 列表
+vector<po> prim(long long x) {
+    vector<po> res;
+    for (long long p = 2; p <= x / p; p++) {
+        if (x % p == 0) {
+            int cnt = 0;
+            while (x % p == 0) {
+                x /= p;
+                cnt++;
+            }
+            res.push_back({p, cnt});
+        }
+    }
+    if (x > 1) {
+        res.push_back({x, 1});
+    }
+    return res;
+}
+
+int main() {
+    cin >> n >> m;
+    S = 0;
+    T = n + 1;
+
+    set<int> ap; // 收集所有出现过的质因子
+
+    // 读入数组并质因数分解
+    for (int i = 1; i <= n; i++) {
+        cin >> a[i];
+        b[i] = prim(a[i]);
+        for (auto &u : b[i]) {
+            ap.insert(u.p);
+        }
+    }
+
+    // 读入所有给定的对，并统一方向：xi[i] 为奇数，yi[i] 为偶数
+    vector<long long> xi(maxn), yi(maxn);
+    for (int i = 1; i <= m; i++) {
+        int x, y;
+        cin >> x >> y;
+        if (x % 2 == 0) swap(x, y); // 保证 x 是奇数
+        xi[i] = x;
+        yi[i] = y;
+    }
+
+    long long ans = 0;
+
+    // 对每个质因子单独建图跑最大流
+    for (int p : ap) {
+        // 清空图
+        v.assign(maxn, vector<st>());
+
+        // 源点连奇数点，偶数点连汇点
+        for (int i = 1; i <= n; i++) {
+            int cnt = 0;
+            for (auto &x : b[i]) {
+                if (x.p == p) cnt = x.c;
+            }
+            if (cnt == 0) continue; // 不含该质因子
+            if (i & 1) add(S, i, cnt);        // 奇数点
+            else add(i, T, cnt);              // 偶数点
+        }
+
+        // 添加冲突边：只有两端都含有该质因子时才连边
+        for (int i = 1; i <= m; i++) {
+            int k1 = 0, k2 = 0;
+            for (auto &x : b[xi[i]]) if (x.p == p) k1 = 1;
+            for (auto &x : b[yi[i]]) if (x.p == p) k2 = 1;
+            if (k1 && k2) {
+                add(xi[i], yi[i], INF); // 奇数 -> 偶数，容量 INF
+            }
+        }
+
+        // 累加该质因子的最大匹配数
+        ans += dinic();
+    }
+
+    cout << ans << endl;
+    return 0;
+}
