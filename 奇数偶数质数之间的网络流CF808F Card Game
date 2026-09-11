@@ -1,0 +1,192 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int S;
+int T;
+long long k;
+long long INF = 1e18;
+struct st{
+	int ed;
+	int id;
+	long long w;
+};
+vector<int>dep;
+vector<int>cur;
+const int maxn = 400;
+vector<vector<st>>v;
+vector<long long>p(maxn);
+vector<long long>c(maxn);
+vector<long long>a(maxn); 
+vector<long long>prim(2e5 + 5,1);
+void pri()
+{
+	prim[1] = 0;
+	for(int i = 1;i<=2e5;i++)
+	{
+		if(prim[i])
+		{
+			for(int j = 2;j*i <= 2e5;j++)
+			{
+				prim[j*i] = 0;
+			}
+		}
+	}
+	return;
+}
+bool bfs()
+{
+	queue<int>q;
+	q.push(S);
+	dep.assign(maxn,-1);
+	dep[S] = 0;
+	while(!q.empty()) 
+	{
+		int u = q.front();
+		q.pop();
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int ed = v[u][i].ed;
+			if(dep[ed] == -1 && v[u][i].w)
+			{
+				dep[ed] = dep[u] + 1;
+				q.push(ed);
+			}
+		}
+	}
+	cur.assign(maxn,0);
+	return dep[T] != -1;
+}
+long long dfs(int u,long long lim)
+{
+	if(T == u)
+	{
+		return lim;
+	}
+	for(int i = cur[u];i<v[u].size();i++)
+	{
+		cur[u] = i;
+		int ed = v[u][i].ed;
+		if(dep[ed] == dep[u] + 1 && v[u][i].w)
+		{
+			long long res = dfs(ed,min(v[u][i].w,lim));
+			if(res)
+			{
+				v[u][i].w -= res;
+				v[ed][v[u][i].id].w += res;
+				return res;
+			}
+			else
+			{
+				dep[ed] = -1;
+			}
+		}
+	}
+	return 0;
+}
+long long dinic()
+{
+	long long r = 0;
+	long long f = 0;
+	while(bfs())
+	{
+		while(f = dfs(S,INF))
+		{
+			r += f;
+			//cout<<"Ppp"<<endl;
+		}
+		
+	}
+	return r;
+}
+void add(int u,int x,long long w)
+{
+	int sti = v[u].size();
+	int edi = v[x].size();
+	v[u].push_back({x,edi,w});
+	v[x].push_back({u,sti,0});
+	return;
+}
+int main()
+{
+	cin>>n>>k;
+	S = 0;
+	T = n + 1;
+	int l = 1;
+	int r = n;
+	pri();
+	
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>p[i]>>c[i]>>a[i];	
+		
+	}
+	int ans = -1;
+	while(l <= r)
+	{
+		int mid  =(l + r) >>1;
+		v.clear();
+		v.assign(maxn,vector<st>());
+		long long tot = 0;
+		long long mx = 0;
+		long long tar =0 ;
+		for(int i = 1;i<=n;i++)
+		{
+			if(c[i] == 1 && a[i] <= mid)
+			{
+				if(mx < p[i])
+				{
+					tar = i;
+					mx = p[i];
+				}
+			}
+		}
+		for(int i = 1;i<=n;i++)
+		{
+			if(mid < a[i])
+			{
+				continue;
+			}
+			if(c[i] == 1 && tar != i)
+			{
+				continue;
+			}
+			if(c[i] == 1)
+			{
+				if(i == tar)
+				{
+					add(S,i,p[i]);
+					tot += p[i];
+				}
+			}
+			else if(c[i] & 1)
+			{
+				add(S,i,p[i]);
+				tot += p[i];
+			}
+			else
+			{
+				add(i,T,p[i]);
+				tot += p[i];
+			}
+			for(int j = 1;j<=n;j++)
+			{
+				if (c[i] % 2 == 1 && c[j] % 2 == 0 && prim[c[i] + c[j]]) 
+				{
+	    			add(i, j, INF);
+				}
+			}
+		}
+		if(tot - dinic() >= k)
+		{
+			ans = mid;
+			r = mid -1;
+		}
+		else
+		{
+			l = mid + 1;
+		}
+	}
+	cout<<ans<<endl;
+	return 0;
+} 
