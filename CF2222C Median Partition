@@ -1,0 +1,52 @@
+#include <bits/stdc++.h>
+using namespace std;
+long long mod = 998244353;
+void solve()
+{
+	//对于每个出现的2，我们可匹配后面的2，但是绝对不能匹配前面的2，同时必须找到第一个1的位置
+	//此外，收集三的位置，1，2,3的前缀和
+	int n;
+	cin>>n;
+	vector<int>v(n+5);
+	vector<int>s1(n+5);
+	vector<int>s2(n+5);
+	vector<int>s3(n+5);
+	int sta = 0;
+	long long ans = 0;
+	long long sum = 0;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+		int x = v[i];
+		s1[i] = s1[i-1] + (x == 1);
+		s2[i] = s2[i-1] + (x == 2);
+		s3[i] = s3[i-1] + (x == 3);
+	} 
+	for(int i = 1;i<= n;i++)
+	{
+		if(v[i] == 2)
+		{
+			sum = (sum + sum + s1[i]) % mod;
+			//case 1,选前面的，第一个sum是不选当前2，第二个是选当前2，
+			//case2 不选前面的，s1[i]是当前二另外开一次新的 
+		}
+		else if(v[i] == 3)
+		{
+			ans = (ans + sum) % mod;
+		}
+	}
+	cout<<ans<<'\n';
+	return ;
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+	cin.tie(nullptr);
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
