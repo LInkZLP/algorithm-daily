@@ -1,0 +1,124 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int S;
+int T;
+struct st{
+	int ed;
+	int id;
+	int w;
+};
+int INF = 1e5;
+const int maxn = 450;
+vector<int>dep;
+vector<int>cur;
+vector<vector<st>>v(maxn);
+vector<vector<int>>mp(maxn>>1,vector<int>(maxn>>1));
+int k;
+bool bfs()
+{
+	queue<int>q;
+	q.push(S);
+	dep.assign(maxn,-1);
+	dep[S] = 0;
+	while(!q.empty())
+	{
+		int u = q.front();
+		q.pop();
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int ed = v[u][i].ed;
+			if(dep[ed] == -1 && v[u][i].w)
+			{
+				dep[ed] = dep[u] + 1;
+				q.push(ed);
+			}
+		}
+	}
+	cur.assign(maxn,0);
+	return dep[T] != -1;
+}
+int dfs(int u,int lim)
+{
+	if(T == u)
+	{
+		return lim;
+	}
+	for(int i = cur[u];i<v[u].size();i++)
+	{
+		cur[u] = i;
+		int ed = v[u][i].ed;
+		if(dep[ed] == dep[u] + 1 && v[u][i].w)
+		{
+			int res = dfs(ed,min(lim,v[u][i].w));
+			if(res)
+			{
+				v[u][i].w -= res;
+				v[ed][v[u][i].id].w += res;
+				return res;
+			}
+			else
+			{
+				dep[ed] = -1;
+			}
+		}
+	}
+	return 0;
+}
+int dinic()
+{
+	int r = 0;
+	int f = 0;
+	while(bfs())
+	{
+		while(f = dfs(S,INF))
+		{
+			r += f;
+		}
+	}
+	return r;
+}
+void add(int u,int x,int w)
+{
+	int sti = v[u].size();
+	int edi = v[x].size();;
+	v[u].push_back({x,edi,w});
+	v[x].push_back({u,sti,0});
+	return ;
+}
+int main()
+{
+	//我们要求最多能放多少車，也就是最多能找出多少条这样的路径，使得它们不共享行、不共享列、且都在合法位置上。
+	//这正是最大流要解决的问题：在容量限制下，最多能有多少单位流量从 S 流到 T。
+	//最大流=最多能放置的車数
+	cin>>n>>m>>k;
+	for(int i = 1;i<=k;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		mp[x][y] = -1;
+	}
+	S = 0;
+	T = n + m + 1;
+	for(int i= 1;i<=m;i++)
+	{
+		add(i + n,T,1);
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		add(S,i,1);
+		
+		for(int j = 1;j<=m;j++)
+		{
+			if(mp[i][j] == -1)
+			{
+				continue;
+			}
+			add(i,j + n,1);
+		}
+	}
+	cout<<dinic()<<endl;
+	return 0;
+}
