@@ -1,0 +1,133 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int timer = 0;
+stack<int>stk;
+const int maxn  = 2e5 + 5;
+vector<int>instk(maxn);
+vector<int>dfn(maxn);
+vector<int>low(maxn);
+int scc_cnt = 0;
+vector<int>scc_sz(maxn);
+vector<vector<int>>v(maxn);
+vector<int>scc_id(maxn);
+vector<vector<int>>scc(maxn);
+struct st{
+	int ed;
+	int r;
+};
+void tarjan(int u)
+{
+	timer ++;
+	dfn[u] = low[u] = timer;
+	instk[u] = 1;
+	stk.push(u);
+	for(int i =0 ;i<v[u].size();i++)
+	{
+		int nxt = v[u][i];
+		if(!dfn[nxt])
+		{
+			tarjan(nxt);
+			low[u] = min(low[nxt],low[u]);
+		}
+		else if(instk[nxt])
+		{
+			low[u] = min(low[u],dfn[nxt]);
+		}
+	}
+	if(low[u] == dfn[u])
+	{
+		int nxt = 0;
+		scc_cnt ++;
+		do{
+			nxt = stk.top();
+			instk[nxt] = 0;
+			stk.pop();
+			scc_id[nxt] = scc_cnt;
+			scc_sz[scc_cnt] ++;
+		}while(nxt != u);
+	}
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+	cin.tie(nullptr);	
+	cin>>n>>m;
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back(y);
+	}
+	for(int i = 1; i<=n;i++)
+	{
+		if(!dfn[i])
+		{
+			tarjan(i);
+		}
+	}
+//	cout<<scc_cnt<<endl; 
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 0;j<v[i].size();j++)
+		{
+			int ed = v[i][j];
+			if(scc_id[ed] != scc_id[i])
+			{
+				//// SCC 编号和原始节点编号不能混用
+				scc[scc_id[ed]].push_back(scc_id[i]);//建立反向图 
+			}
+		}
+	}
+	queue<st>q;
+	vector<int>jd(maxn);
+	vector<int>pl(maxn);
+	for(int i = 1;i<=scc_cnt;i++)
+	{
+		for(int j = 0;j<scc[i].size();j++)
+		{
+			int ed = scc[i][j];
+			jd[ed] ++;
+		}
+	}
+	for(int i = 1;i<=scc_cnt;i++)
+	{
+		if(scc_sz[i] >= 2)//不需要考虑jd为0的点，只需要考虑环，而且不需要拓扑排序 
+		{
+			q.push({i,(scc_sz[i] != 1)});
+			pl[i] = scc_sz[i] != 1;
+		}
+	}
+	vector<int>vis(maxn);
+	// SCC 编号和原始节点编号不能混用
+	int ans = 0; 
+	while(!q.empty())
+	{
+		st p = q.front();
+		q.pop();
+		int u = p.ed;
+		int r = p.r;
+		if(vis[u])
+		{
+			continue;
+		}
+		vis[u] = 1;
+		if(r)
+		{
+			ans += scc_sz[u];
+		}
+		for(int i = 0;i<scc[u].size();i++)
+		{
+			int ed = scc[u][i];
+			pl[ed] |= pl[u];
+			if(!vis[ed])
+			{
+				q.push({ed,pl[ed]});
+			}
+		}
+	}
+	cout<<ans<<endl;
+	return 0;
+}
