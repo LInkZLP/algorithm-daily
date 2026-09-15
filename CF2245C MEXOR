@@ -1,0 +1,102 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+/*
+ * 题目：构造一个 0..n-1 的排列 p，使得前缀 mex 的异或和等于 k。
+ *
+ * 定义 f(i) = mex(p[0..i])。
+ * 因为 p 是排列，所以 f(n-1) = n。
+ *
+ * 设前 n-1 个前缀 mex 的异或和为 k'，则：
+ *     k' = k ^ n
+ *
+ * 前 n-1 个 f 值恰好是 0..n-1 中缺少一个值 m 的 n-1 个数。
+ * 因此它们的异或和 = (0^1^...^(n-1)) ^ m = k'。
+ * 但我们不需要显式求出 m，而是直接构造排列，使得前 n-1 个 f 的异或和等于 k'。
+ *
+ * 构造策略（根据 k' 的大小分情况）：
+ *
+ * 情况 1：k' = 0
+ *   排列：1, 2, ..., n-1, 0
+ *   前 n-1 个位置 0 未出现，所以 f(i) = 0 (i=0..n-2)，异或和 = 0 = k'。
+ *   最后放入 0，所有数字出现，f(n-1)=n。总异或和 = 0 ^ n = n = k。
+ *
+ * 情况 2：k' <= n-1
+ *   排列：先放 1..n-1 中除了 k' 的所有数，然后放 0，最后放 k'。
+ *   这样在前 n-1 个位置中，只有最后一个位置（放入 0 后）的 mex 会变成 k'，
+ *   其余位置的 mex 都是 0。因此前 n-1 个 f 的异或和 = k'。
+ *   总异或和 = k' ^ n = k。
+ *
+ * 情况 3：k' > n-1
+ *   首先检查 k' 和 n-1 的二进制长度。
+ *   若 len(k') > len(n-1)，则无解（因为 mex 值都在 [0,n) 内，异或和不可能超过 n-1 的范围）。
+ *   否则，令 v = k' ^ (n-1)。由于 k' 和 n-1 的最高位相同，异或后最高位抵消，
+ *   所以 v < n-1。
+ *   排列：先放 1..n-2 中除了 v 的所有数，然后放 0, v, n-1。
+ *   这样前 n-1 个 f 的异或和恰好为 k'。总异或和 = k' ^ n = k。
+ */
+
+void solve()
+{
+    int n, k;
+    cin >> n >> k;
+    k = k ^ n;   // k' = 前 n-1 个 mex 的异或和
+
+    if (k == 0)
+    {
+        // 情况 1
+        cout << "YES" << endl;
+        for (int i = 1; i <= n - 1; i++)
+            cout << i << " ";
+        cout << 0 << endl;
+    }
+    else if (k > n - 1)
+    {
+        // 情况 3：检查二进制长度
+        int len_k = 0, len_n = 0;
+        int tmp = k;
+        while (tmp) { len_k++; tmp >>= 1; }
+        tmp = n - 1;
+        while (tmp) { len_n++; tmp >>= 1; }
+
+        if (len_k > len_n)
+        {
+            cout << "NO" << endl;
+            return;
+        }
+
+        int v = k ^ (n - 1);   // v < n-1
+        cout << "YES" << endl;
+        // 输出 1..n-2 中除了 v 的所有数
+        for (int i = 1; i <= n - 2; i++)
+        {
+            if (i == v) continue;
+            cout << i << " ";
+        }
+        // 最后输出 0, v, n-1
+        cout << 0 << " " << v << " " << n - 1 << endl;
+    }
+    else
+    {
+        // 情况 2：k <= n-1
+        cout << "YES" << endl;
+        // 输出 1..n-1 中除了 k 的所有数
+        for (int i = 1; i <= n - 1; i++)
+        {
+            if (i == k) continue;
+            cout << i << " ";
+        }
+        // 最后输出 0 和 k
+        cout << 0 << " " << k << endl;
+    }
+}
+
+int main()
+{
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    int t;
+    cin >> t;
+    while (t--) solve();
+    return 0;
+}
