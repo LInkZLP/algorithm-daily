@@ -1,0 +1,185 @@
+/*
+ * 题目：最大收益（技术购买或研发 + 产品推出）
+ * 
+ * 核心思路：
+ * 本题是最大权闭合子图的变种。每个技术既可以购买，也可以研发，这是一个“或”逻辑。
+ * 在最小割模型中，“并联”表示逻辑“与”（选 A 必须选 B 和 C），“串联”表示逻辑“或”（选 A 可以选 B 或 C）。
+ * 
+ * 建图方法（串联）：
+ * 设每个技术拆成三个节点：
+ *   tech_i : 表示“需要技术 i”
+ *   buy_i  : 表示“购买技术 i”
+ *   dev_i  : 表示“研发技术 i”
+ * 
+ * 边：
+ *   tech_i -> buy_i  容量 INF
+ *   buy_i  -> dev_i  容量 f_i   （购买代价）
+ *   dev_i  -> T      容量 h_i   （研发代价）
+ * 
+ *   产品节点 v：
+ *   S -> 产品 v      容量 g_v   （产品收益）
+ *   产品 v -> tech_u 容量 INF    （产品 v 需要技术 u）
+ * 
+ *   技术依赖 (a, b)：a 是 b 的前置，即研发 b 需要 a
+ *   dev_b -> tech_a  容量 INF
+ * 
+ * 答案 = 所有产品收益之和 - 最小割（最大流）
+ * 
+ * 题解核心代码（来自官方题解）：
+ * 
+ * int main() {
+ *     int n, m, p, q;
+ *     cin >> n >> m >> p >> q;
+ *     int s = n * 2 + m + 1, t = s + 1;
+ *     long long sum = 0;
+ *     
+ *     for (int i = 1, f; i <= n; i++) {
+ *         cin >> f;
+ *         add_edge(i, i + n, f);
+ *     }
+ *     for (int i = 1, h; i <= n; i++) {
+ *         cin >> h;
+ *         add_edge(s, i, h);
+ *     }
+ *     for (int i = 1, g; i <= m; i++) {
+ *         cin >> g;
+ *         sum += g;
+ *         add_edge(i + n * 2, t, g);
+ *     }
+ *     for (int u, v; p--; ) {
+ *         cin >> u >> v;
+ *         add_edge(u + n, v + n * 2, inf);
+ *     }
+ *     for (int u, v; q--; ) {
+ *         cin >> u >> v;
+ *         add_edge(u + n, v, inf);
+ *     }
+ *     
+ *     cout << sum - maxflow(s, t) << '\n';
+ *     return 0;
+ * }
+ * 
+ * 注意：题解中 T 侧表示“选择/推出”，S 侧表示“放弃”。本题代码采用相反约定：
+ * S 侧表示“选择/推出”，T 侧表示“放弃”，因此产品连源点，技术链连向汇点。
+ * 两种约定等价，只要内部一致即可。
+ */
+
+#include <bits/stdc++.h>
+using namespace std;
+
+int n, m, S, T;
+struct st {
+    int ed, id;
+    long long w;
+};
+long long INF = 1e12;
+vector<int> dep, cur;
+const int maxn = 410;
+vector<vector<st>> v(maxn);
+
+void add(int u, int x, long long w) {
+    int sti = v[u].size();
+    int edi = v[x].size();
+    v[u].push_back({x, edi, w});
+    v[x].push_back({u, sti, 0});
+}
+
+bool bfs() {
+    queue<int> q;
+    q.push(S);
+    dep.assign(maxn, -1);
+    dep[S] = 0;
+    while (!q.empty()) {
+        int u = q.front(); q.pop();
+        for (int i = 0; i < v[u].size(); i++) {
+            int ed = v[u][i].ed;
+            if (dep[ed] == -1 && v[u][i].w) {
+                dep[ed] = dep[u] + 1;
+                q.push(ed);
+            }
+        }
+    }
+    cur.assign(maxn, 0);
+    return dep[T] != -1;
+}
+
+long long dfs(int u, long long lim) {
+    if (u == T) return lim;
+    for (int i = cur[u]; i < v[u].size(); i++) {
+        cur[u] = i;
+        int ed = v[u][i].ed;
+        if (dep[ed] == dep[u] + 1 && v[u][i].w) {
+            long long res = dfs(ed, min(lim, v[u][i].w));
+            if (res) {
+                v[u][i].w -= res;
+                v[ed][v[u][i].id].w += res;
+                return res;
+            } else {
+                dep[ed] = -1;
+            }
+        }
+    }
+    return 0;
+}
+
+long long dinic() {
+    long long r = 0, f;
+    while (bfs()) {
+        while ((f = dfs(S, INF)) > 0) {
+            r += f;
+        }
+    }
+    return r;
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    long long tot = 0;
+    int p, q;
+    cin >> n >> m >> p >> q;
+    S = 0;
+    T = n * 3 + m + 1;
+
+    // 技术节点：tech = i, buy = i+n, dev = i+2n
+    // 串联：tech -> buy -> dev -> T
+    for (int i = 1; i <= n; i++) {
+        add(i, i + n, INF);           // tech -> buy
+    }
+    for (int i = 1; i <= n; i++) {
+        long long f;
+        cin >> f;
+        add(i + n, i + 2 * n, f);     // buy -> dev，容量 f（购买代价）
+    }
+    for (int i = 1; i <= n; i++) {
+        long long h;
+        cin >> h;
+        add(i + 2 * n, T, h);         // dev -> T，容量 h（研发代价）
+    }
+
+    // 产品收益：S -> 产品
+    for (int i = 1; i <= m; i++) {
+        long long g;
+        cin >> g;
+        tot += g;
+        add(S, i + 3 * n, g);
+    }
+
+    // 产品依赖 (u, v)：技术 u 是产品 v 的前置
+    for (int i = 1; i <= p; i++) {
+        int x, y;
+        cin >> x >> y;
+        add(y + 3 * n, x, INF);       // 产品 y -> tech x
+    }
+
+    // 技术依赖 (a, b)：技术 a 是技术 b 的前置
+    for (int i = 1; i <= q; i++) {
+        int x, y;
+        cin >> x >> y;
+        add(y + 2 * n, x, INF);       // dev y -> tech x
+    }
+
+    cout << tot - dinic() << '\n';
+    return 0;
+}
