@@ -1,0 +1,84 @@
+#include <bits/stdc++.h>
+using namespace std;
+void solve()
+{
+	int n;
+	string a;
+	string b;
+	cin>>n>>a>>b;
+	int la = 0;
+	int ra = 0;
+	int lb = 0;
+	int rb = 0;
+	for(int i : a)
+	{
+		la += (i == '(');
+		ra += (i == ')');
+	}
+	for(int i : b)
+	{
+		lb += (i == '(');
+		rb += (i == ')');
+	}
+//	cout<<la<<" "<<ra<<" "<<lb<<" "<<rb<<endl;
+	if((la + lb != ra+ rb )|| a[0] == ')' || b[0] == ')' || a[n-1] == '(' || b[n-1] == '(')
+	{
+		cout<<"NO"<<endl;
+		return;
+	}
+	int ca = 0;
+	int cb = 0;
+	for(int i = 0;i<n;i++)
+	{
+		if(a[i] == b[i])
+		{
+			if(a[i] == '(')
+			{
+				ca++;
+				cb++;
+			}
+			else
+			{
+				ca--;
+				cb--;
+			}
+		}
+		else
+		{
+			if(ca <= cb)
+			{
+				ca++;
+				cb--;
+			}
+			else
+			{
+				cb++;
+				ca--;
+			}
+		}
+		if (ca < 0 || cb < 0)
+		{
+  	  		cout << "NO"<<endl;
+    		return;
+		}
+	}
+	if(ca<0 || cb<0)
+	{
+		cout<<"NO"<<endl;
+	}
+	else
+	{
+		cout<<"YES"<<endl;
+	}
+	return ;
+}
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
