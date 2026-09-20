@@ -1,0 +1,98 @@
+#include <bits/stdc++.h>
+using namespace std;
+struct st{
+	int ed;
+	int id;
+	long long w;
+	long long c;
+};
+int n;
+int m;
+vector<int>inv;
+const int maxn = 5e3 + 5;
+vector<vector<st>>v(maxn);
+vector<long long>dis;
+vector<int>preV;
+vector<int>preE;
+int S;
+int T;
+long long INF = 1e18;
+void add(int u,int x,long long w,long long c)
+{
+	int sti = v[u].size();
+	int edi = v[x].size();
+	v[u].push_back({x,edi,w,c});
+	v[x].push_back({u,sti,0,-c});
+	return;
+}//先保证流量最大，再让总费用最小
+bool spfa()//寻找最短路 
+{
+	dis.assign(maxn,INF);
+	inv.assign(maxn,0);
+	preV.assign(maxn,-1);
+	preE.assign(maxn,-1);
+	dis[S] = 0; 
+	queue<int>q;
+	q.push(S);
+	inv[S] = 1;
+	while(!q.empty())
+	{
+		int u = q.front();
+		q.pop();
+		inv[u] = 0;
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int ed = v[u][i].ed;
+			if(v[u][i].w > 0 && dis[ed] > dis[u] + v[u][i].c)
+			{
+				dis[ed] = dis[u] + v[u][i].c;
+				preV[ed] = u;
+				preE[ed] = i;
+				if(!inv[ed])
+				{
+					inv[ed] = 1;
+					q.push(ed);	
+				}	
+			}
+		}
+	}
+	return dis[T] != INF;
+	
+}
+//每次沿当前残量网络的最短路增广，最终得到的最大流一定是最小费用的
+int main()
+{
+	ios::sync_with_stdio(false);
+    cin.tie(0);
+	cin>>n>>m>>S>>T;
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		long long w;
+		long long c;
+		cin>>x>>y>>w>>c;
+		add(x,y,w,c);
+	}
+	long long flow = 0;
+	long long cost = 0;
+	//所以循环停下来的时候，流量自动就是最大流。
+	//这一步跟费用完全无关，是最大流算法的通用性质
+	while(spfa())
+	{
+		long long f = INF;
+		for(int u = T;u!=S;u = preV[u])
+		{
+			f = min(v[preV[u]][preE[u]].w,f);
+		}
+		for(int u = T;u!=S;u = preV[u])
+		{
+			v[preV[u]][preE[u]].w -= f;
+			v[u][v[preV[u]][preE[u]].id].w += f;
+		}
+		flow += f;
+		cost += f * dis[T];
+	}
+	cout<<flow<<" "<<cost<<endl;
+	return 0;
+} 
