@@ -1,0 +1,88 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+vector<vector<long long>>d(205,vector<long long>(205,LLONG_MAX));
+bitset<205>bl[205][205];
+vector<int>mp(205);
+int main()
+{
+	int n;
+	int m;
+	cin>>n>>m;
+	for(int i = 1;i<=n;i++)
+	{
+		d[i][i] = 0;
+		bl[i][i].set(i);
+	}
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		long long l;
+		cin>>x>>y>>l;
+		d[x][y] = min(d[x][y],l);
+		d[y][x] = min(d[y][x],l);
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 1;j<=n;j++)
+		{
+			bl[i][j].set(i);
+			bl[i][j].set(j);
+		}
+	}
+	for(int k = 1;k<=n;k++)
+	{
+		for(int i = 1;i<=n;i++)
+		{
+			for(int j = 1;j<=n;j++)
+			{
+				if(d[i][k] != LLONG_MAX && d[k][j] != LLONG_MAX && d[i][j] > d[i][k] + d[k][j])
+				{
+					d[i][j] = d[i][k] + d[k][j];
+					bl[i][j] = bl[i][k] | bl[k][j];
+				}
+				else if(d[i][k] != LLONG_MAX && d[k][j] != LLONG_MAX && d[i][j] == d[i][k] + d[k][j])
+				{
+					bl[i][j] &= ( bl[i][k] | bl[k][j] );
+				} 
+			}
+		}
+	}
+	int sum = 0;
+	for(int k = 1;k <= n;k++)
+	{
+		for(int i = 1;i<=n;i++)
+		{
+			for(int j = 1;j<=n;j++)
+			{
+				if(d[i][k] == LLONG_MAX || d[k][j] == LLONG_MAX)
+				{
+					continue;
+				}
+				if(i != k && j != k && i != j && bl[i][j][k])
+				{
+					mp[k] ++;
+					sum ++;
+				}
+			}
+		}
+	}
+	if(!sum)
+	{
+		cout<<"No important cities."<<endl;
+	}
+	else
+	{
+		for(int i = 1;i<=n;i++)
+		{
+			if(mp[i])
+			{
+				cout<<i<<" ";
+			}
+		}
+		cout<<endl;
+	}
+	return 0;
+}
