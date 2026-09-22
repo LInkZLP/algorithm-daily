@@ -1,0 +1,106 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int S;
+int T;
+const int maxn = 450;
+struct st{
+	int ed;
+	int id;
+	long long w;
+	int c;
+};
+const int INF = 1e7;
+vector<vector<st>>v(maxn);
+vector<int>dis;
+vector<int>preV;
+vector<int>preE;
+vector<int>inq;
+void add(int u,int x,int w,int c)
+{
+	int sti = v[u].size();
+	int edi = v[x].size();
+	v[u].push_back({x,edi,w,c});
+	v[x].push_back({u,sti,0,-c});
+	return;
+}
+bool spfa()
+{
+	queue<int>q;
+	dis.assign(maxn,INF);
+	preV.assign(maxn,0);
+	preE.assign(maxn,0);
+	inq.assign(maxn,0);
+	inq[S] = 1;
+	q.push(S);
+	dis[S] = 0;
+	while(!q.empty())
+	{
+		int u = q.front();
+		q.pop();
+		inq[u] = 0;
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int ed = v[u][i].ed;
+			if(v[u][i].w && dis[ed] > dis[u] + v[u][i].c)
+			{
+				dis[ed] = dis[u] + v[u][i].c;
+				preV[ed] = u;
+				preE[ed] = i;
+				if(inq[ed])
+				{
+					continue;
+				}
+				q.push(ed);
+				inq[ed] = 1;
+			}
+		}
+	//	cout<<"ppp"<<endl;
+	}
+	return dis[T] != INF;
+}
+void get()
+{
+	long long flow = 0;
+	long long cost = 0;
+	while(spfa())
+	{
+		long long f = INF;
+		for(int u = T;u != S;u = preV[u])
+		{
+			f = min(f,v[preV[u]][preE[u]].w);
+		}	
+		for(int u = T;u != S;u = preV[u])
+		{
+			v[preV[u]][preE[u]].w -= f;
+			v[u][v[preV[u]][preE[u]].id].w += f;
+		}
+		flow += f;
+		cost += f * dis[T];
+	}
+	cout<<flow << " "<<cost<<endl;
+	return;
+}
+int main()
+{
+	cin>>n>>m;
+	S = 1;
+	T = n;
+	add(1,1 + n,INF,0);
+	add(n,n + n,INF,0);
+	for(int i = 2;i<=n-1;i++)
+	{
+		add(i,i + n,1,0);
+	}
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		int c;
+		cin>>x>>y>>c;
+		add(x + n,y,1,c);
+	}
+	get();
+	return 0;
+}
