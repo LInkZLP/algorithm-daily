@@ -1,0 +1,231 @@
+#include  <bits/stdc++.h>
+using namespace std;
+int timer = 0;
+int n;
+int m;
+const int maxn = 2e5 + 5;
+vector<vector<int>>v(maxn);
+vector<int>dfn(maxn);
+vector<int>top(maxn);
+vector<int>seg(maxn);
+vector<int>va(maxn);
+vector<int>sz(maxn);
+vector<int>dep(maxn);
+vector<int>son(maxn);
+vector<int>fa(maxn);
+vector<long long>sum(maxn<<2);
+vector<long long>add(maxn<<2);
+long long mod = 1LL<<31;
+struct st{
+	int l;
+	int r;
+};
+bool cmp(st a,st b)
+{
+	if(a.l == b.l)
+	{
+		return a.r < b.r;
+	}
+	return a.l < b.l;
+}
+void dfs1(int u,int p)
+{
+	sz[u] ++;
+	fa[u] = p;
+	int mxl = 0;
+	int tar = 0;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		dep[ed] = dep[u] + 1;
+		dfs1(ed,u);
+		sz[u] += sz[ed];
+		if(sz[ed] > mxl)
+		{
+			tar = ed;
+			mxl = sz[ed];	
+		} 
+	}
+	son[u] = tar;
+	return;
+}
+void dfs2(int u,int p)
+{
+	timer ++;
+	seg[timer] = u;
+	dfn[u] = timer;
+	top[u] = p;
+	if(son[u] == 0)
+	{
+		return;
+	}
+	dfs2(son[u],p);
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == fa[u] || ed == son[u])
+		{
+			continue;
+		} 
+		dfs2(ed,ed);
+	}
+	return;
+}
+void down(int i,int ln,int rn)
+{
+	if(add[i])
+	{
+		long long h = add[i];
+		add[i] = 0;
+		sum[i<<1] += ln * h;
+		sum[i<<1|1] += rn * h;
+		add[i << 1] += h;
+		add[i<<1 | 1] += h; 
+	}
+	return;
+}
+void up(int i)
+{
+	sum[i] = sum[i<<1] + sum[i<<1|1];
+	return;
+}
+void change(int l,int r,int i,int jobl,int jobr,long long jobv)
+{
+	if(l >= jobl && r <=jobr)
+	{
+		sum[i] += jobv * (r - l + 1);
+		add[i] += jobv;
+		return;
+	}
+	int mid = (l + r)>>1;
+	down(i,mid - l + 1,r - mid);
+	if(mid >= jobl)
+	{
+		change(l,mid,i<<1,jobl,jobr,jobv);
+	}
+	if(mid + 1 <=jobr)
+	{
+		change(mid + 1,r,i<<1|1,jobl,jobr,jobv);
+	}
+	up(i);
+	return;
+}
+long long query(int l,int r,int i,int jobl,int jobr)
+{
+	if(l >= jobl && r <= jobr)
+	{
+		return sum[i];
+	}
+	int mid = (l + r)>>1;
+	down(i,mid - l+ 1,r - mid);
+	long long ans = 0;
+	if(mid >= jobl)
+	{
+		ans += query(l,mid,i<<1,jobl,jobr);
+	}
+	if(mid + 1 <= jobr)
+	{
+		ans += query(mid + 1,r,i<<1|1,jobl,jobr);
+	}
+	return ans;
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+	cin.tie(nullptr);
+	cin>>n;
+	for(int i = 1;i<=n-1;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back(y);
+		v[y].push_back(x);
+	}
+	dfs1(1,0);
+	dfs2(1,1);
+	cin>>m;
+	while(m--)
+	{
+		int op;
+		cin>>op;
+		if(op == 0)
+		{
+			int x;
+			long long k;
+			cin>>x >> k;
+			change(1,n,1,dfn[x],dfn[x] + sz[x] -1,k);
+		}
+		else
+		{
+			int k;
+			cin>>k;
+			vector<st>have;
+			while(k --)
+			{
+				int x;
+				int y;
+				cin>>x>>y;
+				while(top[x] != top[y])
+				{
+					if(dep[top[y]] >= dep[top[x]])
+					{
+						have.push_back({dfn[top[y]],dfn[y]});
+						y = fa[top[y]];
+					}
+					else
+					{
+						have.push_back({dfn[top[x]],dfn[x]});
+						x = fa[top[x]];
+					}
+				}
+				have.push_back({min(dfn[x],dfn[y]),max(dfn[x],dfn[y])});//树剖结束解决top一样 
+			}
+			sort(have.begin(),have.end(),cmp);
+			if (k == 0)
+			{
+			    cout << 0 << '\n';
+			    continue;
+			}
+			int ptr = 0;
+			int len = have.size();
+			int l = have[0].l;
+			int r = have[0].r;
+			vector<st>nv;
+			ptr ++;
+			while(ptr < len)
+			{
+				int l1 = have[ptr].l;
+				int r1 = have[ptr].r;
+				if(r1 <= r)
+				{
+					
+				}
+				else if(r1 > r && l1 <= r)
+				{
+					r = r1;
+				}
+				else if(l1 > r)
+				{
+					nv.push_back({l,r});
+					l = l1;
+					r = r1;
+				}
+				ptr ++;
+			}
+			nv.push_back({l,r});
+			long long ans = 0;
+			for (auto &p : nv) 
+			{
+   				 ans = (ans + query(1, n, 1, p.l, p.r)) % mod;
+			}
+			cout<<ans<<'\n'; 
+		}
+	}
+	
+	return 0;
+} 
