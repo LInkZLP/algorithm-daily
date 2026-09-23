@@ -1,0 +1,109 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+struct st {
+    long long x;
+    int cnt;
+};
+
+bool cmp(st a, st b) {
+    return a.x < b.x;
+}
+
+void solve() {
+    int n;
+    cin >> n;
+    map<long long, int> mp;          // 统计每个影子值出现的次数
+    map<long long, long long> mp1;   // 影子值 -> 对应的原值 a
+    vector<long long> a(n + 5);
+
+    for (int i = 1; i <= n; i++) {
+        long long x;
+        cin >> x;
+        a[i] = x;
+        mp[x]++;
+    }
+
+    // 边界 1：n == 1 时，影子必须是 0，原值只能是 1
+    if (n == 1) {
+        if (a[1] == 0) cout << 1 << endl;
+        else cout << -1 << endl;
+        return;
+    }
+
+    vector<st> v;
+    for (auto p : mp) {
+        v.push_back({p.first, p.second});
+    }
+    sort(v.begin(), v.end(), cmp);
+
+    // 边界 2：最小的影子值必须是 0（最小元素没有更小的元素）
+    if (v[0].x != 0) {
+        cout << -1 << endl;
+        return;
+    }
+
+    // 边界 3：所有影子值都相同（v.size() == 1）
+    //    - 若影子为 0，则所有原值都为 1（字典序最小）
+    //    - 否则无解
+    if (v.size() == 1) {
+        if (a[1] == 0) {
+            for (int i = 1; i <= n; i++) cout << 1 << " ";
+            cout << endl;
+        } else {
+            cout << -1 << endl;
+        }
+        return;
+    }
+
+    long long last = 0;   // 当前已累计的“比当前 a 小的元素总和”
+    long long mx = 0;     // 上一个计算出的 a 值，用于保证严格递增
+
+    // 依次计算每个不同影子值对应的原值
+    for (int i = 1; i < (int)v.size(); i++) {
+        long long temp = v[i].x - last;
+        int c = v[i - 1].cnt;   // 前一个影子值出现的次数
+
+        // 边界 4.1：必须整除，否则无法得到整数原值
+        if (temp % c != 0) {
+            cout << -1 << endl;
+            return;
+        }
+
+        long long h = temp / c;
+
+        // 边界 4.2：原值必须为正整数
+        if (h <= 0) {
+            cout << -1 << endl;
+            return;
+        }
+
+        // 边界 4.3：原值必须严格递增（除第一个不同影子外）
+        if (i != 1 && h <= mx) {
+            cout << -1 << endl;
+            return;
+        }
+
+        last += c * h;
+        mp1[v[i - 1].x] = h;
+        mx = max(mx, h);
+    }
+
+    // 边界 5：最大影子值对应的原值取 mx + 1，保证字典序最小
+    mp1[v.back().x] = mx + 1;
+
+    // 按原顺序输出构造出的数组 a
+    for (int i = 1; i <= n; i++) {
+        cout << mp1[a[i]] << " ";
+    }
+    cout << endl;
+}
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    int t;
+    cin >> t;
+    while (t--) solve();
+    return 0;
+}
