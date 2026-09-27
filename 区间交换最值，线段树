@@ -1,0 +1,159 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+struct st1{
+	long long mx;
+	int id;
+};
+struct st2{
+	long long mi;
+	int id;
+};
+const int maxn = 2e5 + 5;
+vector<st1>v1(maxn<<2);
+vector<st2>v2(maxn<<2);
+vector<long long>val(maxn<<2);
+vector<int>seg(maxn << 2);
+void up1(int i)
+{
+	if(v1[i<<1].mx > v1[i<<1|1].mx)
+	{
+		v1[i] = v1[i<<1];
+	}
+	else
+	{
+		v1[i] = v1[i<<1|1];
+	}
+	return;
+}
+void up2(int i)
+{
+	if(v2[i<<1].mi < v2[i<<1|1].mi)
+	{
+		v2[i] = v2[i<<1];
+	}
+	else
+	{
+		v2[i] = v2[i<<1|1];
+	}
+	return;
+}
+void build(int l,int r,int i)
+{
+	if(l == r)
+	{
+		v1[i] = {val[l],l};
+		v2[i] = {val[l],l};
+		seg[l] = i;
+		return;
+	}
+	int mid = (l + r)>>1;
+	build(l,mid,i<<1);
+	build(mid + 1,r,i<<1|1);
+	up1(i);
+	up2(i);
+	return ;
+}
+void c1(int l,int r,int i,int jobl,int jobr,long long jobv)
+{
+	if(l >= jobl && r <= jobr)
+	{
+		v1[i].mx = jobv;
+		v2[i].mi = jobv;
+		return;
+	}
+	int mid = (l + r)>>1;
+	if(mid >= jobl)
+	{
+		c1(l,mid,i<<1,jobl,jobr,jobv);
+	}
+	if(mid + 1 <= jobr)
+	{
+		c1(mid + 1,r,i<<1|1,jobl,jobr,jobv);
+	}
+	up1(i);
+	up2(i);
+	return;
+}
+st1 q1(int l,int r,int i,int jobl,int jobr)
+{
+	if(l >= jobl && r <= jobr)
+	{
+		return v1[i];
+	}
+	st1 res = {0,0};
+	int mid = (l + r)>>1;
+	if(mid >= jobl)
+	{
+		st1 h = q1(l,mid,i<<1,jobl,jobr);
+		if(h.mx > res.mx)
+		{
+			res = h;
+		}
+	}
+	if(mid + 1 <= jobr)
+	{
+		st1 h = q1(mid + 1,r,i<<1|1,jobl,jobr);
+		if(h.mx > res.mx)
+		{
+			res = h;
+		}
+	}
+	return res;
+}
+st2 q2(int l,int r,int i,int jobl,int jobr)
+{
+	if(l >= jobl && r <= jobr)
+	{
+		return v2[i];
+	}
+	st2 res = {LLONG_MAX,0};
+	int mid = (l + r)>>1;
+	if(mid >= jobl)
+	{
+		st2 h = q2(l,mid,i<<1,jobl,jobr);
+		if(h.mi < res.mi)
+		{
+			res = h;
+		}
+	}
+	if(mid + 1 <= jobr)
+	{
+		st2 h = q2(mid + 1,r,i<<1|1,jobl,jobr);
+		if(h.mi < res.mi)
+		{
+			res = h;
+		}
+	}
+	return res;
+}
+int main() 
+{
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+	int n;
+	int m;
+	cin>>n>>m;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>val[i];
+	}
+	build(1,n,1);
+	for(int i = 1;i<=m;i++)
+	{
+		int l;
+		int r;
+		cin>>l>>r;
+		st1 x = q1(1,n,1,l,r);
+		st2 y = q2(1,n,1,l,r);
+		c1(1,n,1,x.id,x.id,y.mi);
+		c1(1,n,1,y.id,y.id,x.mx);
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		cout<<q1(1,n,1,i,i).mx<<" ";
+	}
+	cout<<endl;
+    return 0;
+}
