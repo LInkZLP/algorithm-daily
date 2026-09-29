@@ -1,0 +1,157 @@
+//此题不需要二分黑白格，实际上，一个点虽然不能被同时经过，但却能反复经过，我们把S连接起始点，终点连接T，w,c都为1,0，同样的，我们每个点的可行下一步相连，容量为INF，表示可以重复经过，费用为1，表示一步的代价
+
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int S;
+int T;
+struct st{
+	int ed;
+	int id;
+	int w;
+	int c;
+};
+int a;
+int b;
+int k;
+const int maxn = 1e4 + 100;
+vector<vector<st>>v(maxn);
+vector<int>dis;
+vector<int>preV;
+vector<int>preE;
+vector<int>inq;
+const int INF = 1e8;
+vector<vector<int>>mp(128,vector<int>(128,0));
+vector<vector<int>>tar(128,vector<int>(128,0));
+bool bfs()
+{
+	queue<int>q;
+//	cout<<"ppp"<<endl;
+	q.push(S);
+	dis.assign(maxn,INF);
+	dis[S] = 0;
+	preV.assign(maxn,0);
+	preE.assign(maxn,0);
+	inq.assign(maxn,0);
+	inq[S] = 1;
+	
+	while(!q.empty())
+	{
+		int u = q.front();
+		q.pop();
+		inq[u] = 0;
+		
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int ed = v[u][i].ed;
+			if(dis[ed] > dis[u] + v[u][i].c && v[u][i].w)
+			{
+				dis[ed] = dis[u] + v[u][i].c;
+				preE[ed] = u;
+				preV[ed] = i;
+				if(inq[ed])
+				{
+					continue;
+				}
+				inq[ed] = 1;
+				q.push(ed);
+			}
+		}
+	}
+	
+	return dis[T] != INF;
+}
+void solve()
+{
+	int flow = 0;
+	int cost = 0;
+	while(bfs())
+	{
+		int f = INF;
+		for(int u = T;u != S;u = preE[u])
+		{
+			f = min(f,v[preE[u]][preV[u]].w);
+		}
+		for(int u = T;u != S;u = preE[u])
+		{
+			v[preE[u]][preV[u]].w -= f;
+			v[u][v[preE[u]][preV[u]].id].w += f;
+		}
+		flow += f;
+		cost += f * dis[T];
+		
+	}
+	cout<<cost<<endl;
+	return ;
+}
+void add(int u,int x,int w,int c)
+{
+	int sti = v[u].size();
+	int edi = v[x].size();
+	v[u].push_back({x,edi,w,c});
+	v[x].push_back({u,sti,0,-c});
+	return;
+}
+int main()
+{
+	cin>>n>>m>>k>>a>>b;
+	int ptr = 0;
+	S = 0;
+	T = n * m + 1;
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 1;j<=m;j++)
+		{
+			char x;
+			cin>>x;
+			if(x == '*')
+			{
+				mp[i][j] = -1;
+			}
+			else
+			{
+				mp[i][j] = 1;
+				tar[i][j] = ++ ptr;
+			}
+		}
+	}
+	int dx[] = {a,a,-a,-a,b,b,-b,-b};
+	int dy[] = {b,-b,b,-b,a,-a,a,-a};
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 1;j<=m;j++)
+		{
+			if(mp[i][j] == -1)
+			{
+				continue;
+			}
+			for(int l = 0;l < 8;l++)
+			{
+				int nx = i + dx[l];
+				int ny = j + dy[l];
+				if(nx >= 1 && nx <= n && ny >= 1 && ny <= m && mp[nx][ny] != -1)
+				{
+					add(tar[i][j],tar[nx][ny],INF,1);
+				}
+			}
+		}
+	}
+	for(int i = 1;i<=k;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		add(S,tar[x][y],1,0);
+	}
+	for(int i = 1;i<=k;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		add(tar[x][y],T,1,0);
+	}
+	
+	solve();
+	return 0;
+}
