@@ -1,0 +1,35 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+void solve()
+{
+    int n, l, r;
+    cin >> n >> l >> r;
+    vector<long long> v(n + 5);   
+    vector<long long> ans(n + 5); 
+    v[0] = 0;
+    for (int i = 1; i <= n; i++) {
+        v[i] = i;
+    }
+
+    v[r] = v[l - 1];
+
+    for (int i = 1; i <= n; i++) {
+        ans[i] = v[i] ^ v[i - 1];
+    }
+
+    for (int i = 1; i <= n; i++) {
+        cout << ans[i] << " ";
+    }
+    cout << endl;
+}
+
+int main()
+{
+    int t;
+    cin >> t;
+    while (t--) {
+        solve();
+    }
+    return 0;
+}
