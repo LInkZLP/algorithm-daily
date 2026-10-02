@@ -1,0 +1,142 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int S;
+int T;
+int m;
+struct st{
+	int ed;
+	int id;
+	int w;
+};
+vector<int>dep;
+vector<int>cur;
+const int maxn = 600;
+vector<vector<st>>v(maxn);
+vector<vector<int>>re(maxn,vector<int>(maxn,0));
+int INF = 1e7;
+bool bfs()
+{
+	dep.assign(maxn,-1);
+	dep[S] = 0;
+	queue<int>q;
+	q.push(S);
+	while(!q.empty())
+	{
+		int u = q.front();
+		q.pop();
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int ed = v[u][i].ed;
+			if(v[u][i].w && dep[ed] == -1)
+			{
+				dep[ed] = dep[u] + 1;
+				q.push(ed);
+			}
+		}
+	} 
+	cur.assign(maxn,0);
+	return dep[T] != -1;
+}
+int dfs(int u,int lim)
+{
+	if(u == T)
+	{
+		return lim;
+	}
+	for(int i = cur[u];i<v[u].size();i++)
+	{
+		int ed = v[u][i].ed;
+		cur[u] = i;
+		if(dep[ed] == dep[u] + 1 && v[u][i].w)
+		{
+			int res = dfs(ed,min(lim,v[u][i].w));
+			if(res)
+			{
+				v[u][i].w -= res;
+				v[ed][v[u][i].id].w += res;
+				return res;
+			}
+			else
+			{
+				dep[ed] = -1;
+			}
+		}
+	}
+	return 0;	
+}
+void add(int u,int x,int w)
+{
+	int sti = v[u].size();
+	int edi = v[x].size();
+	v[u].push_back({x,edi,w});
+	v[x].push_back({u,sti,0});
+}
+int dinic()
+{
+	int r = 0;
+	int f = 0;
+	while(bfs())
+	{
+		while(f = dfs(S,INF))
+		{
+			r += f;
+		}
+	}
+	return r;
+}
+int main()
+{
+	//闭包边比原边多，所以闭包后的最大匹配可能更大，链覆盖数可能更小。
+	//如果 u 可以到达 v，那么 u 和 v 不能同时选。而不是简单路径覆盖 ，
+	//它不要求相邻点之间必须直接有道路。
+	//错误关系，把可达关系当成直接边关系 
+	//于是算的是最少有向路径覆盖，而不是 Dilworth 定理里的最少链覆盖。
+	//传递闭包的作用，就是把“直接边关系”补成题目真正需要的“可达关系”。
+	
+	//问题	连接依据	能否跳过中间点	建图
+	//最小不相交路径覆盖	原图直接边	不能	原图
+	//最小链覆盖	是否能到达	能	传递闭包
+	//本题最大藏身点	是否能到达	能	传递闭包
+	//最小不相交路径覆盖 看 原图直接边
+	//最小链覆盖 看  是否能到达
+	//题目要求的是任意两个藏身点之间都没有路径相连。 
+	cin>>n>>m;
+	S = 0;
+	T = 2 * n + 1;
+	for(int i = 1;i<=n;i++)
+	{
+		add(S,i,1);
+		add(i + n,T,1);
+	}
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		re[x][y] = 1;
+	//	add(x,y + n,1);	
+	}
+	for(int k = 1;k<=n;k++)
+	{
+		for(int i = 1;i<=n;i++)
+		{
+			for(int j = 1;j<=n;j++)
+			{
+				if (re[i][k] && re[k][j]) re[i][j] = 1;
+			}
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 1;j<=n;j++)
+		{
+			if(re[i][j])
+			{
+				add(i,j + n,1);
+			}
+		}
+	}
+	cout<<n - dinic()<<endl;
+    return 0;
+}
