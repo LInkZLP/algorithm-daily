@@ -1,0 +1,42 @@
+#include <bits/stdc++.h>
+using namespace std;
+int t;
+int n;
+int a;
+int b;
+void solve()
+{
+	//可以证明所有长区间都会被“长度 2”和“长度 3”的局部条件覆盖
+	cin>>n;
+	vector<long long>v(n + 5); 
+	long long ans = 0;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+	}
+	for(int i = 1;i<=n;i+=2)
+	{
+		if(i > 1 && v[i] + v[i - 2] > v[ i - 1])
+		{
+			ans += v[i] + v[i - 2] - v[i - 1];
+			v[i] = v[i - 1] - v[i - 2];
+		}
+		if(i + 1 <= n && v[i] > v[i + 1])
+		{
+			ans += v[i] - v[i + 1];
+			v[i] = v[i + 1];
+		}
+	}
+	cout<<ans<<endl;
+	return;
+}
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+} 
