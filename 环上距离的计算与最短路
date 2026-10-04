@@ -1,0 +1,86 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int q;
+int m;
+const int maxn = 2e5 + 5;
+#define pli pair<long long,int>
+vector<vector<pli>>v(maxn);
+vector<long long>dp(maxn,LLONG_MAX);
+vector<long long>pre(maxn);
+void dij()
+{
+	int sta = n + 1;
+	priority_queue<pli,vector<pli>,greater<pli>>pq;
+	pq.push({0,sta});
+	dp[n + 1] = 0;
+	while(!pq.empty())
+	{
+		int u = pq.top().second;
+		pq.pop();
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int ed = v[u][i].second;
+			long long w = v[u][i].first;
+			if(dp[ed] > dp[u] + w)
+			{
+				dp[ed] = dp[u] + w;
+				pq.push({dp[ed],ed});
+			}
+		}
+	}
+	return;
+}
+int main()
+{
+	cin>>n>>m;
+	for(int i = 1;i<=n;i++)
+	{
+		long long x;
+		cin>>x;
+		if(i == n)
+		{
+			v[n].push_back({x,1});
+			v[1].push_back({x,n});
+		}
+		else
+		{
+			v[i].push_back({x,i + 1});
+			v[i + 1].push_back({x,i});
+		}
+		pre[i + 1] = pre[i] + x;
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		long long x;
+		cin>>x;
+		v[n + 1].push_back({x,i});
+		v[i].push_back({x,n + 1});
+	}
+	dij();
+	while(m--)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		if(y == n + 1)
+		{
+			cout<<dp[x]<<endl;
+			continue;
+		}
+		long long s1 = 0;
+		long long tot = pre[n + 1];
+		if(x <= y)
+		{
+			s1 = pre[y] - pre[x];
+		}
+		else
+		{
+			s1 = tot - (pre[x] - pre[y]);
+		}
+		s1 = min(s1,tot - s1);
+		long long s2 = dp[x] + dp[y];
+		cout<<min(s1,s2)<<'\n';
+	}
+	return 0;
+} 
