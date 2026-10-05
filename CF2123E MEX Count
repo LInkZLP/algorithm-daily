@@ -1,0 +1,44 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+void solve()
+{
+	cin>>n;
+	vector<int>v(n + 5);
+	vector<int>mp(n + 5);
+	vector<int>c(n + 5);
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+		mp[v[i]] ++;
+	}
+	//也就是说，不仅要考虑至少要删去多少个MEX才是i，还要考虑最多删多少MEX是i(至少保留i个数） 
+	for(int i = 0;i<=n;i++)//最终的MEX 
+	{
+		c[mp[i]] ++;
+		c[n - i + 1] --;	
+		if(mp[i] == 0)
+		{
+			break;
+		}
+	}
+	cout<<c[0]<<" ";
+	for(int i = 1;i<=n;i++)
+	{
+		c[i] += c[i - 1];
+		cout<<c[i]<<" ";
+	}
+	cout<<endl;
+	return ;
+}
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		solve();	
+	}	
+	return 0;
+}
