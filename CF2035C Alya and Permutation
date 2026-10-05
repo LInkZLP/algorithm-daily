@@ -1,0 +1,110 @@
+#include <bits/stdc++.h>
+using namespace std;
+//不难看出，所有位运算操作都不能超过当前最高位，假设最高位为x,最大值也只能为1<<x - 1;
+//那么，我们进行分类讨论，因为最后一位的操作不一样
+//若n为奇数，最后一位的操作是&，我们可以知道 a & b <= min(a,b)(当且仅当a = b取等）
+//考虑这个，最后一位只能是n，因为我们希望这个min(a,b)最大
+//接下来就是要找一个构造，因为我们知道，n-1 + 1 为n，我们只需要保存最小一位的1即可
+//那么，只需要四个位置的数（题目给了n - 5）即可保存这个1，具体看构造
+
+//n为偶数的时候，我们由n是奇数情况可以得知，考虑n的最高位二进制形式1000...
+//我们总能构造出111..的二进制形式，那么最高位到n之间的数怎么办呢，他们放在最高位后面都是干扰项
+//那么我们把最高位到 n的数字全部放在1前面即可，因为最大值已经固定，他们改变不了最大值,
+//剩下的就在奇数情况下改进 
+void solve()
+{
+	int n;
+	cin>>n;
+	vector<int>ans(n + 5);
+	if(n & 1)
+	{
+		cout<<n<<endl;
+		ans[n] = n;
+		for(int i = 1;i<=n - 5;i++)
+		{
+			ans[i] = i;
+		}
+		int k = 0;
+		ans[n - 1] = n - 1;
+		ans[n - 2] = n - 2;
+		ans[n - 3] = n - 4;
+		ans[n - 4] = n - 3;
+		for(int i = 1;i<=n;i++)
+		{
+			cout<<ans[i]<<" ";
+			if(i & 1)
+			{
+				k &= ans[i];
+			}
+			else
+			{
+				k |= ans[i];
+			}
+		}
+		cout<<endl;
+	//	cout<<"k "<<k<<endl;
+	}
+	else
+	{
+		int k = 0;
+		if(n == 6)
+		{
+			cout<<7<<endl;
+			cout<<"1 2 4 6 5 3"<<endl;
+			return;
+		}
+		int sta = 0;
+		int temp = n;
+		int ed = 1;
+		while(temp)
+		{
+			temp >>=1;
+			sta ++;
+			ed<<=1;
+		}
+		ed >>=1;
+		int ptr = 1;
+		cout<<(ed<<1) - 1<<endl;
+		for(int i = ed + 1;i<=n;i++)
+		{
+			ans[ptr] = i;
+			ptr ++;
+		}
+		ans[n] = ed;
+		ans[n - 1] = ed - 1;
+		ans[n - 2] = ed - 2;
+		ans[n - 3] = ed - 3;
+		ans[n - 4] = ed - 5;
+		ans[n - 5] = ed - 4;
+		for(int i = 1;i<=ed - 6;i++)
+		{
+			ans[ptr] = i;
+			ptr ++;
+		}
+		for(int i = 1;i<=n;i++)
+		{
+			cout<<ans[i]<<" ";
+			if(i & 1)
+			{
+				k &= ans[i];
+			}
+			else
+			{
+				k |= ans[i];
+			}
+		}
+		cout<<endl;
+	//	cout<<"K "<<k<<endl;
+	}
+	return ;
+}
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+} 
