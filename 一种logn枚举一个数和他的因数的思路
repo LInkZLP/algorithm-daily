@@ -1,0 +1,10 @@
+为了避免
+for(int i = 1;i<=n;i++)
+  for(int j = 1;j <= i;j ++)
+
+可以让目标为tar
+for(int i = 1;i<=n;i++) //枚举因数
+  for(int j = 1;j*i<=n;j++)//枚举倍数
+      tar = i * j
+      讨论tar 与 i 的关系
+时间复杂度为logn，借鉴埃氏筛
