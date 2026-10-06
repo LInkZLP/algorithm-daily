@@ -1,0 +1,47 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+void solve()
+{
+	//二进制减法中，如果减数是被减数的子集，那么不会产生借位，减法等价于异或：
+	//x - y = x xor y
+	
+	/*a & c
+	一定是 a 的子集。
+	而：
+	a
+	又一定是：
+	a | b
+	的子集。
+	所以：
+	a & c 一定是 a | b 的子集*/
+	//因此原式等价于：
+	//(a | b) xor (a & c) = d 
+	long long b;
+	long long c;
+	long long d;
+	cin>>b>>c>>d;
+	long long a = d ^ b;
+	if((a | b) - (c & a) == d)
+	{
+		cout<<a<<endl;
+	}
+	else
+	{
+		cout<<-1<<endl;
+	}
+	return;
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+	int t;
+	//cout<<(10 | 4 )- (4 & 2)<<endl;
+	cin>>t;
+	while(t--)	
+	{
+		solve();
+	}
+	return 0;
+}
