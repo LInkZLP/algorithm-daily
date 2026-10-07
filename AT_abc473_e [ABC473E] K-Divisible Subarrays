@@ -1,0 +1,58 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+long long k;
+/*
+1. 初始状态没有 mp[0] = 1
+空前缀的余数是 0，必须一开始就记录。
+你用 if(r == 0 && ans == 0) 特判，只能处理第一次余数为 0 的情况。如果切段后新起点的余数又是 0，而 mp 已被清空且没重新放入 0，再次遇到余数 0 时就会漏切。
+
+2. 错误地检查 mp.find(k - r)
+两个前缀和模 K 相等，才能保证中间子段和是 K 的倍数。
+检查 k - r 是否存在毫无意义，它对应的是两个余数之和为 0，并不代表它们相等。
+这会导致错误地切出和不被 K 整除的段，破坏最优划分。
+
+3. 切段后 mp.clear() 但没有把当前余数 r 放回
+切出一段后，新起点从当前位置开始，从新起点到当前位置的前缀和模 K 就是 r。
+必须立刻执行 mp[r] = 1，否则后续再次出现相同余数时，mp 里找不到，无法匹配，漏掉合法切分。
+
+4. v[i] == 0 的特判多余且有害
+*/
+void solve()
+{
+	cin>>n>>k;
+	vector<long long>v(n + 5);
+	vector<long long>pre(n + 5);
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+		pre[i] = pre[i - 1] + v[i];
+	}
+	unordered_map<long long,int>mp;
+	int ans = 0;
+	mp[0] = 1;
+	for(int i = 1;i<=n;i++)
+	{
+		long long r = pre[i] % k;
+		if(mp.find(r) != mp.end())
+		{
+			ans ++;
+			mp.clear();
+			//cout<<i<<endl;
+		}
+		mp[r] = 1;
+	}
+	cout<<ans<<endl;
+	return;
+}
+int main()
+{
+	int t;
+	//cin>>t;
+	t = 1;
+	while(t--)
+	{
+		solve(); 
+	}
+	return 0;
+}
