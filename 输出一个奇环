@@ -1,0 +1,99 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 5e5 + 5;
+vector<int>col(maxn); 
+vector<int>ans;
+int k = 0;
+vector<int>fa(maxn);
+int n;	
+int m;
+vector<vector<int>>v;
+void dfs(int u,int c)
+{
+	if(k)
+	{
+		return;
+	}
+	for(int i = 0;i<v[u].size();i++)
+	{
+		if(k)
+		{
+			return;
+		}
+		int ed = v[u][i];
+		if(col[ed] == c && k == 0)
+		{
+			k = 1;
+		//	cout<<"ppp"<<endl; 
+			int l = u;
+		//	cout<<fa[l]<<endl;
+			while(l != ed)
+			{
+				ans.push_back(l);
+				l = fa[l];
+			//	cout<<l<<endl;
+			}
+			ans.push_back(l);
+		}
+		else if(col[ed] == 0)
+		{
+			int p = (c == 1) ? 2 : 1;
+			col[ed] = p;
+			fa[ed] = u;
+			dfs(ed,p);
+		}
+	}
+	return;
+}
+void solve()
+{
+	cin>>n>>m;
+	k = 0;
+	v.clear();
+	ans.clear();
+	v.assign(n + 5,vector<int>());
+	col.assign(n + 5,0);
+	fa.assign(n + 5,0);
+	for(int i = 1;i<=m;i++)
+	{
+		int a;
+		int b;
+		cin>>a>>b;
+		v[a].push_back(b);
+		v[b].push_back(a);
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		if(!col[i])
+		{
+			col[i] = 1;
+			dfs(i,1);
+		}
+		//cout<<fa[i]<<" ";
+	}
+//	cout<<"ans"<<ans.size()<<endl;
+	if(ans.size() >= 3)
+	{
+		cout<<ans.size()<<endl;
+		for(int i : ans)
+		{
+			cout<<i<<" ";
+		}
+		cout<<endl;
+	}
+	else
+	{
+		cout<<-1<<endl;
+	}
+	return;
+}
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
