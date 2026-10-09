@@ -1,0 +1,71 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+/*
+证明：
+原方程：n^2 + n + x = i^2
+两边乘以4并配方：
+(2n+1)^2 - (2i)^2 = 1 - 4x
+即 (2n+1 - 2i)(2n+1 + 2i) = 1 - 4x
+
+令 tar = 4x - 1，则：
+(2n+1 - 2i)(2n+1 + 2i) = -tar
+
+设 l1 = 2n+1 - 2i, l2 = 2n+1 + 2i，则：
+l1 * l2 = -tar
+l1 + l2 = 2(2n+1) = 2t，其中 t = 2n+1
+
+对于 |tar| 的任意正因子对 (i, j)，其中 i * j = |tar|：
+- 若 tar > 0，则 -tar < 0，l1 与 l2 异号，|l1 + l2| = |i - j|，所以 2t = |i - j|。
+- 若 tar < 0，则 -tar > 0，l1 与 l2 同号，|l1 + l2| = i + j，所以 2t = i + j。
+
+注意：tar / i 当 tar < 0 时为 -j，因此
+|tar / i - i| = |-j - i| = i + j（同号情况）
+|tar / i - i| = |j - i| = |i - j|（异号情况）
+所以统一使用 2t = |tar / i - i| 即可。
+
+得到 t = |2n+1| 后，n = (t-1)/2 或 n = (-t-1)/2。
+*/
+
+void solve()
+{
+    long long x;
+    cin >> x;
+    long long tar = 4 * x - 1;
+    vector<long long> ans;
+    long long K = abs(tar);
+    for (long long i = 1; i * i <= K; i++)
+    {
+        if (K % i == 0)
+        {
+            long long two_t = abs(tar / i - i); // 2t
+            if (two_t % 2 == 0)
+            {
+                long long t = two_t / 2;
+                ans.push_back((t - 1) / 2);
+                ans.push_back((-t - 1) / 2);
+            }
+        }
+    }
+    sort(ans.begin(), ans.end());
+    ans.erase(unique(ans.begin(), ans.end()), ans.end());
+    cout << ans.size() << endl;
+    for (long long v : ans)
+    {
+        cout << v << " ";
+    }
+    cout << endl;
+}
+
+int main()
+{
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+    int t = 1;
+    // cin >> t;
+    while (t--)
+    {
+        solve();
+    }
+    return 0;
+}
