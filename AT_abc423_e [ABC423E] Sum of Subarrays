@@ -1,0 +1,43 @@
+#include <bits/stdc++.h>
+using namespace std;
+void solve()
+{
+	int n;
+	int q;
+	cin>>n>>q;
+	vector<long long>v(n + 5);
+	vector<long long>p0(n + 5);
+	vector<long long>p1(n + 5);
+	vector<long long>p2(n + 5) ;
+	for(int i = 1;i<=n;i++)
+	{
+		long long a;
+		cin>>a;
+		p0[i] = p0[i - 1] + a;
+		p1[i] = p1[i - 1] + a * i;
+		p2[i] = p2[i - 1] + a * i * i;
+	}
+	while(q--)
+	{
+		long long l;
+		long long r;
+		cin>>l>>r;
+		long long s0 = p0[r] - p0[l - 1];
+		long long s1 = p1[r] - p1[l - 1];
+		long long s2 = p2[r] - p2[l - 1];
+		long long ans = -s2 + (r + l) * s1 - (r + 1) * (l -1) * s0;
+		cout<<ans<<endl;
+	}
+	return;
+}
+int main()
+{
+	int t;
+	//cin>>t;
+	t = 1;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
