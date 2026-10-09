@@ -1,0 +1,68 @@
+#include <bits/stdc++.h>
+using namespace std;
+void solve()
+{
+	int n;
+	int m;
+	cin>>n>>m;
+	int maxn = 100005;
+	vector<vector<int>>w(n + 5,vector<int>(m + 5));
+	vector<int>cx(maxn);
+	vector<int>sx(maxn);
+	vector<int>cy(maxn);
+	vector<int>sy(maxn);
+	long long sum = 0;
+	for(int i = 1;i<=n;i++)
+	{
+		unordered_map<int,int>mp;
+		for(int j = 1;j<=m;j++)
+		{
+			int c;
+			cin>>c;
+			w[i][j] = c;
+			cy[c] ++;
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		unordered_map<int,int>mp;
+		for(int j = 1;j<=m;j++)
+		{
+			int c = w[i][j];
+			sy[c] ++;
+			sum +=1LL*(2*sy[c] - cy[c] - 1) * i;
+		}
+	}
+	for(int j = 1;j<=m;j++)
+	{
+		unordered_map<int,int>mp;
+		for(int i = 1;i<=n;i++)
+		{
+			int c = w[i][j];
+			cx[c] ++;
+		}
+	}
+	for(int j = 1;j<=m;j++)
+	{
+		unordered_map<int,int>mp;
+		for(int i = 1;i<=n;i++)
+		{
+			int c = w[i][j];
+			sx[c] ++;
+			sum += 1LL* (2*sx[c] - cx[c] - 1) * j;
+		}
+	}
+	cout<<sum<<endl;
+	return;
+}
+int main()
+{
+	int t;
+	//cin>>t;
+	t = 1;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
