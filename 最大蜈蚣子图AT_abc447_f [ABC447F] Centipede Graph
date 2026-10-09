@@ -1,0 +1,111 @@
+#include <bits/stdc++.h>
+using namespace std;
+vector<vector<int>>v;
+vector<int>d1;
+vector<int>d2;
+vector<int>d3;
+vector<int>v1;
+vector<int>v2;
+int ans = 1;
+void dfs(int u,int p,int l)
+{
+	if(v1[u]) 
+	{
+		//三个度的要么开头要么当结尾 
+		ans = max(l + 1,ans);
+		//结尾结算 
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int ed = v[u][i];
+			if(ed == p)
+			{
+				continue;
+			}
+			dfs(ed,u,1);//开头 
+		}
+		d1[u] = 1;//结尾结算 
+	}
+	else if(v2[u])
+	{
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int ed = v[u][i];
+			if(ed == p)
+			{
+				continue;
+			}
+			dfs(ed,u,l + 1);
+			if(d1[ed] > d1[u])
+			{
+				d2[u] = d1[u];
+				d1[u] = d1[ed];
+			}
+			else if(d1[ed] > d2[u])
+			{
+				d2[u] = d1[ed];
+			}
+		}
+		d1[u] ++;
+		//要么从开头来结合最长，要么取决于自己的最长和次最长 
+		ans = max(d1[u] + d2[u],max(ans,l + d1[u]));
+	}
+	else
+	{
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int ed = v[u][i];
+			if(ed == p)
+			{
+				continue;
+			}
+			dfs(ed,u,0);
+		}
+	}
+	return ;
+}
+void solve()
+{
+	int n;
+	cin>>n;	
+	ans = 1;
+	//考虑链情况！！！，n>=3,ans>=1!! 
+	v.assign(n + 5,vector<int>()); 
+	d1.assign(n + 5,0);
+	d2.assign(n + 5,0);
+	v1.assign(n + 5,0);
+	v2.assign(n + 5,0);
+	for(int i = 1;i<=n-1;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back(y);
+		v[y].push_back(x);
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		if(v[i].size() == 3)
+		{
+			v1[i] = 1;
+			ans = 1;
+		}
+		if(v[i].size() >= 4)
+		{
+			v2[i] = 1;
+			ans = 1;
+		}
+	}
+	dfs(1,1,0);
+	cout<<ans<<endl;
+	return;
+}
+int main()
+{
+	int t;
+	cin>>t; 
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
