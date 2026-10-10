@@ -1,0 +1,46 @@
+#include <bits/stdc++.h>
+using namespace std;
+void solve()
+{
+	int n;
+	cin>>n;
+	int tar = 1<<15;
+//	cout<<tar<<endl;
+	for(int t = 1;t <= n;t ++)
+	{
+		int x;
+		cin>>x;
+		if(x == 0)
+		{
+			cout<<0<<" ";
+			continue;
+		}
+		int ans = 0;
+		for(int i = 1;i<=15;i++)
+		{
+			for(int j = 0;j<= i;j++)
+			{
+				if((x + j) * (1<<(i - j)) % tar == 0 && !ans )
+				{
+				//	cout<<(x + j) * (1<<(i - j)) <<endl;
+					ans = i;
+					break;
+				}
+			}
+		}
+		cout<<ans<<" ";
+	}
+	
+	return;
+}
+int main()
+{
+	int t;
+//	cin>>t;
+	t = 1;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
