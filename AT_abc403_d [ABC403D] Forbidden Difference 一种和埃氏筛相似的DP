@@ -1,0 +1,69 @@
+#include <bits/stdc++.h>
+using namespace std;
+void solve()
+{
+    int n;
+    long long d;
+    cin >> n >> d;
+    vector<long long>v(n + 5);
+    unordered_map<long long, int>mp;
+    long long mx = 0;
+    int cnt = 0;
+    long long ss = 0;
+    for (int i = 1; i <= n; i++)
+    {
+        cin >> v[i];
+        ss += v[i];
+        mx = max(mx, v[i]);
+        mp[v[i]]++;
+        if(mp[v[i]] == 1)
+        {
+        	cnt ++;
+		}
+    }
+    if(mx < d)
+    {
+    	cout<<0<<endl;;
+    	return;
+	}
+	if(d == 0)
+	{
+		cout<<n - cnt<<endl;
+		return ;
+	}
+    vector<vector<long long>>dp(mx + 5, vector<long long>(2, 0));
+    for(int i = 0;i<=d - 1;i++)
+    {
+        dp[i][1] = mp[i];
+    }
+    for (int i = d;i <= 2* d - 1;i++)
+    {
+    	if(mp.find(i - d) == mp.end())
+		{
+			continue;
+		} 
+        for (int j = i;j <= mx;j += d)
+        {
+            dp[j][1] = dp[j - d][0] + mp[j];
+            dp[j][0] = max(dp[j - d][0], dp[j - d][1]);
+        }
+    }
+    long long sum = 0;
+    for (int i = mx - d + 1;i <= mx;i++)
+    {
+        sum += max(dp[i][0], dp[i][1]);
+    }
+    cout << n - sum << endl;
+    return;
+}
+int main()
+{
+    int t;
+    //cin>>t;
+    t = 1;
+    while (t--)
+    {
+        solve();
+    }
+    return 0;
+}
