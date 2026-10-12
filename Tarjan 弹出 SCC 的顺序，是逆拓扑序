@@ -1,0 +1,93 @@
+#include <bits/stdc++.h> 
+using namespace std;
+int timer= 0;
+const int maxn = 5e5 + 5;
+vector<vector<int>>v(maxn);
+vector<int>dfn(maxn);
+vector<int>low(maxn);
+vector<vector<int>>scc(maxn);
+vector<int>scc_id(maxn);
+vector<int>instk(maxn);
+vector<vector<int>>ans(maxn);
+stack<int>stk;
+int scc_cnt;
+int n;
+int m;
+void tarjan(int u)
+{
+	timer ++;
+	low[u] = dfn[u] = timer;
+	instk[u] = 1;
+	stk.push(u);
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(!dfn[ed])
+		{
+			tarjan(ed);
+			low[u] = min(low[u],low[ed]);
+		}
+		else if(instk[ed])
+		{
+			low[u] = min(low[u],dfn[ed]);
+		}
+	}
+	if(low[u] == dfn[u])
+	{
+		scc_cnt ++;
+		int ed = 0;
+		do{
+			ed = stk.top();
+			instk[ed] = 0;
+			stk.pop();
+			scc_id[ed] = scc_cnt;
+		}while(ed != u);
+	}
+	return;
+}
+void solve()
+{
+	cin>>n>>m;
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		x++;
+		y++;
+		v[x].push_back(y);
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		if(!dfn[i])
+		{
+			tarjan(i);
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		ans[scc_id[i]].push_back(i - 1);
+	}
+	cout<<scc_cnt<<endl;
+	for(int i = scc_cnt;i>=1;i--)
+	{
+		cout<<ans[i].size()<<" ";
+		for(int k : ans[i])
+		{
+			cout<<k<<" ";
+		}
+		cout<<endl;
+	}
+	return;
+}
+int main()
+{
+	int t;
+	//cin>>t;
+	t = 1; 
+	while(t--)	
+	{
+		solve();
+	}
+	return 0;
+}
