@@ -1,0 +1,77 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+const int maxn = 2e5 + 5;
+vector<vector<int>>v(maxn);
+vector<int>fa(maxn);
+long long mod = 1e9 + 7;
+vector<long long>dp(maxn,0);
+vector<int>sz(maxn);
+vector<long long>ans(maxn);
+void dfs(int u,int p)
+{
+	sz[u] ++;
+	fa[u] = p;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		dfs(ed,u);
+		dp[u] += dp[ed] + sz[ed];
+		sz[u] += sz[ed];
+	}
+	return;
+}
+void dfs2(int u)
+{
+	if(u == 1)
+	{
+		ans[u] = dp[u];
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int ed = v[u][i];
+			if(ed == fa[u])
+			{
+				continue;
+			}
+			dfs2(ed);
+		}
+	}
+	else
+	{
+		ans[u] = ans[fa[u]] - 2 *sz[u] + n;
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int ed = v[u][i];
+			if(ed == fa[u])
+			{
+				continue;	
+			}
+			dfs2(ed);
+		}
+	}
+	return;
+}
+int main()
+{
+	cin>>n;
+	for(int i = 1;i<=n - 1;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back(y);
+		v[y].push_back(x);
+	}
+	dfs(1,0);
+	dfs2(1);
+	for(int i = 1;i<=n;i++)
+	{
+		cout<<ans[i]<<endl;
+	}
+	return 0;
+ } 
