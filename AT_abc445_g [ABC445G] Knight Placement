@@ -1,0 +1,223 @@
+#include <bits/stdc++.h>
+using namespace std;
+int S;
+int T;
+int n;
+int m;
+struct st{
+	int ed;
+	int id;
+	int w;
+};
+const int maxn = 300 * 300*2 + 300;
+vector<vector<st>>v(maxn);
+vector<vector<char>>mp(350,vector<char>(350));
+vector<int>cur;
+vector<int>col(maxn);
+vector<int>dep;
+vector<vector<int>>g(maxn);
+vector<vector<int>>tar(350,vector<int>(350,0));
+int a;
+int b;
+int INF = 1e8;
+void dfs1(int u,int c)
+{
+	col[u] = c;
+	for(int i = 0;i<g[u].size();i++)
+	{
+		int ed = g[u][i];
+		if(col[ed] == 0)
+		{
+			dfs1(ed,(c == 1) ? 2 : 1);
+		}
+	}
+	return;
+}
+bool bfs()
+{
+	dep.assign(maxn,-1);
+	dep[S] = 0;
+	queue<int>q;
+	q.push(S);
+	while(!q.empty())
+	{
+		int u = q.front();
+		q.pop();
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int ed = v[u][i].ed;
+			if(dep[ed] == -1 && v[u][i].w)
+			{
+				dep[ed] = dep[u] + 1;
+				q.push(ed);	
+			}	
+		} 
+	}
+	cur.assign(maxn,0);
+	return dep[T] != -1;
+}
+
+int dfs(int u,int lim)
+{
+	if(u == T)
+	{
+		return lim;
+	}
+	for(int i = cur[u];i<v[u].size();i++)
+	{
+		int ed = v[u][i].ed;
+		cur[u] = i;
+		if(dep[ed] == dep[u] + 1 && v[u][i].w)
+		{
+			int res = dfs(ed,min(lim,v[u][i].w));
+			if(res > 0)
+			{
+				v[u][i].w -= res;
+				v[ed][v[u][i].id].w += res;
+				return res;
+			}
+			else
+			{
+				dep[ed] = -1;
+			}
+		}
+	}
+	return 0;
+}
+int dinic()
+{
+	int r = 0;
+	int f = 0;
+	while(bfs())
+	{
+		while(f = dfs(S,INF))
+		{
+			r += f;
+		}
+	}
+	return r;
+}
+void add(int u,int x,int w)
+{
+	int sti = v[u].size();
+	int edi = v[x].size();
+	v[u].push_back({x,edi,w});
+	v[x].push_back({u,sti,0});
+}
+int main()
+{
+	cin>>n>>a>>b;
+	vector<vector<char>>ans(350,vector<char>(350));
+	int dx[] = {a,-a,a,-a,b,-b,b,-b};
+	int dy[] = {b,b,-b,-b,a,a,-a,-a};
+	int cnt = 0;
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 1;j<=n;j++)
+		{
+			cin>>mp[i][j];	
+			ans[i][j] = mp[i][j];
+			if(mp[i][j] != '#')
+			{
+				cnt ++;
+				
+				tar[i][j] = cnt;
+			}
+		} 
+	}
+	S = 0;
+	T = cnt + 1;
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 1;j<=n;j++)
+		{
+			if(mp[i][j] != '#')
+			{
+				for(int k = 0;k<8;k++)
+				{
+					int nx = i + dx[k];
+					int ny = j + dy[k];
+					if(nx >= 1 && nx <= n && ny >= 1 && ny <= n && mp[nx][ny] != '#')
+					{
+						g[tar[i][j]].push_back({tar[nx][ny]});
+					}
+				}
+			}
+		}
+	}
+	for(int i = 1;i<=cnt;i++)
+	{
+		if(col[i] == 0)
+		{
+			dfs1(i,1); 
+		}
+		if(col[i] == 1)
+		{
+			add(S,i,1);
+		}
+		else
+		{
+			add(i,T,1);
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 1;j<=n;j++)
+		{
+			if(mp[i][j] != '#' && col[tar[i][j]] == 1)
+			{
+				for(int k = 0;k<8;k++)
+				{
+					int nx = i + dx[k];
+					int ny = j + dy[k];
+					if(nx >= 1 && nx <= n && ny >= 1 && ny <= n && mp[nx][ny] != '#')
+					{
+						add(tar[i][j],tar[nx][ny],1);
+					}
+				}
+			}
+		}
+	}
+	int ppp= dinic();
+	queue<int>q;
+	vector<int>ok(maxn);
+	q.push(S);
+	ok[S] = 1;
+	while(!q.empty())
+	{
+		int u = q.front();
+		q.pop();
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int ed = v[u][i].ed;
+			if(ok[ed] == 0 && v[u][i].w)
+			{
+				q.push(ed);
+				ok[ed] = 1;
+			}
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = 1;j<=n;j++)
+		{
+			if(ans[i][j] != '#')
+			{
+				int id = tar[i][j];
+				bool pl = false;
+				if(col[id] == 1)
+				{
+					pl = ok[id];
+				}
+				else
+				{
+					pl = !ok[id];
+				}
+				ans[i][j] = pl ? 'o' : '.';
+			}
+			cout<<ans[i][j];
+		}
+		cout<<endl;
+	}
+	return 0;
+}
