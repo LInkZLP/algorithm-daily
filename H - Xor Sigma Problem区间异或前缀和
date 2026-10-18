@@ -44,6 +44,7 @@ void solve()
 		sta = sta * 2;
 	//	cout<<p1[n][i]<<endl;
 	}
+//相邻的会产生单个区间的数值 
 	cout<<sum - ss<<endl;
 	return ;
 }
