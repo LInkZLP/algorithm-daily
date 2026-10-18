@@ -1,0 +1,95 @@
+#include <bits/stdc++.h>
+using namespace std;
+struct st{
+	long long a;
+	long long b;
+	long long dh;
+};
+bool cmp(st x,st y)
+{
+	if(x.dh == y.dh)
+	{
+		return x.a > y.a;
+	}
+	return x.dh > y.dh;
+}
+void solve()
+{
+	int n;
+	cin>>n;
+	vector<st>v(n + 5);
+	long long mi =LLONG_MAX;
+	long long pi = LLONG_MAX;
+	int tar = 0;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i].a >> v[i].b;
+		v[i].dh = v[i].a - v[i].b;
+		if(v[i].a < mi)
+		{
+			mi = v[i].a;
+			pi = v[i].b;
+			tar = i;
+		}
+		else if(mi == v[i].a)
+		{
+			if(pi < v[i].b)
+			{
+				tar = i;
+				pi = v[i].b;
+			}
+		}
+	}
+	if(n == 1)
+	{
+		cout<<mi<<endl;
+		return;
+	}
+	vector<st>nv;
+	for(int i = 1;i<=n;i++)
+	{
+		nv.push_back({v[i].a,v[i].b,v[i].dh});
+	}
+	sort(nv.begin(),nv.end(),cmp);
+	vector<long long>pre(n + 5,0);
+	vector<long long>suf(n + 5);
+	pre[0] = nv[0].b;
+	int l = nv.size();
+	//cout<<tar<<endl;
+	suf[nv.size() - 1] = nv[nv.size() - 1].a;
+	for(int i = 1;i<nv.size();i++)
+	{
+		pre[i] = pre[i - 1] + nv[i].b;
+	}
+	for(int i = nv.size() - 2;i>=0;i--)
+	{
+		suf[i] = suf[i + 1] + nv[i].a;
+	}
+	long long sum = LLONG_MAX;
+	for(int i = nv.size() - 1;i>=0;i--)
+	{
+		int c = l - i - 1;
+		if(c>= i + 1)
+		{
+			sum = min(pre[i] + suf[i + 1],sum);
+		}
+		else
+		{
+			sum = min(pre[i] + suf[i + 1] + mi * (i - c + 1),sum);
+		}
+	}
+	//cout<<suf[0]<<endl;
+	cout<<sum<<endl;
+	return;
+}
+int main()
+{
+	int t;
+	t = 1;
+	cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
