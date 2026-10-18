@@ -1,0 +1,59 @@
+#include <bits/stdc++.h>
+using namespace std;
+void solve()
+{
+	int n;
+	cin>>n;
+	vector<long long>v(n + 5);
+	long long ss = 0;
+	vector<vector<long long>>cnt1(n + 5,vector<long long>(32,0));
+	vector<vector<long long>>p1(n + 5,vector<long long >(32,0));
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+		ss += v[i];
+		v[i] ^= v[i - 1];
+		
+	}
+	for(int i = 0;i<=n;i++)
+	{
+		long long temp = v[i];
+		int k = 0;
+		while(temp)
+		{
+			if(temp & 1)
+			{
+				cnt1[i][k] ++;
+			}
+			k ++;
+			temp >>=1;
+		}
+	}
+	for(int k = 0;k<=30;k++)
+	{
+		for(int i = 1;i<=n;i++)
+		{
+			p1[i][k] = p1[i - 1][k] + cnt1[i][k];
+		}
+	}
+	long long sum = 0;
+	long long sta = 1;
+	for(int i = 0;i<=30;i++)
+	{
+		sum += p1[n][i] * (n + 1 - p1[n][i]) * sta;
+		sta = sta * 2;
+	//	cout<<p1[n][i]<<endl;
+	}
+	cout<<sum - ss<<endl;
+	return ;
+}
+int main()
+{
+	int t;
+	t = 1;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
