@@ -1,0 +1,73 @@
+#include <bits/stdc++.h> 
+using namespace std;
+long long n;
+bool check(long long a,long long mid,int len)
+{
+	__int128 rt = 1;
+	for(int i = 1;i<=len;i++)
+	{
+		rt = rt * (a + (i - 1) * mid);
+		if(rt> n)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+void solve()
+{
+	cin>>n;
+	long long sum = 0;
+	for(int len = 3;len <= 30;len ++)
+	{
+		__int128 ff = 1;
+		for(int i = 1;i<=len;i ++)
+		{
+			ff *= i;
+		}
+		if(ff > n)
+		{
+			break;
+		}
+		for(long long a = 1;a <= 1e6;a ++)
+		{
+			if(!check(a, 1, len)) break;
+			long long r = 1e9;
+			long long l = 1;
+			long long md = -1;
+			while(r >= l)
+			{
+				long long mid = (l + r)>>1;
+				if(check(a,mid,len))
+				{
+					l = mid + 1;
+					md = mid;
+				}
+				else
+				{
+					r = mid - 1;
+				}
+			}
+			if(md != -1)
+			{
+				sum += md;
+			}
+		}
+	//	cout<<sum<<endl;
+	//	cout<<"ppp"<<endl;
+	}
+	cout<<sum<<endl;
+	return ;
+}
+int main()
+{
+	int t;
+	t = 1;
+	//cin>>t;
+	while(t--)
+	{
+		solve();
+	}	
+
+	return 0;
+}
