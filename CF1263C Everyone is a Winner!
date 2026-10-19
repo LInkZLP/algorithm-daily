@@ -1,0 +1,59 @@
+#include <bits/stdc++.h> 
+using namespace std;
+long long n;
+//一次枚举获得两个数的信息
+//n = x * k  + r
+//若k为结果，那r <= i,若x为结果，那么k<=r,因为n = 目标 * 系数 + r,r <= 系数
+//11 = 2 * 4 + 3 = 2 * 5 + 1
+void solve()
+{
+	cin>>n;
+	vector<long long>ans;
+	ans.push_back(1);
+	ans.push_back(0);
+	for(long long i = 2;i * i<=n;i++)
+	{
+		long long p = n / i;
+		long long r = n % i;
+		if(n % i == 0)
+		{
+			ans.push_back(i);
+			ans.push_back(n / i);
+		}
+		else
+		{
+			if(r <= i)
+			{
+				ans.push_back(p);
+			}
+			if(r <= p)
+			{
+				ans.push_back(i);
+			}
+		}
+	}
+	ans.push_back(1);
+	ans.push_back(0);
+	ans.push_back(n);
+	sort(ans.begin() ,ans.end());
+	ans.erase(unique(ans.begin(),ans.end()),ans.end());
+	cout<<ans.size()<<endl;
+	for(long long p : ans)
+	{
+		cout<<p<<" ";
+	}
+	cout<<endl;
+	return ;
+}
+int main()
+{
+	int t;
+	t = 1;
+	cin>>t;
+	while(t--)
+	{
+		solve();
+	}	
+
+	return 0;
+}
