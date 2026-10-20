@@ -1,0 +1,40 @@
+#include <bits/stdc++.h>
+using namespace std;
+vector<vector<int>>v;
+vector<long long>val;
+void solve()
+{
+	int n;
+	int m;
+	cin>>n>>m;
+	v.assign(n + 5,vector<int>());
+	val.assign(n + 5,0);
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>val[i];
+	}
+	long long sum = 0;
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back(y);
+		v[y].push_back(x);
+		sum += min(val[x],val[y]);
+	}
+	cout<<sum<<endl;
+	return;
+}//拆点过于麻烦，但是对于一条边来说，我们总是希望它能选择最小权值的端点，拆点实际上就是拆边
+int main()
+{
+	int t;
+	//cin>>t;
+	t = 1;
+	while(t--)
+	{
+		solve();
+	}
+	
+	return 0;
+}
