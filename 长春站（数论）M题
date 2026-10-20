@@ -1,0 +1,65 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+long long gcd(long long m,long long n)
+{
+	return n ==0 ? m : gcd(n,m % n);
+}
+void solve()
+{
+	int n;
+	int m;
+	cin>>n>>m;
+	vector<long long>v(n + 5);
+	vector<vector<long long>>G(n + 5,vector<long long>(n + 5,0));
+	vector<int>cnt(1e6 + 5);
+	for(int i = 2;i<=m;i++)
+	{
+		for(int j = 1;j*i <= m;j++)
+		{
+			cnt[i*j] ++;
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i];
+	}
+
+	for(int len = 2;len<=n;len++)
+	{
+		for(int i = 1;i + len - 1 <= n;i++)
+		{
+			int j = i + len - 1;
+			G[i][j] = gcd(G[i + 1][j - 1],1LL*abs(v[i] - v[j]));
+		}
+	}
+	long long ans = 0;
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = i + 1;j<=n;j++)
+		{
+			if(G[i][j] == 0)
+			{
+				ans += m - 1;
+			}
+			else
+			{
+				ans += cnt[G[i][j]];
+			}
+		}
+	}
+	cout<<ans<<endl;
+	return;
+}
+int main()
+{
+	int t;
+	//cin>>t;
+	//cin>>t;
+	t = 1;
+	while(t--)	
+	{
+		solve();
+	}
+	return 0;
+}
