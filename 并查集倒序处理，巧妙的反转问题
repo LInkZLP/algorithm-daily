@@ -1,0 +1,129 @@
+#include <bits/stdc++.h>
+using namespace std;
+struct st{
+	int id;
+	int x;
+	int y;
+};
+const int maxn = 3e5 + 5;
+vector<int >fa(maxn);
+vector<int>ans(5e5 + 5);
+vector<st>v(5e5 + 5);
+vector<long long>sz(maxn,1);
+vector<int>pt(5e5 + 5);
+vector<long long>ha(5e5 + 5);
+int e;
+int n;
+int m;
+int q;
+int find(int x)
+{
+	if(x == fa[x])
+	{
+		return x;
+	}
+	return fa[x] = find(fa[x]);
+}
+void Union(int x,int y)
+{
+	int r1 = find(x);
+	int r2 = find(y);
+	if(r1 == r2)
+	{
+		return;//错误点3，必须要去重 
+	}
+	sz[r2] += sz[r1];//错误点二，进来之后必须全部用ri,不能贪快用find，因为r会改变 
+	ha[r2] |= ha[r1];
+	fa[r1] = fa[r2];
+	
+	return ;
+}
+void solve()
+{
+	cin>>n>>m>>e;
+	for(int i = 1;i<=e;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[i] = {i,x,y};
+	}
+	cin>>q;
+	for(int i = 1;i<=m + n;i++)
+	{
+		fa[i] = i;
+	}
+	for(int i = n + 1;i<=n + m;i++)
+	{
+		ha[i] = 1;
+	}
+	unordered_map<int,int>mp;
+	for(int i = 1;i<=q;i++)
+	{
+		cin>>pt[i];
+		mp[pt[i]] = 1;
+	}
+	for(int i = 1;i<=e;i++)
+	{
+		if(mp.find(i) != mp.end())
+		{
+			continue;
+		}
+		Union(v[i].x,v[i].y);
+	}
+	long long sum = 0;
+	for(int i = 1;i<=n;i++)
+	{
+		int r = find(i);
+		if(ha[r])
+		{
+			sum ++;
+		}
+	}
+	ans[q] = sum;
+	for(int i = q;i>=1;i--)
+	{
+		int x = v[pt[i]].x;
+		int y = v[pt[i]].y;
+		int r1 = find(x);
+		int r2 = find(y);
+		if(ha[r1] || ha[r2])
+		{
+			if(ha[r1] && ha[r2])
+			{
+				Union(x,y);
+			}
+			else if(!ha[r1])
+			{
+				sum += sz[r1];
+				Union(x,y);
+			}
+			else
+			{
+				sum += sz[r2];
+				Union(y,x);//错误点1，忽略了顺序 
+			}
+		}
+		else
+		{
+			Union(x,y);
+		}
+		ans[i - 1] = sum;
+	}
+	for(int i = 1;i<=q;i++)
+	{
+		cout<<ans[i]<<endl;
+	}
+	return ;
+}
+int main()
+{
+	int t;
+	//cin>>t;
+	t = 1;
+	while(t--)
+	{
+		solve();
+	}	
+	return 0;
+}
