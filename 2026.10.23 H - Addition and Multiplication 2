@@ -1,0 +1,44 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+vector<int>c;
+void solve()
+{
+	cin>>n;
+	c.assign(10,0);
+	int mi = INT_MAX;
+	for(int i = 1;i<=9;i++)
+	{
+		cin>>c[i];
+		mi = min(mi,c[i]);
+	}
+	int len = n / mi;
+	int ss = n;
+	string ans = "";
+	for(int i = 1;i<=len;i++)//先规定最小长度 
+	{
+		for(int j = 9;j>=1;j--)//贪心选择 
+		{
+			if(ss >= c[j] && (len - i) * mi <= ss - c[j])//保证长度情况下选择 
+			{
+				ss-=c[j];
+				ans += char('0' + j);
+				//ans += char('0' + j);和ans =ans + char('0' + j);不一样,后者会l^2 
+				break;
+			}
+		}
+	}
+	cout<<ans<<endl;
+	return;
+}
+ 
+int main()
+{
+	int t = 1;
+	//cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
