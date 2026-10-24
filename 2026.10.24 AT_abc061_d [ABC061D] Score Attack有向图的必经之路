@@ -1,0 +1,116 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int timer = 0;
+#define pli pair<long long,int>
+const int maxn = 3e5 + 5;
+vector<int>cnt(maxn);
+vector<int>inq(maxn);
+vector<vector<pli>>v(maxn);
+vector<long long>dp(maxn,LLONG_MIN);
+vector<int>vis(maxn);
+vector<vector<int>>rv(maxn);
+vector<vector<int>>nv(maxn);
+bool spfa(int sta)
+{
+	queue<int>q;
+	q.push(sta);
+	dp[sta] = 0;
+	inq[sta] = 1;
+	while(!q.empty())
+	{
+		int u = q.front();
+		q.pop();
+		inq[u] = 0;
+		if(vis[u] != 2)
+		{
+			continue;
+		}
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int ed = v[u][i].second;
+			if(dp[ed] < dp[u] + v[u][i].first)
+			{
+				dp[ed] = dp[u] + v[u][i].first;
+				cnt[ed] ++;
+				if(cnt[ed]  > n + 1)
+				{
+					return false;
+				}
+				if(inq[ed])
+				{
+					continue;
+				}
+				q.push(ed);
+				inq[ed] = 1;
+			}
+		}
+	}	
+	return true;
+}
+void dfs1(int u)
+{
+	for(int i = 0;i<rv[u].size();i++)
+	{
+		int ed = rv[u][i];
+		if(vis[ed] == 0)
+		{
+			vis[ed] = 1;
+			dfs1(ed);
+		}
+	}
+	return;
+}
+void dfs2(int u)
+{
+	for(int i = 0;i<nv[u].size();i++)
+	{
+		int ed = nv[u][i];
+		if(vis[ed] == 1)
+		{
+			vis[ed] = 2;
+			dfs2(ed);
+		}
+	}
+	return;
+}
+void solve()
+{
+	cin>>n>>m;
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		long long c;
+		cin>>x>>y>>c;
+		v[x].push_back({c,y});
+		rv[y].push_back(x);
+		nv[x].push_back(y);
+		//v[y].push_back({c,x});
+	}
+	vis[n] = 1;
+	dfs1(n);
+	vis[1] = 2;
+	dfs2(1);
+	if(spfa(1))
+	{
+		cout<<dp[n]<<endl;
+	}
+	else
+	{
+		cout<<"inf"<<endl;
+	}
+	return;
+}
+int main()
+{
+	int t = 1;
+	//cin>>t;
+	while(t--)	
+	{
+		solve();
+	}
+
+	return 0;
+}
