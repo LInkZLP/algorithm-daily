@@ -1,0 +1,102 @@
+#include <bits/stdc++.h>
+using namespace std;
+//Union(u,v) = f(r1(u),r2(u)) =f(r1(u),r2(u)) + f(r1(v),r2(v));
+//f(i,j)表示i,j在两种路线下面的公共部分 
+const int maxn = 2e5 + 5;
+vector<int>d1(maxn);
+int n;
+int k;
+int l;
+vector<int>d2(maxn);
+vector<int>ans(maxn);
+int f1(int x)
+{
+	if(x == d1[x])
+	{
+		return x;
+	}
+	return d1[x] = f1(d1[x]);
+}
+int f2(int x)
+{
+	if(x == d2[x])
+	{
+		return x;
+	}
+	return d2[x] = f2(d2[x]);
+}
+void u1(int x,int y)
+{
+	int r1 = f1(x);
+	int r2 = f1(y);
+	d1[r1] = r2;
+}
+void u2(int x,int y)
+{
+	int r1 = f2(x);
+	int r2 = f2(y);
+	d2[r1] = r2;
+}
+int main()
+{
+	cin>>n>>k>>l;
+	for(int i = 1;i<=n;i++)
+	{
+		d1[i] = d2[i] = i;
+	}
+	for(int i = 1;i<=k;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		u1(x,y);
+	}
+	vector<int>t1(maxn);
+	for(int i = 1;i<=l;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		u2(x,y);
+	}
+	for(int i = 1;i<=n;i++)
+	{
+	//	cout<<t1[i]<<endl;
+		t1[i] = f1(i);
+	}
+	vector<int>seg(maxn);
+	vector<int>ptr;
+	for(int i = 1;i<=n;i++)
+	{
+		if(f2(i) == i)
+		{
+		//	cout<<i<<endl;
+			ptr.push_back(i);
+			seg[i] = ptr.size() - 1;
+		}
+	}
+	//cout<<ptr.size()<<endl;
+	vector<vector<int>>cc(ptr.size() + 4);
+	for(int i = 1;i<=n;i++)
+	{
+		cc[seg[f2(i)]].push_back(i);
+	}
+	for(int i = 0;i<ptr.size();i++)
+	{
+		unordered_map<int,int>mp;
+		for(int j = 0;j<cc[i].size();j++)
+		{
+			mp[t1[cc[i][j]]] ++;
+		}
+		for(int j = 0;j<cc[i].size();j++)
+		{
+			ans[cc[i][j]] = mp[t1[cc[i][j]]];
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		cout<<ans[i]<<" ";
+	}
+	cout<<endl;
+	return 0;
+}
