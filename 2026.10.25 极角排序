@@ -1,0 +1,83 @@
+#include <bits/stdc++.h>
+using namespace std;
+struct st{
+	long long x;
+	long long y;
+};
+int half(st a)
+{
+	if(a.y > 0 || (a.y == 0 && a.x > 0))
+	{
+		return 0;
+	}
+	return 1;
+}
+bool cmp(st a,st b)
+{
+	if(half(a) != half(b))
+	{
+		return half(a) < half(b);
+	}
+	long long cross = a.x * b.y - a.y * b.x;
+	if(cross != 0)
+	{
+		return cross > 0;
+	}
+	return a.x * a.x + a.y * a.y < b.x * b.x + b.y * b.y;
+}
+bool check(st a,st b)
+{
+	long long cross = b.x * a.y - b.y * a.x;//叉积形式 
+	long long dot = b.x * a.x + b.y * a.y;//点积 
+	return cross > 0 || (cross == 0 && dot > 0);
+}
+void solve()
+{
+	int n;
+	cin>>n;
+	vector<st>v(n + 5);
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>v[i].x >> v[i].y;
+	}
+	sort(v.begin() + 1,v.begin() + 1 + n,cmp);
+	int  ans = 1;
+	int l = 1;
+	int r = 1;
+	vector<st>nv(n * 2 + 5);
+	for(int i = 1;i<=n;i++)
+	{
+		nv[i] = v[i];
+		nv[i + n] = v[i];
+	}
+	while(r <=2* n)
+	{
+		while(r - l + 1 > n && r >= l)
+		{
+			l ++;
+		}
+		if(check(nv[r],nv[l]))
+		{
+			ans = max(ans,r - l + 1);
+		}
+		else
+		{
+			while(!check(nv[r],nv[l]) && l <= r)
+			{
+				l ++;
+			}
+		}
+		r ++;
+	}
+	cout<<ans<<endl;
+}
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
