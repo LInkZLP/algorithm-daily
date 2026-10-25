@@ -1,0 +1,97 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 3e2 + 5;
+vector<vector<long long>>dp(maxn,vector<long long>(maxn,LLONG_MAX));
+int n;
+int m;
+struct st{
+	int x;
+	int y;
+	long long w;
+};
+struct st2{
+	long long w;
+	long long x;
+};
+vector<st>edge;
+#define pli pair<long long ,int>
+void floyd(vector<vector<long long>> & dp)
+{
+	for(int k = 1;k<=n;k++)
+	{
+		for(int i = 1;i<=n;i++)
+		{
+			for(int j = 1;j<=n;j++)
+			{
+				if(dp[i][k] != LLONG_MAX && dp[k][j] != LLONG_MAX)
+				{
+					dp[i][j] = min(dp[i][j],dp[i][k] + dp[k][j]);
+				}
+			}
+		}
+	}
+	return;
+}
+bool cmp(st a,st b)
+{
+	return a.w > b.w;
+}
+void solve()
+{
+	cin>>n>>m;
+	edge.assign(m + 5,{});
+	for(int i = 1;i<=n;i++)
+	{
+		dp[i][i] = 0;
+	}
+	for(int i = 1;i <= m;i++)
+	{
+ 		int x;
+ 		int y;
+ 		long long w;
+ 		cin>>x>>y>>w;
+ 		edge[i] = {x,y,w};
+ 		dp[x][y] = min(w,dp[x][y]);
+ 		dp[y][x] = min(w,dp[y][x]);
+	}
+	floyd(dp);
+	int cnt = 0;
+	vector<int>pc(m + 5);
+	sort(edge.begin() + 1,edge.begin() + 1 + m,cmp);
+	for(int k = 1;k<=m;k++)
+	{
+		int x = edge[k].x;
+		int y = edge[k].y;
+		long long w = edge[k].w;
+		if(w > dp[x][y])
+		{
+			cnt ++;
+			continue;
+		}
+		for(int i = 1;i<=n;i++)
+		{
+			if(i == y || i == x)
+			{
+				continue;
+			}
+			if(dp[x][i] + dp[i][y] == dp[x][y])
+			{
+				cnt ++;
+				break;
+			}
+		}
+	}
+	////cout<<dp[1][2]<<" "<<dp[2][3]<<" "<<dp[3][1]<<endl;
+	cout<<cnt<<endl;
+	return ;
+}
+int main()
+{
+	int t = 1;
+	//cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
