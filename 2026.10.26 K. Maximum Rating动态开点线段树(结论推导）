@@ -1,0 +1,185 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 1e7 + 7e6;
+vector<int>val(maxn);
+vector<int>ls(maxn);
+vector<int>rs(maxn);
+vector<long long>sum(maxn); 
+vector<int>cnt(maxn);
+int tot = 0;
+int q;
+int n;
+struct st{
+	long long c;
+	long long ss;
+};
+void down(int i,int l,int r)
+{
+	long long mid = (l + r)>>1;
+	if(!ls[i])
+	{
+		tot ++;
+		ls[i] = tot;
+	}
+	if(!rs[i])
+	{
+		tot ++;
+		rs[i] = tot;
+	}
+	return;
+}
+void up(int i)
+{
+	sum[i] = sum[ls[i]] + sum[rs[i]];
+	cnt[i] = cnt[ls[i]] + cnt[rs[i]];
+	return; 
+}
+void change(int l,int r,int i,int jobl,int jobr,long long jobv,int k)
+{
+	//cout<<"ppp"<<endl;
+	if(l >= jobl && r <= jobr)
+	{
+		sum[i] += jobv;
+		cnt[i] += k;
+		return ;
+	}
+	int mid = (l + r)>>1;
+	down(i,l,r);
+	if(mid >= jobl)
+	{
+		change(l,mid,ls[i],jobl,jobr,jobv,k);
+	}
+	else
+	{
+		change(mid + 1,r,rs[i],jobl,jobr,jobv,k);
+	}
+	up(i);
+	return;
+}
+st query(int l,int r,int i,int jobl,int jobr)
+{
+	if(l >= jobl && r <= jobr)
+	{
+		return {cnt[i],sum[i]};
+	}
+	int mid = (l + r)>>1;
+	down(i,l,r);
+	long long as = 0;
+	long long ac = 0;
+	if(mid >= jobl)
+	{
+		st uu = query(l,mid,ls[i],jobl,jobr);
+		as += uu.ss;
+		ac += uu.c;
+	}
+	if(mid + 1 <= jobr)
+	{
+		st uu = query(mid + 1,r,rs[i],jobl,jobr);
+		as += uu.ss;
+		ac += uu.c;
+	}
+	return {ac,as};
+}
+int main()
+{
+	//假如说有a1 a2 a3 a4 a5 a6 a7，最大是a1 + a2 + a3 + a4 + a5 <=s,加上a6就大于s,那k的取值也是2,3,4,5,6,7，结论就是，长度是从cnt[1] - cc 到cnt[1],长度是cc + 1
+	cin>>n>>q;
+	tot = 1;
+	long long s = 0;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>val[i];
+		if(val[i] > 0)
+		{
+			change(1,1e9,1,val[i],val[i],val[i],1);
+		}
+		else
+		{
+			s += -val[i];
+		}
+	}
+	while(q--)
+	{
+		int x;
+		long long k;
+		cin>>x>>k;
+		if(val[x] > 0)
+		{
+			if(k > 0)
+			{
+				change(1,1e9,1,val[x],val[x],-val[x],-1);
+				val[x] = k;
+				change(1,1e9,1,val[x],val[x],val[x],1);
+			}
+			else
+			{
+				change(1,1e9,1,val[x],val[x],-val[x],-1);
+				s += -k;
+				val[x] = k;
+			}
+		}
+		else
+		{
+			if(k > 0)
+			{
+				s += val[x];
+				val[x] = k;
+				change(1,1e9,1,val[x],val[x],val[x],1);
+			}
+			else
+			{
+				s += -k + val[x];
+				val[x] = k;
+			}
+		}
+	//	cout<<"s = "<<s<<endl;
+		long long mc = cnt[1];
+		long long right = 1e9;
+		long long left = 1;
+		long long cc = 0;
+		long long cm = 0;
+		long long cs = 0;
+		while(right >= left)
+		{
+			long long mid = (right + left) >>1;
+			st uu = query(1,1e9,1,1,mid);
+			long long us = uu.ss;
+			long long uc = uu.c;
+			if(us > s)
+			{
+				right = mid - 1;
+			}
+			else
+			{
+				left =  mid + 1;
+				cc = uc;
+				cs = us;
+				cm = mid;
+			}
+		//	cout<<"ppp"<<endl;
+		}
+			//二分只会判"这一整堆买不买得起"。可同价的商品有多件时，
+			//"整堆买不起"不等于"一件都买不起"——只要单件价格 ≤ 剩余的钱，就能买几件。
+			//。那么剩下的钱还能再买几件价格 cm+1 的？
+		//	cout<<"pp : "<<query(1,1e9,1,1,1).c<<" "<<query(1,1e9,1,1,1).ss<<endl; 
+		//	cout<<cc<<" "<<cnt[1]<<endl;
+		if(cc == mc)//cc == mc 就意味着“所有正数都买下了”
+		{
+			cout<<cc + 1<<endl;
+		}
+		else//二分最后会精准到cm + 1 ,最后肯定是cm + 1让二分停止，cm + 1肯定有数字在，只需要检查能获得几个 
+		{
+			long long nv = cm + 1;
+			st vv = query(1,1e9,1,nv,nv);
+			long long tk = (s - cs) / nv;
+			if(tk > vv.c)
+			{
+	
+				tk = vv.c;
+			}
+			cout<<cc + tk + 1<<endl;
+		}
+		
+	}
+	return 0;
+} 
