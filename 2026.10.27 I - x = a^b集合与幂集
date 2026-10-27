@@ -1,0 +1,81 @@
+#include <bits/stdc++.h>
+using namespace std;
+long long n;
+long long qpow(long long a,int b)
+{
+	long long res = 1;
+	while(b)
+	{
+		if(b & 1)
+		{
+			if(res > n / a)
+			{
+				return n + 1;
+			}
+			res = res * a;
+		}
+		b >>= 1;
+		if(b != 0 && a > n / a)
+		{
+			return n + 1;
+		}
+		a *= a;
+	}
+	return res;
+}
+void solve()
+{
+	cin>>n;
+	long long sta = log2(n);
+	long long kn = sqrt(n);
+	long long ss = 0;
+	if(kn > 1e6)
+	{
+		ss += kn - 1e6;
+	}
+	long long lim = (kn > 1e6) ? 1e6 : kn;
+//	cout<<sta<<" "<<lim<<endl;
+	int cnt = 0;
+	vector<int>vis(1e6 + 5);
+	set<long long>s;
+	for(long long i = 2;i<=1e6;i++)
+	{
+		for(long long j = i*i;j <= kn;j = i * j)
+		{
+			if(j <= 1e6)
+			{
+				vis[j] = 1;
+			}
+			else
+			{
+				s.insert(j);
+			}
+		}
+	}
+	for(long long i = 2;i <= lim;i++)
+	{
+		while(qpow(i,sta) > n)
+		{
+			sta --;
+		}
+		if(vis[i])
+		{
+			continue;
+		}
+		ss += sta - 1;
+	//	cout<<i<<" "<<sta - 1<<endl;
+	}
+	cout<<ss - s.size() + 1<<endl;
+	return ;
+}
+int main()
+{
+	int t = 1;
+	//cin>>t;
+	//cout<<1000000000 - 1000000 + 1127<<endl;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
