@@ -1,0 +1,88 @@
+#include <bits/stdc++.h>
+using namespace std;
+struct st{
+	int x;
+	int y;
+	int k;
+};
+int main()
+{
+	int x;
+	int p;
+	int y;
+	int q1;
+	cin>>x>>y>>p>>q1;
+	vector<vector<vector<int>>>dp(110,vector<vector<int>>(110,vector<int>(3,INT_MAX)));
+	queue<st>q;
+	//dp[x][?][1]
+	//sta - > dp[x][y][0] = 0
+	dp[x][y][0] = 0;
+	q.push({x,y,0});
+	while(!q.empty())
+	{
+		st r = q.front();
+		q.pop();
+		int rx = r.x;
+		int rk = r.k;
+		int ry = r.y;
+		if(dp[rx][ry][rk] ==INT_MAX)
+		{
+			continue;
+		}
+		if(rk) // 河对岸回来 
+		{
+			if(rx == x)
+			{
+				continue;
+			}
+			for(int i = 0;i <= ry;i++) // 带回来几个狼 
+			{
+				if((rx > 0 &&  ry - i >  rx + q1 )|| i > p)
+				{
+					continue;
+				} 
+				if(dp[x - rx][y - ry + i][0] > 	dp[rx][ry][1] + 1)
+				{
+					dp[x - rx][y - ry + i][0] =	dp[rx][ry][1] + 1;
+					q.push({x - rx,y - ry + i,0});
+				//	cout<<x - rx<<" "<<y - ry + i<<" "<<0<<endl;
+				}
+			} 
+		}
+		else
+		{
+			for(int i = 0;i<=rx;i++)
+			{
+				for(int j = 0;j<=ry;j++)
+				{
+					if(i + j <= p)
+					{
+						if(rx - i != 0 && rx - i + q1 < ry - j)
+						{
+							continue;
+						}
+						if(dp[x - rx + i][y - ry + j][1] > dp[rx][ry][0] + 1)
+						{
+							dp[x - rx + i][y - ry + j][1] = dp[rx][ry][0] + 1;
+							q.push({x - rx + i,y - ry + j,1});
+						//	cout<<x - rx + i<<" "<<y - ry + j<<" "<<1<<endl;
+						}
+					}
+				}
+			}
+		}
+	}
+	int ans = INT_MAX;
+	for(int i = 0;i<=y;i++)
+	{
+		//cout<<dp[x][i][1]<<endl;
+		ans = min(dp[x][i][1],ans);
+	}
+	if(ans == INT_MAX)
+	{
+		cout<<-1<<endl;
+		return 0;
+	}
+	cout<<ans<<endl;
+	return 0;
+}
