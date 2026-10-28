@@ -1,0 +1,76 @@
+#include <bits/stdc++.h>
+using namespace std;
+struct st{
+	long long l;
+	long long r;
+	int id;
+};
+int n;
+int m;
+vector<st>v;
+bool cmp(st a,st b)
+{
+	if(a.l == b.l)
+	{
+		return a.r < b.r;
+	}
+	return a.l < b.l;
+}
+bool check()
+{
+	int i = 1;
+	priority_queue<long long,vector<long long>,greater<long long>>pq;
+	long long now = 0;
+	while(i <= n || !pq.empty())
+	{
+		if(pq.empty())//确定当前位置 
+		{
+			now = max(now,(long long)v[i].l);
+		}
+		while(i <= n && v[i].l <= now)//把当前位置的全部左端点符合的塞进来 
+		{
+			pq.push({v[i].r});
+			i ++;
+		}
+		int r = pq.top();// ① 掏出袋子里最急的球（它的 R） 
+		pq.pop();
+		if(r < now)// // ② 它最晚只能坐到 r，可现在已经到 now 了 → 过期，No
+		{
+			return false;
+		}
+		now ++;//给这个r用now的位置,now++ 
+	}
+	return true;
+}
+void solve()
+{
+	cin>>n;
+	v.assign(n + 5,{});
+	for(int i = 1;i<=n;i++)
+	{
+		long long l;
+		long long r;
+		cin>>l>>r;
+		v[i] = {l,r,i};
+	}
+	sort(v.begin() + 1,v.begin() + 1 + n,cmp);
+	if(check())
+	{
+		cout<<"Yes"<<endl;
+	}
+	else
+	{
+		cout<<"No"<<endl;
+	}
+	return;
+}
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
