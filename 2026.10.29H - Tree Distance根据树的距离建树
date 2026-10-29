@@ -1,0 +1,123 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 3e3 + 5;
+int n;
+int m;
+struct st{
+	int w;
+	int id;
+};
+vector<vector<int>>mp(maxn,vector<int>(maxn));
+vector<st>vs;
+struct st2{
+	int w;
+	int ed;
+};
+bool cmp(st a, st b)
+{
+	return a.w < b.w;
+}
+vector<int>fa(maxn);
+vector<vector<st2>>v(maxn);
+vector<int>vis(maxn);
+vector<int>dis(maxn);
+bool check(int s)
+{
+	for(int i = 1;i<=n;i++)
+	{
+		dis[i] = -1;
+	}
+	queue<int>q;
+	dis[s] = 0;
+	q.push(s);
+	while(!q.empty())
+	{
+		int u = q.front();
+		q.pop();
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int ed = v[u][i].ed;
+			int w = v[u][i].w;
+			if(dis[ed] == -1)
+			{
+				dis[ed] = dis[u] + w;
+				q.push(ed);
+			}
+		}
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		if(dis[i] != mp[s][i])
+		{
+			return false;
+		}
+	}
+	return true;
+}
+void solve()
+{
+	cin>>n;
+	vs.push_back({0,1});
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = i + 1;j<=n;j++)
+		{
+			cin>>mp[i][j];
+			mp[j][i] = mp[i][j];
+			if(i == 1)
+			{
+				vs.push_back({mp[i][j],j});
+			}
+		}
+	}	
+	sort(vs.begin(),vs.end(),cmp);
+	for(int i = 2;i<=n;i++)
+	{
+		int best = 0;
+		for(int j = 0;j<vs.size();j++)
+		{
+			int id =vs[j].id;
+			if(id == i)
+			{
+				continue;
+			}
+			if(mp[i][id] == mp[1][i] - mp[1][id])
+			{
+				best = id;
+			//	break;
+			}
+		}
+		if(best == 0)
+		{
+			cout<<"No"<<endl;
+			return;
+		}
+		fa[i] = best;
+	}
+	for(int i = 2;i<=n;i++)
+	{
+	//	cout<<fa[i]<<" ";
+		v[fa[i]].push_back({mp[fa[i]][i],i});
+		v[i].push_back({mp[fa[i]][i],fa[i]});
+	}
+//	cout<<endl;
+	for(int s = 1;s <= n;s ++)
+	{
+		if(!check(s))
+		{
+			cout<<"No"<<endl;
+			return;
+		}
+	}
+	cout<<"Yes"<<endl;
+	return ;
+}
+int main()
+{
+	int t = 1;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+} 
