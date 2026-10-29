@@ -1,0 +1,156 @@
+#include <bits/stdc++.h>
+using namespace std;
+vector<int>col;
+vector<int>cnt;
+vector<vector<int>>v;
+vector<int>sz;
+vector<int>ans;
+vector<int>son;
+vector<int>fa;
+int n;
+int m;
+int diff = 0;
+void add(int u,int p)
+{
+	cnt[col[u]] ++;
+	if(cnt[col[u]] == 1)
+	{
+		diff ++;
+	}
+
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		add(ed,u);
+	}
+	return;
+}
+void def(int u,int p)
+{
+	cnt[col[u]] --;
+	if(cnt[col[u]] == 0)
+	{
+		diff --;
+	}
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		def(ed,u);
+	}
+	return;
+}
+void dfs1(int u,int p)
+{
+	sz[u] ++;
+	int tar = 0;
+	int mxl = 0;
+	fa[u] = p;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		dfs1(ed,u);
+		if(sz[ed] > mxl)
+		{
+			mxl = sz[ed];
+			tar = ed;
+		}
+		sz[u] += sz[ed];
+	}
+	son[u] = tar;
+	return;
+}
+void dfs2(int u,int keep)
+{
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == fa[u] || ed == son[u])
+		{
+			continue;
+		}
+		dfs2(ed,0);
+	}
+	if(son[u] != 0)
+	{
+		dfs2(son[u],1);
+	}
+	cnt[col[u]] ++;
+	if(cnt[col[u]] == 1)
+	{
+		diff ++;
+	}
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == fa[u] || ed == son[u])
+		{
+			continue;
+		}
+		add(ed,u);
+	}
+	ans[u] = diff;
+	if(keep == 0)
+	{
+		def(u,fa[u]);
+	}
+//	cout<<u<<" "<<ans[u]<<endl;
+	return;
+}
+void solve()
+{
+	cin>>n;
+	col.assign(n + 5,0);
+	v.assign(n + 5,vector<int>());
+	cnt.assign(n + 5,0);
+	sz.assign(n + 5,0);
+	son.assign(n + 5,0);
+	fa.assign(n + 5,0);
+	ans.assign(n+ 5,0);
+	for(int i = 1;i<=n - 1;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back(y);
+		v[y].push_back(x);
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>col[i];
+	}
+	dfs1(1,0);
+	dfs2(1,0);
+	int q;
+	cin>>q;
+	while(q--)
+	{
+		int i;
+		cin>>i;
+		cout<<ans[i]<<endl;
+	}
+	return ;
+}
+int main()
+{
+	int t;
+	t = 1;
+	//cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	
+	return 0;
+}
