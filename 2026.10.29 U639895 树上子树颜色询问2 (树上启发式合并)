@@ -1,0 +1,135 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 2e5 + 5;
+int n;
+int m;
+vector<int>sz(maxn);
+vector<int>son(maxn);
+vector<int>fa(maxn);
+vector<vector<int>>v(maxn);
+vector<int>col(maxn);
+vector<int>cnt(maxn);
+vector<vector<int>>qu(maxn);
+map<pair<int,int>,int>mp;
+void add(int u)
+{
+	cnt[col[u]] ++;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == fa[u])
+		{
+			continue;
+		}
+		add(ed);
+	}
+	return;
+}
+void cancel(int u)
+{
+	cnt[col[u]] --;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == fa[u])
+		{
+			continue;
+		}
+		cancel(ed);
+	}
+	return;
+}
+void dfs1(int u,int p)
+{
+	fa[u] = p;
+	int mxl = 0;
+	int tar = 0;
+	sz[u] ++;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		dfs1(ed,u);
+		sz[u] += sz[ed];
+		if(mxl < sz[ed])
+		{
+			mxl = sz[ed];
+			tar = ed;
+		}
+	}
+	son[u] = tar;
+	return;
+}
+void dfs2(int u,int k,int p)
+{
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p || ed == son[u])
+		{
+			continue;
+		}
+		dfs2(ed,0,u);
+	}
+	if(son[u] != 0)
+	{
+		dfs2(son[u],1,u);		
+	}
+	for(int i = 0;i<v[u].size();i ++)
+	{
+		int ed = v[u][i];
+		if(ed == p || ed == son[u])
+		{
+			continue;
+		}
+		add(ed);
+	}
+	cnt[col[u]] ++;
+	for(int i = 0;i<qu[u].size();i++)
+	{
+		int tr = qu[u][i];
+	//	cout<<u<<" "<<tr<<endl;
+		mp[{u,tr}] = cnt[tr];
+	//	cout<<mp[{u,tr}]<<" "<<u<<" "<<tr<<endl;
+	}
+	if(k == 0)
+	{
+		cancel(u);
+	}
+	return ;
+}
+int main()
+{
+	cin>>n;
+	
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>col[i];
+	}
+	for(int i = 1;i<=n - 1;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back(y);
+		v[y].push_back(x);
+	}
+	cin>>m;
+	vector<int>a1(m + 5);
+	vector<int>a2(m + 5);
+	for(int i = 1;i<=m;i++)
+	{
+		cin>>a1[i]>>a2[i];
+		qu[a1[i]].push_back(a2[i]);
+	}
+	dfs1(1,0);
+	dfs2(1,0,1);
+	for(int i = 1;i<=m;i++)
+	{
+		cout<<mp[{a1[i],a2[i]}]<<endl;
+	}
+	return 0;
+}
