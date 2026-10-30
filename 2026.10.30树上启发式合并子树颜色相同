@@ -1,0 +1,152 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+const int maxn = 2e5 + 5;
+vector<int>col(maxn);
+vector<int>cnt(maxn);
+vector<int>rcnt(maxn);
+vector<vector<int>>v(maxn);
+vector<int>son(maxn);
+vector<int>sz(maxn);
+int mx = 0;
+int ans = 0;
+int diff = 0;
+int r = 0;
+void update(int c)
+{
+	cnt[c] ++;
+	if(cnt[c] == 1)
+	{
+		diff ++;
+	}
+	if(mx < cnt[c])
+	{
+		mx = cnt[c];
+	}
+	return;
+}
+void add(int u,int p)
+{
+	update(col[u]);
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		add(ed,u);
+	}
+	return;
+}
+void cancel(int u,int p)
+{
+	cnt[col[u]] -- ;
+	if(cnt[col[u]] == 0)
+	{
+		diff = 0;
+	}
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		cancel(ed,u);
+	}
+	return;	
+}
+void dfs1(int u,int p)
+{
+	sz[u] ++;
+	int mxl = 0;
+	int tar = 0;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		dfs1(ed,u);
+		sz[u] += sz[ed];
+		if(sz[ed] > mxl)
+		{
+			mxl = sz[ed];
+			tar = ed;		
+		}
+	}
+	son[u] = tar;
+	return;
+}
+void dfs2(int u,int keep,int p)
+{
+	//cout<<u<<endl;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p || ed == son[u])
+		{
+			continue;
+		}
+		dfs2(ed,0,u);
+	}
+	if(son[u] != 0)
+	{
+		dfs2(son[u],1,u);
+	}
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p || ed == son[u])
+		{
+			continue;
+		}
+		add(ed,u);
+	}
+	update(col[u]);
+	if(diff * mx == sz[u])
+	{
+		ans ++;
+	}
+	if(keep == 0)
+	{
+		cancel(u,p);
+		//cout<<mx<<" "<<abs(mi)<<" "<<u<<endl;
+		mx = 0;
+	}
+	return;
+}
+void solve()
+{
+	cin>>n;
+	r = 1;
+	for(int i = 1;i<=n;i++)
+	{
+		int p = 0;
+		cin>>col[i]>>p;
+		if(p == 0)
+		{
+			r = i;
+			continue;
+		}
+		v[p].push_back(i);
+		v[i].push_back(p);
+	}
+	dfs1(r,0);
+	dfs2(r,0,0);
+	cout<<ans<<endl;
+	return;
+}
+int main()
+{
+	int t = 1;
+	//cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
