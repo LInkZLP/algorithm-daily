@@ -1,0 +1,185 @@
+#include <bits/stdc++.h> 
+using namespace std;
+int n;
+int m;
+int q;
+struct st{
+	int qid;
+	int k1;
+};
+const int maxn = 1e5 + 5;
+vector<int>dfn(maxn);
+vector<int>dep(maxn);
+vector<vector<int>>v(maxn);
+vector<vector<st>>qv(maxn);//错误 2：qp[{x,y}] = i —— 重复查询互相覆盖
+unordered_map<string,int>nid;
+vector<set<int>>dv(maxn);
+vector<int>fa(maxn);
+vector<int>sz(maxn);
+vector<int>son(maxn);
+vector<int>col(maxn);
+vector<int>ans(maxn);
+map<pair<int,int>,int>dp;
+void add(int u,int p)
+{
+	dp[{dep[u],col[u]}] ++;
+	dv[dep[u]].insert(col[u]);
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		add(ed,u);
+	}
+	return;
+}
+void cancel(int u,int p)
+{
+	dp[{dep[u],col[u]}] --;
+	if(dp[{dep[u],col[u]}] == 0)
+	{
+		dv[dep[u]].erase(col[u]);//错误 1：set 直接 erase —— 同深度同色节点被一次性删光
+		//cancel 是逐节点调用的。删第一个 c 节点时，erase(c) 把 dv[d] 里的 c 直接抹掉了——但深度 d 上还有另外 2 个 c 节点没被 cancel。
+		//等删到第二个 c 节点时，dv[d] 里已经没有 c 了，erase 空操作,必须要cnt维护set 
+	}
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		cancel(ed,u);
+	}
+	return;
+}
+void dfs1(int u,int p)
+{
+	fa[u] = p;
+	sz[u] ++;
+	int tar = 0;
+	int mxl = 0;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		dep[ed] = dep[u] + 1;
+		dfs1(ed,u);
+		sz[u] += sz[ed];
+		if(mxl < sz[ed])
+		{
+			mxl = sz[ed];
+			tar = ed;
+		}
+	}
+	son[u] = tar;
+	return;
+}
+void dfs2(int u,int keep,int p)
+{
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p || ed == son[u])
+		{
+			continue;
+		}
+		dfs2(ed,0,u);
+	}
+	if(son[u] != 0)
+	{
+		dfs2(son[u],1,u);
+	}
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p || ed == son[u])
+		{
+			continue;
+		}
+		add(ed,u);
+	}
+	dp[{dep[u],col[u]}] ++;
+	dv[dep[u]].insert(col[u]);
+	for(int i = 0;i<qv[u].size();i++)
+	{
+		int tv = qv[u][i].k1;
+		int id = qv[u][i].qid;
+		if(dep[u] + tv > n)
+		{
+			ans[id] = 0;
+		}
+		else
+		{
+			ans[id] = dv[dep[u] + tv].size();
+		}
+	}
+	if(keep == 0)
+	{
+		cancel(u,p);
+	}
+	return;
+}
+void solve()
+{
+	cin>>n;
+	vector<int>root;
+	int ptr = 0;
+	for(int i = 1;i<=n;i++)
+	{
+		string ss;
+		int p;
+		cin>>ss>>p;
+		if(nid.find(ss) == nid.end())
+		{
+			nid[ss] = ++ptr;
+		}
+		col[i] = nid[ss];
+		if(p == 0)
+		{
+			root.push_back(i);
+		}
+		else
+		{
+			v[i].push_back(p);
+			v[p].push_back(i);
+		}
+	}
+	cin>>q;
+	for(int i = 1;i<=q;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		qv[x].push_back({i,y});
+	}
+	dv.assign(maxn,{});
+	for(int i = 0;i<root.size();i++)
+	{
+		
+		dep[root[i]] = 1;
+		dfs1(root[i],root[i]);
+		dfs2(root[i],0,root[i]);
+	}
+	for(int i = 1;i<=q;i++)
+	{
+		cout<<ans[i]<<endl;
+	}
+	return;
+}
+int main()
+{
+	int t = 1;
+	//cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	
+	return 0;
+}
