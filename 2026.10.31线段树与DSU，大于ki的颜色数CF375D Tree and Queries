@@ -1,0 +1,224 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 2e5 + 5;
+int n;
+int m;
+struct st{
+	int id;
+	int k;
+};
+vector<int>sz(maxn);
+vector<int>son(maxn);
+vector<vector<int>>v(maxn);
+vector<int>col(maxn);
+vector<int>cnt(maxn);
+vector<int>sum(maxn<<2);
+vector<vector<st>>qv(maxn);
+vector<int>ans(maxn);
+void up(int i)
+{
+	sum[i] = sum[i<<1] + sum[i<<1|1];
+	return;
+}
+void change(int l,int r,int i,int jobl,int jobr,int jobv)
+{
+	if(l >= jobl && r <= jobr)
+	{
+		sum[i] += jobv;
+		return;
+	}
+	int mid = ( l+ r)>>1;
+	if(mid >= jobl)
+	{
+		change(l,mid,i<<1,jobl,jobr,jobv);
+	}
+	if(mid + 1 <= jobr)
+	{
+		change(mid + 1,r,i<<1|1,jobl,jobr,jobv);
+	}
+	up(i);
+	return;
+}
+int query(int l,int r,int i,int jobl,int jobr)
+{
+	if(l >= jobl && r <= jobr)
+	{
+		return sum[i];
+	}
+	int mid = ( l+ r)>>1;
+	int ans = 0;
+	if(mid >= jobl)
+	{
+		ans += query(l,mid,i<<1,jobl,jobr);
+	}
+	if(mid + 1 <= jobr)
+	{
+		ans += query(mid + 1,r,i<<1|1,jobl,jobr);
+	}
+	up(i);
+	return ans;
+}
+void add(int u,int p)
+{
+	if(cnt[col[u]] == 0)	
+	{
+		cnt[col[u]] ++;
+		change(1,n,1,1,1,1);
+	}
+	else
+	{
+		change(1,n,1,cnt[col[u]],cnt[col[u]],-1);
+		cnt[col[u]] ++;
+		change(1,n,1,cnt[col[u]],cnt[col[u]],1);
+	}
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		add(ed,u);
+	}
+	return;
+}
+void cancel(int u,int p)
+{
+	if(cnt[col[u]] == 1)	
+	{
+		cnt[col[u]] --;
+		change(1,n,1,1,1,-1);
+	}
+	else
+	{
+		change(1,n,1,cnt[col[u]],cnt[col[u]],-1);
+		cnt[col[u]] --;
+		change(1,n,1,cnt[col[u]],cnt[col[u]],1);
+	}
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		cancel(ed,u);
+	}
+	return;
+}
+void dfs1(int u,int p)
+{
+	sz[u] ++ ;
+	int mxl = 0;
+	int tar = 0;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		dfs1(ed,u);
+		sz[u] += sz[ed];
+		if(mxl < sz[ed])
+		{
+			mxl = sz[ed];
+			tar = ed;
+		}
+	}
+	son[u] = tar; 
+	return;
+}
+void dfs2(int u,int keep,int p)
+{
+//	cout<<u<<endl;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p || ed == son[u])
+		{ 
+			continue;
+		}
+		dfs2(ed,0,u);
+	}
+	if(son[u] != 0)
+	{
+		dfs2(son[u],1,u);
+	}
+
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p || ed == son[u])
+		{ 
+			continue;
+		}
+		add(ed,u);
+	}
+
+	if(cnt[col[u]] == 0)	
+	{
+		cnt[col[u]] ++;
+		change(1,n,1,1,1,1);
+	}
+	else
+	{
+		change(1,n,1,cnt[col[u]],cnt[col[u]],-1);
+		cnt[col[u]] ++;
+		change(1,n,1,cnt[col[u]],cnt[col[u]],1);
+	}
+	
+	for(int i = 0;i<qv[u].size();i++)
+	{
+		int k = qv[u][i].k;
+		int id = qv[u][i].id;
+		ans[id] = query(1,n,1,k,n);
+		//cout<<k<<" "<<id<<endl;
+	}
+//	cout<<"ppp"<<endl;
+	if(keep == 0)
+	{
+		cancel(u,p);
+	}
+	return;
+}
+void solve()
+{
+	cin>>n>>m;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>col[i];
+	}
+	for(int i = 1;i<=n - 1;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back(y);
+		v[y].push_back(x);
+	}
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int k;
+		cin>>x>>k;
+		qv[x].push_back({i,k});
+	}
+	dfs1(1,0);
+	dfs2(1,0,1);
+	for(int i = 1;i<=m;i++)
+	{
+		cout<<ans[i]<<endl;
+	}
+	return;
+}
+int main()
+{
+	int t;
+	t = 1;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
