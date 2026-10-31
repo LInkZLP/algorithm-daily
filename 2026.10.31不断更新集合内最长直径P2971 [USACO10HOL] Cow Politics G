@@ -1,0 +1,354 @@
+//新直径 = max(旧直径, dist(新点, 端点1), dist(新点, 端点2))
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+const int maxn = 2e5 + 5;
+const int LOG = 23;
+vector<int>dfn(maxn);
+vector<vector<int>>up(maxn,vector<int>(LOG,0));
+vector<int>sz(maxn);
+vector<vector<int>>v(maxn);
+vector<int>dep(maxn);
+void dfs(int u,int p)
+{
+	up[u][0] = p;
+	for(int i = 1;i<=LOG - 1;i++)
+	{
+		up[u][i] = up[up[u][i - 1]][i - 1];
+	}
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		dep[ed] = dep[u] + 1;
+		dfs(ed,u);
+	}
+	return;
+}
+int lca(int a,int b)
+{
+	if(dep[a] < dep[b])
+	{
+		swap(a,b);
+	}
+	int dh = dep[a] - dep[b];
+	for(int i = LOG - 1;i>=0;i--)
+	{
+		if(dh & ( 1<<i))
+		{
+			a = up[a][i];
+		}
+	}
+	if(a == b)
+	{
+		return a;
+	}
+	for(int i = LOG - 1;i>=0;i--)
+	{
+		if(up[a][i] != up[b][i])
+		{
+			a = up[a][i];
+			b = up[b][i];
+		}
+	}
+	return up[a][0];
+}
+int dist(int u,int x)
+{
+	return dep[u] + dep[x] - 2* dep[lca(u,x)];
+}
+int main()
+{
+	int r = 1;
+	int k;
+	cin>>n>>k;
+	vector<vector<int>>col(maxn);
+	for(int i = 1;i<=n;i++)
+	{
+		int x;
+		int p;
+		cin>>x>>p;
+		col[x].push_back(i);
+		if(p == 0)
+		{
+			r = i;
+		}
+		else
+		{
+			v[p].push_back(i);
+			v[i].push_back(p);
+		}
+	}
+	dfs(r,0);
+	for(int i = 1;i<=k;i++)
+	{
+		int s1 = col[i][0];
+		int s2 = col[i][1];
+		int cur = dist(s1,s2);
+		for(int j = 2;j<col[i].size();j++)
+		{
+			int nxt = col[i][j];
+			int d1 = dist(nxt,s1);
+			int d2 = dist(nxt,s2);
+			if(d1 >= d2 && d1 > cur)
+			{
+				cur = d1;
+				s2 = nxt;
+			}
+			else if(d1 < d2 && d2 > cur)
+			{
+				cur = d2;
+				s1 = nxt;
+			}
+			
+		}
+		cout<<cur<<endl;
+	}
+	return 0;
+}
+# P2971 [USACO10HOL] Cow Politics —— 完整总结
+
+## 一、题目
+
+一棵 `N` 个点的树（`N ≤ 2e5`，`P_i = 0` 的点是根）。`N` 头奶牛分属 `K` 个政党（`K ≤ N/2`，**每个政党至少两头牛**）。
+
+**对每个政党，求“同党两头牛之间的最大距离”**，即该党点集的**直径**。
+
+原题样例：
+
+```
+6 2
+1 3     点1: 党1, 父亲3
+2 1     点2: 党2, 父亲1
+1 0     点3: 党1, 根
+2 1     点4: 党2, 父亲1
+2 1     点5: 党2, 父亲1
+1 5     点6: 党1, 父亲5
+→ 输出 3(党1: 1,3,6) / 2(党2: 2,4,5)
+```
+
+---
+
+## 二、思路演变（三版，每版挂在哪）
+
+### 版本 1：dsu on tree + `mx1/mx2`（方向错误）
+
+思路：dsu on tree，按颜色维护 `dep[u] - dep[sta]` 的最大/次大值，再拼成经过 `sta` 的路径。
+
+**四个问题**：
+
+| 问题 | 说明 |
+|---|---|
+| **框架错位** | dsu on tree 是“**对每个点 `u`，汇总 `subtree(u)`**”的框架；本题要的是“**对每种颜色，汇总全树的点**”。同色点可以分散在不同分支，任何真子集子树都装不住 ⇒ 框架用不上 |
+| `mx1/mx2` 语义失效 | 要拼“经过 `sta` 的路径”，必须保证两个最大值来自 `sta` 的**不同儿子**；但数组是按颜色全局复用的，**跨不同的 `sta` 混在一起** ⇒ `mx1+mx2` 不是任何一条真实路径 |
+| `v1/v2` 判重失效 | 用“儿子下标 `cc`”区分不同子树，可同一儿子下标在不同父亲下含义不同 |
+| `cdep[col] - dep[u]` | `cdep` 是“该颜色最深的点”，减 `dep[u]` 得到的是“最深点到 `u` 的距离”，**与直径无关**（直径的另一端不一定是该颜色） |
+
+**根因**：判断口诀没做对——“答案挂在谁身上”。本题答案挂在**颜色**上，不在子树里。
+
+### 版本 2：分组 + 端点法（方向对，实现有 bug）
+
+按颜色分组，每组用“两个端点”增量求直径。
+
+| bug | 表现 | 实测 |
+|---|---|---|
+| **等距未处理**：`if(d1 > d2 && d1 > cur)` 漏掉 `d1 == d2` | 该结果不变，答案偏小 | 三臂等距反例输出 `2`，正确 `4` |
+| **`col[i][1]` 越界**：某党不足 2 头牛 | 读到垃圾 / 崩溃 | `n=2,k=2` 输出 `0 1`（垃圾），`k` 大于实际党派数时 `0xC0000005` |
+| **递归 `dfs` 爆栈** | 链状数据直接 RE | `n=2e5` 的链 `exit=-1073741571` |
+
+### 版本 3：修完三处（最终版）
+
+`d1 >= d2` + 每党 `< 2` 的保护 + **迭代建树** ⇒ 正确。
+
+---
+
+## 三、正确方法的证明
+
+### 引理（核心）
+
+> 设集合 `S` 的直径端点是 `(a, b)`。则对**任意**点 `x`：
+> ```
+> max_{s∈S} dist(x, s) = max( dist(x,a), dist(x,b) )
+> ```
+> 等价说法：**离任何点最远的点，一定是直径的两个端点之一。**
+
+### 证明（用树度量的四点不等式）
+
+> **四点不等式**：任何树上四点 `p,q,r,t` 满足
+> ```
+> d(p,q) + d(r,t)  ≤  max{ d(p,r)+d(q,t),  d(p,t)+d(q,r) }
+> ```
+
+取 `p = x`、`q = s`（`S` 中离 `x` 最远的点）、`r = a`、`t = b`：
+
+- 左边 `= d(x,s) + d(a,b)`
+- 右边 `≤ max(d(x,a), d(x,b)) + d(a,b)`，因为 `(a,b)` 是直径 ⇒ `d(s,a) ≤ d(a,b)`、`d(s,b) ≤ d(a,b)`
+
+若 `d(x,s) > max(d(x,a), d(x,b))`，则左边 > 右边，**与四点不等式矛盾**。∎
+
+**直觉**：直径的两个端点是集合的“两个极端”，树枝状结构里“最远的方向”必然指向某个极端。
+
+### 推论（增量更新规则）
+
+设当前集合的直径是 `(s1, s2)`、长度 `cur`。加入新点 `x` 后：
+
+```
+新直径 = max( cur, dist(x,s1), dist(x,s2) )
+```
+
+- 若 `dist(x,s1)` 最大 ⇒ 新端点是 **`(s1, x)`**
+- 若 `dist(x,s2)` 最大 ⇒ 新端点是 **`(s2, x)`**
+
+于是每个点只需要 **2 次距离查询**，`m` 个点共 `2(m-1)` 次（对比暴力 `m(m-1)/2`）。
+
+---
+
+## 四、实现流程
+
+```
+① 读入 (A_i, P_i)，P_i = 0 是根；建无向邻接表，同时 col[A_i].push_back(i) 按颜色分组
+② 迭代 BFS 建树：求 dep[] 和倍增表 up[LOG][*]（千万别用递归）
+③ 距离：dist(u,v) = dep[u] + dep[v] - 2*dep[lca(u,v)]
+④ 每种颜色：
+     若点数 < 2 → 输出 0
+     否则 s1 = 第1个, s2 = 第2个, cur = dist(s1,s2)
+     从第3个点起：算 d1 = dist(x,s1)、d2 = dist(x,s2)
+        if (d1 >= d2 && d1 > cur)  { cur = d1; s2 = x; }   // 新直径 (s1,x)，替换 s2
+        else if (d1 < d2 && d2 > cur) { cur = d2; s1 = x; } // 新直径 (s2,x)，替换 s1
+     输出 cur
+```
+
+### 完整代码（`cowpol/final.cpp`，已实测）
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 2e5 + 5;
+const int LOG = 23;
+int n, k;
+vector<vector<int>>v(maxn);
+vector<vector<int>>col(maxn);
+vector<int>dep(maxn);
+int up[LOG][maxn];          // 静态数组: 比 vector<vector<int>> 更省更快
+int ordv[maxn];
+
+void build(int root)        // 迭代建树(BFS序): 链状数据不爆栈
+{
+	int head = 0, tail = 0;
+	ordv[tail++] = root;
+	up[0][root] = 0;
+	while(head < tail)
+	{
+		int u = ordv[head++];
+		for(int i = 1;i<LOG;i++) up[i][u] = up[i-1][up[i-1][u]];
+		for(int i = 0;i<v[u].size();i++)
+		{
+			int ed = v[u][i];
+			if(ed == up[0][u]) continue;
+			up[0][ed] = u;
+			dep[ed] = dep[u] + 1;
+			ordv[tail++] = ed;
+		}
+	}
+}
+int lca(int a,int b)
+{
+	if(dep[a] < dep[b]) swap(a,b);
+	int dh = dep[a] - dep[b];
+	for(int i = LOG - 1;i>=0;i--) if(dh & (1 << i)) a = up[i][a];
+	if(a == b) return a;
+	for(int i = LOG - 1;i>=0;i--)
+		if(up[i][a] != up[i][b]) { a = up[i][a]; b = up[i][b]; }
+	return up[0][a];
+}
+int dist(int a,int b){ return dep[a] + dep[b] - 2 * dep[lca(a,b)]; }
+
+int main()
+{
+	ios::sync_with_stdio(false); cin.tie(0);
+	cin>>n>>k;
+	int r = 1;
+	for(int i = 1;i<=n;i++)
+	{
+		int a, p;
+		cin>>a>>p;
+		col[a].push_back(i);
+		if(p == 0) r = i;
+		else { v[p].push_back(i); v[i].push_back(p); }
+	}
+	build(r);
+	for(int c = 1;c<=k;c++)
+	{
+		if(col[c].size() < 2) { cout<<0<<endl; continue; }
+		int s1 = col[c][0], s2 = col[c][1];
+		int cur = dist(s1,s2);
+		for(int j = 2;j<col[c].size();j++)
+		{
+			int nxt = col[c][j];
+			int d1 = dist(nxt,s1), d2 = dist(nxt,s2);
+			if(d1 >= d2 && d1 > cur)     { cur = d1; s2 = nxt; }
+			else if(d1 < d2 && d2 > cur) { cur = d2; s1 = nxt; }
+		}
+		cout<<cur<<endl;
+	}
+	return 0;
+}
+```
+
+---
+
+## 五、复杂度
+
+| 项目 | 复杂度 |
+|---|---|
+| 建树 + 倍增表 | `O(N log N)` |
+| 全部距离查询 | 每点 2 次，共 `O(N log N)` |
+| 空间 | `O(N log N)`（`up` 约 18MB）|
+| 实测 | `n=2e5` 随机树 **0.19s**、链 **0.13s** |
+
+---
+
+## 六、坑清单（每个都实测过）
+
+| 坑 | 后果 | 对策 |
+|---|---|---|
+| **等距没处理** `d1 > d2` | WA（答案偏小） | 用 `d1 >= d2`，或写 `if(d1 > cur \|\| d2 > cur)` 再比较两值 |
+| **递归 `dfs`** | 链上 `0xC00000FD` 爆栈 | BFS 迭代建树 |
+| **`col[i][1]` 越界** | 读垃圾 / `0xC0000005` | `if(col[i].size() < 2) { cout<<0; continue; }` |
+| **端点替换方向搞反** | 全程错 | `(s1,x)` 成立时替换 `s2`；`(s2,x)` 成立时替换 `s1` |
+| `vector<vector<int>> up` 开销 | 多 5MB（每行 24B 头） | 改静态 `up[LOG][maxn]` |
+
+---
+
+## 七、验证数据
+
+| 用例 | 期望 | 结果 |
+|---|---|---|
+| 原题样例 | `3 2` | ✓ |
+| 三臂等距反例（`1-2,1-3,1-5,5-6,6-4`，党1={2,3,4}）| `4 2` | ✓ |
+| 链 `n=2e5`（父指针倒连，两党各 1e5 头）| 不崩 | ✓ 0.13s，`199998 199998` |
+| 随机树 `n=2e5` | 不崩 | ✓ 0.19s |
+| `n ≤ 40` 随机树 vs 暴力（每党两两枚举）| — | 0 错 |
+
+---
+
+## 八、方法论沉淀（比这题本身值钱）
+
+1. **先问“答案挂在谁身上”**
+ - 挂在“某个点 / 某棵子树” ⇒ 才用 dsu on tree；
+ - 挂在“某种颜色 / 某个全局集合” ⇒ **分组** + 集合自身的性质（直径端点、最大/次大、计数…）。
+
+2. **记住“集合直径 = 两个端点”**
+ 动态加点求直径、合并两个集合求直径、多个集合两两最大距离——全都用这一招：
+ > 新直径 = max(旧直径, d(x,端点1), d(x,端点2))
+ 合并两集合时同理：`(a1,b1)` 与 `(a2,b2)` 合并后的端点一定在这 4 个点里。
+
+3. **写“取最大/次大”时，一定要想清楚“相等”怎么处理**
+ 这次的 WA 就是 `d1 == d2` 掉进两个 `if` 的缝隙里。
+
+4. **一切递归在 `N = 2e5` 的树上都要先问一句：会不会是链？**
+ 迭代建树成本不高，但能避免 100% 的 RE。
