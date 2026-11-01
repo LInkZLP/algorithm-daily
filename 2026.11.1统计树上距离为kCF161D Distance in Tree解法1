@@ -1,0 +1,63 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int k;
+long long sum = 0;
+unordered_map<int,int>mp;
+const int maxn = 50005;
+vector<int>dep(maxn);
+vector<int>sz(maxn);
+vector<int>son(maxn);
+vector<vector<int>>v(maxn);
+vector<vector<long long>>dp(maxn,vector<long long>(505));
+void dfs1(int u,int p)
+{
+	dp[u][0] = 1;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		dep[ed] = dep[u] + 1;
+		dfs1(ed,u);
+		for(int j = 0;j<=k - 1;j++)
+		{
+			sum += dp[u][k - 1 - j] * dp[ed][j];
+		}
+		for(int j = 0;j<=k - 1;j++)
+		{
+			dp[u][j + 1] += dp[ed][j];
+		}
+	}
+	return;
+}
+
+void solve()
+{
+	cin>>n>>k;
+	for(int i = 1;i<=n - 1;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back(y);
+		v[y].push_back(x);
+	}
+	dep[1] = 1;
+	dfs1(1,0);
+	cout<<sum<<endl;
+	return ;
+}
+int main()
+{
+	int t = 1;
+	//cin>>t;
+	while(t--)
+	{
+		solve();
+	}	
+
+	return 0;
+}
