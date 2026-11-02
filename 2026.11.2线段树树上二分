@@ -1,0 +1,102 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+int k;
+const int maxn = 6e6 + 5;
+vector<long long>sum(maxn);
+vector<int>cnt(maxn);
+vector<int>ls(maxn);
+vector<int>rs(maxn);
+int tot = 1;
+
+void up(int i)
+{
+    sum[i] = sum[ls[i]] + sum[rs[i]];
+    cnt[i] = cnt[ls[i]] + cnt[rs[i]];
+    return;
+}
+
+void change(int l,int r,int i,int jobl,int jobr,int jobv,int k)
+{
+    if(l >= jobl && r <= jobr)
+    {
+        sum[i] += jobv;
+        cnt[i] += k;
+        return;
+    }
+    int mid = (l + r) >> 1;
+    if(mid >= jobl)
+    {
+        if(!ls[i])
+        {
+            tot++;
+            ls[i] = tot;
+        }
+        change(l, mid, ls[i], jobl, jobr, jobv, k);
+    }
+    if(mid + 1 <= jobr)
+    {
+        if(!rs[i])
+        {
+            tot++;
+            rs[i] = tot;
+        }
+        change(mid + 1, r, rs[i], jobl, jobr, jobv, k);
+    }
+    up(i);
+}
+
+// 树上二分：求前 k 小之和
+long long kth(int l, int r, int i, int k)
+{
+    if(l == r)
+    {
+        return 1LL * k * l;   // 剩下的 k 个都是 l
+    }
+    int mid = (l + r) >> 1;
+    int lc = ls[i];
+    int leftCnt = lc ? cnt[lc] : 0;
+    if(k <= leftCnt)
+    {
+        return kth(l, mid, lc, k);
+    }
+    else
+    {
+        long long leftSum = lc ? sum[lc] : 0;
+        return leftSum + kth(mid + 1, r, rs[i], k - leftCnt);
+    }
+}
+
+void solve()
+{
+    cin >> n >> m >> k;
+    vector<long long> val(n + 5);
+    for(int i = 1; i <= n; i++)
+    {
+        cin >> val[i];
+    }
+    for(int i = 1; i <= m - 1; i++)
+    {
+        change(1, 1e9, 1, val[i], val[i], val[i], 1);
+    }
+    for(int i = m; i <= n; i++)
+    {
+        change(1, 1e9, 1, val[i], val[i], val[i], 1);
+
+        cout << kth(1, 1e9, 1, k) << " ";
+
+        change(1, 1e9, 1, val[i - m + 1], val[i - m + 1], -val[i - m + 1], -1);
+    }
+    return;
+}
+
+int main()
+{
+    int t = 1;
+    while(t--)
+    {
+        solve();
+    }
+    return 0;
+}
