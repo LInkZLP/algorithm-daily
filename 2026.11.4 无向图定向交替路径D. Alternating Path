@@ -1,0 +1,79 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+const int maxn = 2e5 + 5;
+vector<int>col;
+vector<vector<int>>v;
+int k1 = 0;
+int c1 = 0;
+int c2 = 0;
+void dfs(int u,int c)
+{
+	col[u] = c;
+	if(c == 1)
+	{
+		c1 ++;
+	}
+	else
+	{
+		c2 ++;
+	}
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(col[ed] == 0)
+		{
+			dfs(ed,c == 1 ? 2 : 1);
+		}
+		else if(col[ed] == col[u])
+		{
+			k1 = 1;
+		}
+
+	}
+	return;
+}
+void solve()
+{
+	cin>>n>>m;
+	v.assign(n + 5,vector<int>());
+	col.assign(n + 5,0);
+	int ans = 0;
+	for(int i = 1;i<=m;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back(y);
+		v[y].push_back(x);
+	}
+	int cc = 0;
+	for(int i = 1;i<=n;i++)
+	{
+		if(col[i] == 0)
+		{
+			dfs(i,1);
+			if(k1 == 0)
+			{
+				ans += max(c1,c2);
+			}
+			c1 = 0;
+			c2 = 0;
+			k1 = 0;
+		}
+	}
+	cout<<ans<<endl;
+	return ;
+}
+int main()
+{
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	
+	return 0;
+}
