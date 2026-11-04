@@ -1,0 +1,64 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+const int maxn = 200005;
+vector<int> spf(maxn, 0);
+
+// 埃氏筛求最小质因子
+void init()
+{
+	for(int i = 2; i < maxn; i++)
+	{
+		if(spf[i] == 0)          // i 是质数
+		{
+			spf[i] = i;
+			for(int j = 2; 1LL * i * j < maxn; j++)
+			{
+				if(spf[i * j] == 0)   // 只记录第一次，保证是最小质因子
+				{
+					spf[i * j] = i;
+				}
+			}
+		}
+	}
+}
+
+// 分解 x，返回所有不同质因子
+vector<int> factorize(int x)
+{
+	vector<int> res;
+	while(x > 1)
+	{
+		int p = spf[x];           // 直接拿到最小质因子
+		res.push_back(p);
+		while(x % p == 0)
+		{
+			x /= p;               // 把 p 除干净，保证不重复
+		}
+	}
+	return res;
+}
+
+int main()
+{
+	ios::sync_with_stdio(false);
+	cin.tie(nullptr);
+
+	init();
+
+	int n;
+	cin >> n;
+	for(int i = 1; i <= n; i++)
+	{
+		int x;
+		cin >> x;
+		vector<int> fac = factorize(x);
+		cout << x << ": ";
+		for(int p : fac)
+		{
+			cout << p << " ";
+		}
+		cout << "\n";
+	}
+	return 0;
+}
