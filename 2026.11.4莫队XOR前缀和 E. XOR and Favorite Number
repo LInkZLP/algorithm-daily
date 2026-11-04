@@ -1,0 +1,118 @@
+#include <bits/stdc++.h>
+using namespace std;
+vector<int>pl;
+vector<int>pv(2e5 + 5,1);
+const int maxn = 2e5 + 5;
+vector<int>a(maxn);
+vector<vector<int>>v(maxn);
+vector<vector<int>>vs(maxn);
+unordered_map<long long,int>d1;
+unordered_map<long long,int>d2;
+int mxl = 0;
+int n;
+void dfs(int u,int p)
+{
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		dfs(ed,u);
+		for(int k : vs[u])
+		{
+			if(a[ed] % k == 0)
+			{
+				if(d1[k * (n + 1) + u] < d1[k * (n + 1) + ed])
+				{
+					d2[k * (n + 1) + u] = d1[k * (n + 1) + u];
+					d1[k * (n + 1) + u] = d1[k * (n + 1) + ed];
+				}
+				else if(d2[k * (n + 1) + u] < d1[k * (n + 1) + ed])
+				{
+					d2[k * (n + 1) + u] = d1[k * (n + 1) + ed];
+				}
+			}
+		}
+	}
+	if(a[u] != 1)
+	{
+		for(int k : vs[u])
+		{
+			mxl = max(mxl,d1[k * (n + 1) + u] + d2[k * (n + 1) + u] + 1);
+			d1[k * (n + 1) + u] ++;
+		}
+	}
+	return;
+}
+void solve()
+{
+	cin>>n;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>a[i];
+		int ptr = 0;
+		int temp = a[i];
+		while(ptr < (int)pl.size() && 1LL* pl[ptr] * pl[ptr] <= temp)
+		{
+			if(pl[ptr] > temp)
+			{
+				break;
+			}
+			if(temp % pl[ptr] == 0)
+			{
+				int pp = pl[ptr];
+				vs[i].push_back(pl[ptr]);
+				d1[pp * (n + 1) + i] = 0;
+				d2[pp * (n + 1) + i] = 0;
+				while(temp % pl[ptr] == 0)
+				{
+					temp /= pl[ptr];
+				}
+			}
+			ptr ++;
+		}
+		if(temp > 1)
+		{
+			vs[i].push_back(temp);
+			d1[temp * (n + 1) + i] = 0;
+			d2[temp * (n + 1) + i] = 0;
+		}
+	}
+	for(int i = 1;i<=n - 1;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[x].push_back(y);
+		v[y].push_back(x); 
+	}
+	dfs(1,0);
+	cout<<mxl<<endl;
+	return;
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+	cin.tie(nullptr);
+	int t = 1;
+	pv[1] = 0;
+	for(int i = 2;i<=2e5;i++)
+	{
+		if(pv[i] == 0)
+		{
+			continue;
+		}
+		pl.push_back(i);
+		for(int j = 2;j * i <= 2e5;j++)
+		{
+			pv[i * j] = 0;
+		}
+	}
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
