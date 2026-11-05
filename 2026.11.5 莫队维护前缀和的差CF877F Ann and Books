@@ -1,0 +1,181 @@
+#include <bits/stdc++.h>
+using namespace std;
+unordered_map<long long,int>mp;
+unordered_map<int,long long>seg;
+int n;
+int m;
+int q;
+/*1. 前缀和转化：区间条件 → 两个前缀的关系
+
+2. 判断对称性：
+   - 异或、|a-b|：对称，不分左右
+   - 加减、有向距离：不对称，分左右
+   
+3. 莫队排序：l 分块，r 单调
+
+4. 收集所有候选值，离散化
+
+5. 预计算 id，热路径纯数组
+
+6. add 先查后加，cancel 先减后查
+
+7. 先扩后缩
+
+8. long long 防溢出
+*/
+const int maxn = 1e5 + 5;
+vector<int>col(maxn);
+vector<long long>val(maxn);
+vector<long long>p1(maxn);
+vector<long long>cnt(maxn*3);
+struct st{
+	int l;
+	int r;
+	int id;
+};
+vector<long long>ans(maxn);
+vector<st>qv(maxn);
+long long k;
+long long cc = 0;
+int block = 0;
+vector<long long>q1(maxn*3);
+vector<long long>q2(maxn*3);
+vector<long long>q3(maxn*3);
+bool cmp(st a,st b)
+{
+	if(a.l / block == b.l / block)
+	{
+		return a.r < b.r;
+	}
+	return  a.l < b.l;
+}
+//昨天那道异或题不分左右，是因为异或满足交换律，s[i]^s[j]=k 和 s[j]^s[i]=k 是同一个条件；
+//今天这道加减题必须分左右，是因为 p[j]-p[i]=k 和 p[i]-p[j]=k 不同
+//防止相等，va一定不能出现在桶里面 ，之前没有加过，现在就要先查后加 
+//防止相等，va一定不能出现在桶里面 ，之前已经加过，现在就要先减去后查 
+void add(int u,int p)
+{
+	if(p == 1)
+	{
+		cc += cnt[q2[u]];
+	}
+	else
+	{
+		cc += cnt[q3[u]];
+	}
+	cnt[q1[u]] ++;
+	return;
+}
+void cancel(int u,int p)
+{
+	cnt[q1[u]] --;
+	if(p == 1)
+	{
+		cc -= cnt[q2[u]];
+	}
+	else
+	{
+		cc -= cnt[q3[u]];
+	}
+	return;
+}
+void solve()
+{
+	cin>>n>>k;
+	block = sqrt(n);
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>col[i];
+	}
+	vector<long long>vs;
+	vs.push_back(0);
+	vs.push_back(k);
+	vs.push_back(-k);
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>val[i];
+		if(col[i] == 1)
+		{
+			p1[i] = p1[i - 1] + val[i];
+		}
+		else
+		{
+			p1[i] = p1[i - 1] - val[i];
+		}
+		vs.push_back(p1[i]);
+		vs.push_back(p1[i] + k);
+		vs.push_back(p1[i] - k);
+	}
+	sort(vs.begin(),vs.end());
+	vs.erase(unique(vs.begin(),vs.end()),vs.end());
+	int ptr = 1;
+	for(long long i : vs)
+	{
+		mp[i] = ++ptr;
+		seg[ptr] = i;
+	}
+	cin>>q;
+	for(int i = 1;i<=q;i++)
+	{
+		int l;
+		int r;
+		cin>>l>>r;		
+		qv[i] = {l,r,i};
+	}
+	sort(qv.begin() + 1,qv.begin() + 1 + q,cmp);
+	for(int i = 0;i<=n;i++)
+	{
+		q1[i] = mp[p1[i]];//分配节点 
+		q2[i] = mp[p1[i] - k];//分配节点 
+		q3[i] = mp[p1[i] + k];//分配节点 
+	}
+	int wl = 0;
+	int wr = -1;
+	for(int i = 1;i<=q;i++)
+	{
+		int l = qv[i].l;
+		int r = qv[i].r;
+		l--;
+	//	cout<<wl<<" "<<wr<<" "<<l<<" "<<r<<endl;
+		while(wl > l)
+		{
+		//	cout<<"1"<<endl;
+			add(--wl,0);
+		}
+		while(wr < r)
+		{
+		//	cout<<"2"<<endl;
+			add(++wr,1);
+		}
+		while(wl < l)
+		{
+		//	cout<<"3"<<endl;
+			cancel(wl++,0);
+		}
+		while(wr > r)
+		{
+		//	cout<<"4"<<endl;
+			cancel(wr--,1);
+		}
+		ans[qv[i].id] = cc;
+	//	cout<<l<<" "<<r<<endl;
+	}
+	for(int i = 1;i<=q;i++)
+	{
+		cout<<ans[i]<<"\n";
+	}
+	return;
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+	int t = 1;
+	while(t--)	
+	{
+		solve();
+	}
+	
+	
+	return 0;
+} 
