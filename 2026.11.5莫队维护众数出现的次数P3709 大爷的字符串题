@@ -1,0 +1,120 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+const int maxn = 2e5 + 5;
+vector<int>cnt(maxn);
+vector<int>num(maxn);
+int mx = 0;
+vector<long long>a(maxn);
+vector<long long>ans(maxn);
+struct st{
+	int l;
+	int r;
+	int id;
+};
+//开始比较难处理mx变化后的值，想建立Last来记录num[cnt[srg[u]]]上一个大于0的num，
+//但是还是难处理，后面意识到num是连续的
+//num 连续，是因为莫队每次只让一个值的频次变 1，频次分布永远是一段 [1, mx] 的非零区间，
+//不可能断裂。所以 mx 塌了就是 mx-1，last 链表退化成直线，完全没必要维护
+vector<st>qv(maxn);
+vector<int>seg(maxn);
+vector<int>last(maxn);
+unordered_map<long long,int>mp;
+int block = 0;
+bool cmp(st x, st y)
+{
+	if(x.l / block== y.l / block)
+	{
+		return x.r < y.r;
+	}
+	return x.l < y.l;
+}
+void add(int u)
+{
+	num[cnt[seg[u]]] --;
+	cnt[seg[u]] ++;
+	num[cnt[seg[u]]] ++;
+	mx = max(mx,cnt[seg[u]]);
+	return;
+}
+void cancel(int u)
+{
+	if(num[cnt[seg[u]]] == 1 && mx == cnt[seg[u]])
+	{
+		mx --;
+	}
+	num[cnt[seg[u]]] --;
+	cnt[seg[u]] --;
+	num[cnt[seg[u]]] ++;
+	return;
+}
+void solve()
+{
+	cin>>n>>m;
+	vector<long long>vs;
+	block = sqrt(n);
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>a[i];
+		vs.push_back(a[i]);
+	}
+	sort(vs.begin(),vs.end());
+	vs.erase(unique(vs.begin(),vs.end()),vs.end());
+	for(int i = 0;i<vs.size();i++)
+	{
+		mp[vs[i]] = i; 
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		seg[i] = mp[a[i]];
+	}
+	for(int i = 1;i<=m;i++)
+	{
+		int l;
+		int r;
+		cin>>l>>r;
+		qv[i] = {l,r,i};
+	}
+	sort(qv.begin() + 1,qv.begin() + 1 + m,cmp);
+	int wl = 1;
+	int wr = 0;
+	for(int i = 1;i<=m;i++)
+	{
+		int l = qv[i].l;
+		int r = qv[i].r;
+		int id = qv[i].id;
+		while(wl > l)
+		{
+			add(--wl);
+		}
+		while(wr < r)
+		{
+			add(++wr);
+		}
+		while(wl < l)
+		{
+			cancel(wl ++);
+		}
+		while(wr > r)
+		{
+			cancel(wr --);
+		}
+		ans[id] = mx;
+	}
+	for(int i = 1;i<=m;i++)
+	{
+		cout<<-ans[i]<<endl;
+	}
+	return;
+}
+int main()
+{
+	int t = 1;
+	//cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	return 0;
+}
