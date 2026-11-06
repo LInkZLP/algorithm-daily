@@ -1,0 +1,130 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int m;
+const int maxn = 4e5 + 5;
+vector<vector<int>>v(maxn);
+vector<long long>sz(maxn);
+vector<long long>son1(maxn);
+vector<long long>son2(maxn);
+vector<long long>mx(maxn);
+int r = 0;
+void dfs0(int u,int p)
+{
+	sz[u] ++;
+	bool k = false;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		dfs0(ed,u);
+		sz[u] += sz[ed];
+		if(sz[ed] > n / 2)
+		{
+			k = true;
+		}
+	}
+	if(n - sz[u] > n / 2)
+	{
+		k = true;
+	}
+	if(!k)
+	{
+		r = u;
+	}
+	return;
+}
+void dfs2(int u,int p)
+{
+	sz[u] = 1;
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		dfs2(ed,u);
+		sz[u] += sz[ed];
+		if(sz[ed] > son1[u])
+		{
+			son2[u] = son1[u];
+			son1[u] = sz[ed];
+		}
+		else if(sz[ed] > son2[u])
+		{
+			son2[u] = sz[ed];
+		}
+	}
+
+	return;
+}
+void dfs1(int u,int p)
+{
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		long long ss = (sz[ed] == son1[u]) ? son2[u] : son1[u];
+		mx[ed] = max(ss,mx[u]);//从根（重心 r）到 u 的路径上，
+		//在兄弟分支里，能切掉的最大子树（≤ n/2）。
+		if(n - sz[u] <= n / 2)// “父方向”整体 n - sz[u] 这一块，本身可能就是一个可以整体切下来的块！
+		{
+			mx[ed] = max(mx[ed],n - sz[u]);
+		}
+		/*不加这个的返例：1 —— 2 —— 3 —— 4
+							|
+							+—— 5
+							|
+							+—— 6 
+		*/ 
+		dfs1(ed,u);
+	}
+	return;;
+}
+void solve()
+{
+	cin>>n;
+	for(int i = 1;i<=n - 1;i++)
+	{
+		int x;
+		int y;
+		cin>>x>>y;
+		v[y].push_back(x);
+		v[x].push_back(y);
+	}
+	dfs0(1,0);
+	dfs2(r,r);
+	dfs1(r,r);
+	for(int i = 1;i<=n;i++)
+	{
+		if(mx[i] <= n / 2 && n - mx[i] - sz[i] <= n / 2)
+		{
+			cout<<1<<" ";
+		}
+		else
+		{
+			cout<<0<<" ";
+		}
+	}
+	cout<<endl;
+	return;
+}
+int main()
+{
+	int t = 1;
+	//cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	
+	return 0;
+}
+ 
