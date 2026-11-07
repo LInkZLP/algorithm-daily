@@ -1,0 +1,107 @@
+#include <bits/stdc++.h>
+using namespace std;
+long long ans = LLONG_MAX;
+
+long long work(long long a,long long b,long long c)
+{
+	return (a - b) * (a - b) + (b - c) *(b - c) + (a - c) *(a - c);
+}
+void cc(vector<long long>&x,vector<long long>&y,vector<long long>&z,int n1,int n2,int n3)
+{
+	for(int i = 1;i<=n1;i++)
+	{
+		long long tar = x[i];
+		long long y1 = -1;
+		long long y2 = -1;
+		long long z1 = -1;
+		long long z2 = -1;
+		auto it  = lower_bound(y.begin() + 1,y.begin() + 1 + n2,tar);
+		if(it != y.begin() + 1 + n2)
+		{
+			y1 = y[it - y.begin()];
+		}
+		it  = upper_bound(y.begin() + 1,y.begin() + 1 + n2,tar);
+		if(it != y.begin() + 1)
+		{
+			y2 = y[it - 1 - y.begin()];
+		}
+		it  = lower_bound(z.begin() + 1,z.begin() + 1 + n3,tar);
+		if(it != z.begin() + 1 + n3)
+		{
+			z1 = z[it - z.begin()];
+		}
+		it  = upper_bound(z.begin() + 1,z.begin() + 1 + n3,tar);
+		if(it != z.begin() + 1)
+		{
+			z2 = z[it - 1 - z.begin()];
+		}
+		if(y1 != -1)
+		{
+			if(z1 != -1)
+			{
+				ans = min(ans,work(tar,y1,z1));
+			}
+			if(z2 != -1)
+			{
+				ans = min(ans,work(tar,y1,z2));
+			}
+		}
+		if(y2 != -1)
+		{
+			if(z1 != -1)
+			{
+				ans = min(ans,work(tar,y2,z1));
+			}
+			if(z2 != -1)
+			{
+				ans = min(ans,work(tar,y2,z2));
+			}
+		}
+	}
+	return;
+}
+void solve()
+{
+	int n1;
+	int n2;
+	int n3;
+	cin>>n1>>n2>>n3;
+	vector<long long>x(n1 + 5);
+	vector<long long>y(n2 + 5);
+	vector<long long>z(n3 + 5);
+	for(int i = 1;i<=n1;i++)
+	{
+		cin>>x[i];
+	}
+	for(int i = 1;i<=n2;i++)
+	{
+		cin>>y[i];
+	}
+	for(int i = 1;i<=n3;i++)
+	{
+		cin>>z[i];
+	}
+	ans = LLONG_MAX;
+
+	sort(x.begin() + 1,x.begin() + 1 + n1);
+	sort(y.begin() + 1,y.begin() + 1 + n2);
+	sort(z.begin() + 1,z.begin() + 1 + n3);
+	cc(x,y,z,n1,n2,n3);
+	cc(y,x,z,n2,n1,n3);
+	cc(z,x,y,n3,n1,n2);
+	cout<<ans<<endl;
+	return;
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+	int t;
+	cin>>t;
+	while(t--) 
+	{
+		solve();
+	}
+		
+	return 0;
+} 
