@@ -1,0 +1,232 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 2e5 + 5;
+vector<int>sum(maxn * 40);
+vector<int>ls(maxn * 40);
+vector<int>rs(maxn * 40);
+vector<int>sz(maxn);
+vector<int>dep(maxn);
+vector<int>son(maxn);
+vector<vector<int>>v(maxn);
+vector<int>val(maxn);;
+struct st{
+	int ed;
+	int w;
+};
+vector<vector<st>>g(maxn);
+int tot = 1;
+int k;
+int n;
+int m;
+int ans = 0;
+
+//动态开点传的l,r是范围，注意不能不在这个范围修改或者查找 
+//处理节点 u 时，线段树里保存的是“已经处理完、且与当前轻儿子不重叠的子树”里的所有点。
+void up(int i)
+{
+	sum[i] = sum[ls[i]] + sum[rs[i]];
+}
+void change(int l,int r,int i,int jobl,int jobr,int jobv)
+{
+	if(l >= jobl && r <= jobr)
+	{
+		sum[i] += jobv;
+		return;
+	}
+	int mid = (l + r)>>1;
+	if(mid >= jobl)
+	{
+		if(!ls[i])
+		{
+			ls[i] = ++tot;
+		}
+		change(l,mid,ls[i],jobl,jobr,jobv);
+	}
+	if(mid + 1 <= jobr)
+	{
+		if(!rs[i])
+		{
+			rs[i] = ++tot;
+		}
+		change(mid + 1,r,rs[i],jobl,jobr,jobv);
+	}
+	up(i);
+}
+int query(int l,int r,int i,int jobl,int jobr)
+{
+	if(l >= jobl && r <= jobr)
+	{
+		return sum[i];
+	}
+	int mid = (l + r)>>1;
+	int ans = 0;
+	if(!ls[i])
+	{
+		ls[i] = ++tot;
+	}
+	if(!rs[i])
+	{
+		rs[i] = ++tot;
+	}
+	if(mid >= jobl)
+	{
+		ans += query(l,mid,ls[i],jobl,jobr);
+	}
+	if(mid + 1 <= jobr)
+	{
+		ans += query(mid + 1,r,rs[i],jobl,jobr);
+	}
+	return ans;
+}
+void aq(int u,int p,int lca)
+{
+	int tar = k + dep[lca] * 2 - dep[u];
+	if(tar >= 1)
+	{
+		ans += query(1,1e9,1,1,tar);
+	}
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		aq(ed,u,lca);
+	}
+}
+//LCA 在轻儿子子树内部的点对，已经在递归 dfs2(轻儿子) 时统计过了。因此需要aq 
+void add(int u,int p,int lca)
+{
+
+	//tar + dep[u] <= k
+	if(dep[u] > 0)
+	{
+		change(1,1e9,1,dep[u],dep[u],1);
+	}
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		add(ed,u,lca);
+	}
+	return;
+}
+void cancel(int u,int p)
+{
+	if(dep[u] > 0)
+	{
+		change(1,1e9,1,dep[u],dep[u],-1);
+	}
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p)
+		{
+			continue;
+		}
+		cancel(ed,u);
+	}
+	return;
+}
+void dfs1(int u,int p)
+{
+	sz[u] ++;
+	int mxl = 0;
+	int tar = 0;
+	for(int i = 0;i<g[u].size();i++)
+	{
+		int ed = g[u][i].ed;
+		if(ed == p)
+		{
+			continue;
+		}
+		val[ed] = g[u][i].w;
+		dep[ed] = dep[u] + g[u][i].w;
+		dfs1(ed,u);
+		if(mxl < sz[ed])
+		{
+			mxl = sz[ed];
+			tar = ed;
+		}
+		sz[u] += sz[ed];
+	}
+	son[u] = tar;
+	return;
+}
+void dfs2(int u,int keep,int p)
+{
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p|| ed == son[u])
+		{
+			continue;
+		}
+		dfs2(ed,0,u); 
+	}
+	if(son[u] != 0)
+	{
+		dfs2(son[u],1,u);
+	}
+	for(int i = 0;i<v[u].size();i++)
+	{
+		int ed = v[u][i];
+		if(ed == p || ed == son[u])
+		{
+			continue;
+		}
+		aq(ed,u,u);
+		add(ed,u,u); 
+		
+	}
+	int tar = k + dep[u] * 2 - dep[u];
+	if(tar >= 1)
+	{
+		ans += query(1,1e9,1,1,tar);
+	}
+	if(dep[u])
+	{
+		change(1,1e9,1,dep[u],dep[u],1);
+	}
+	if(keep == 0)
+	{
+		
+		cancel(u,p);
+	}
+	return;
+}
+void solve()
+{
+	cin>>n;
+	for(int i = 1;i<=n - 1;i++)
+	{
+		int x;
+		int y;
+		int w;
+		cin>>x>>y>>w;
+		v[x].push_back(y);
+		v[y].push_back(x);
+		g[x].push_back({y,w});;
+		g[y].push_back({x,w});
+	}
+	cin>>k;
+	dfs1(1,0);
+	dfs2(1,0,1);
+	cout<<ans<<endl;
+	return ;
+}
+int main()
+{
+	int t = 1;
+	//cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	
+	return 0;
+}
