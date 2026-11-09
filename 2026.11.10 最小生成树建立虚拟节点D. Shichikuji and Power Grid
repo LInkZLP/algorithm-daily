@@ -1,0 +1,145 @@
+#include <bits/stdc++.h>
+using namespace std;
+struct st{
+	int x1;
+	int y1;
+	long long w;
+};
+const int maxn = 2e5 + 5;
+vector<long long>x(maxn);
+vector<long long>y(maxn);
+vector<long long>k(maxn);
+vector<st>po;
+vector<int>fa(maxn);
+vector<long long>c(maxn);
+vector<int>fa2(maxn);
+vector<int>mi(maxn);
+int f2(int x)
+{
+	if(x == fa2[x])
+	{
+		return x;
+	}
+	return fa2[x] = f2(fa[x]);
+}
+void Union2(int x,int y)
+{
+	int r1 = f2(x);
+	int r2 = f2(y);
+	mi[r2] = min(mi[r2],mi[r1]);
+	fa2[r1] = r2;
+}
+int find(int x)
+{
+	if(fa[x] == x)
+	{
+		return x;
+	}
+	return fa[x] = find(fa[x]);
+}
+bool Union(int x,int y)
+{
+	int r1 = find(x);
+	int r2 = find(y);
+	if(r1 == r2)
+	{
+		return false;
+	}
+	fa[r1] = r2;;
+	return true;
+}
+bool cmp(st a, st b)
+{
+	return a.w < b.w;
+}
+void solve()
+{
+	int n;
+	int m;
+	vector<int>ans1;
+	vector<int>ans2;
+	cin>>n;
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>x[i]>>y[i];
+		fa[i] = i;
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>c[i];
+		po.push_back({0,i,c[i]});
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		cin>>k[i];
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		mi[i] = c[i];
+		fa2[i] = i;	
+	}
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j = i + 1;j<=n;j++)
+		{
+			po.push_back({i,j,(k[i] + k[j]) * (abs(x[i] - x[j]) + abs(y[i] - y[j]))});
+		}
+	}
+	sort(po.begin(),po.end(),cmp);
+	int cnt = 0;
+	long long sum = 0;
+	//cout<<"ppp"<<po.size()<<endl;
+	vector<int>need;
+	for(int i = 0;i<po.size();i++)
+	{
+		int x1 = po[i].x1;
+		int y1 = po[i].y1;
+		long long w1 = po[i].w;
+		if(Union(x1,y1))
+		{
+			cnt ++;
+			if(x1 > y1)
+			{
+				swap(x1,y1);
+			}
+			if(x1 == 0)
+			{
+				need.push_back(y1);
+				sum += c[y1];
+			}
+			else
+			{
+				ans1.push_back(x1);
+				ans2.push_back(y1);
+				sum += w1;
+			}
+		}
+		if(cnt >= n)
+		{
+			break;
+		}
+	}
+	cout<<sum<<endl;
+	cout<<need.size()<<endl;
+	for(int i : need)
+	{
+		cout<<i<<" ";
+	}
+	cout<<endl;
+	cout<<ans1.size()<<endl;
+	for(int i = 0;i<ans1.size();i++)
+	{
+		cout<<ans1[i]<<" "<<ans2[i]<<endl;
+	}
+	return ;
+}
+int main()
+{
+	int t = 1;
+	while(t--)
+	{
+		solve();
+	}
+	
+	return 0;
+}
