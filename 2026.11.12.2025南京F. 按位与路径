@@ -1,0 +1,100 @@
+#include <bits/stdc++.h>
+using namespace std;
+const int maxn = 2e5 + 5;
+int n;
+int m;
+int fa[1000 +5][(1<<12) +5];
+int find(int u,int id)
+{
+	if(fa[u][id] == u)
+	{
+		return u;
+	}
+	return fa[u][id] = find(fa[u][id],id);
+}
+void Union(int u,int x,int id)
+{
+	int r1 = find(u,id);
+	int r2 = find(x,id);
+	fa[r1][id] = r2;
+	//dsu[f(u)] = dsu[f(x)];
+	return;
+}
+void merge(int u,int x,int w,int id)//剪枝枚举w的子集
+{
+	int r1 = find(u,w);
+	int r2 = find(x,w);
+	if(r1 == r2)
+	{
+		return;
+	}
+	fa[r1][w] = r2;
+	for(int i = id;i<12;i++)
+	{
+		if((w >> i) &1)
+		{
+			merge(u,x,w ^(1<<i),i + 1);
+		}
+	}
+}
+void solve()
+{
+	cin>>n>>m;
+	for(int i = 1;i<=n;i++)
+	{
+		for(int j =0;j<=(1<<12);j++)
+		{
+			fa[i][j] = i;
+		}
+	}
+	long long sum = 0;
+	for(int i = 1;i<=m;i++)
+	{
+		char op;
+		cin>>op;
+		if(op == '+')
+		{
+			int x;
+			int y;
+			int w;
+			cin>>x>>y>>w;
+			merge(x,y,w,0);
+		}
+		else
+		{
+			int ans = 0;
+			int x;
+			int y;
+			cin>>x>>y;
+			if(find(x,0) != find(y,0))
+			{
+				sum -= 1;
+				continue;
+			}
+			for(int j = 11;j>=0;j--)
+			{
+				int c = ans | (1<<j);
+				if(find(x,c) == find(y,c))
+				{
+					ans = c;
+				}
+			}
+			sum += ans;
+		}
+	}
+	cout<<sum<<'\n';
+	return ;
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+	int t;
+	cin>>t;
+	while(t--)
+	{
+		solve();
+	}
+	
+	return 0;
+} 
