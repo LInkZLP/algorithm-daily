@@ -1,0 +1,98 @@
+#include <bits/stdc++.h>
+using namespace std;
+int n;
+int q;
+const int maxn = 1e6 + 5;
+vector<int>sum(maxn<<2);
+int tot = 0;
+int total =0 ;
+void up(int i)
+{
+	sum[i] = sum[i<<1] + sum[i<<1|1];
+	return;
+}
+void change(int l,int r,int i,int jobl,int jobr,int jobv)
+{
+	if(l >= jobl && r <= jobr)	
+	{
+		sum[i] += jobv;
+		return ;
+	}
+	int mid = (l + r)>>1;
+	if(mid >= jobl)
+	{
+		change(l,mid,i<<1,jobl,jobr,jobv);
+	}
+	if(mid + 1 <= jobr)
+	{
+		change(mid + 1,r,i<<1|1,jobl,jobr,jobv);
+	}
+	up(i);
+	return;
+}
+int query(int l,int r,int i,int k)
+{
+	if(l == r)
+	{
+		return l;
+	}
+	int lsum = sum[i<<1];
+	int mid = ( l + r) >>1;
+//	down(i);
+	if(k <= lsum)
+	{
+		return query(l,mid,i<<1,k);
+	}
+	else
+	{
+		return query(mid + 1,r,i<<1|1,k - lsum);
+	}
+}
+void solve()
+{
+	cin>>n>>q;
+	tot = 1;
+	for(int i = 1;i<=n;i++)
+	{
+		int x;
+		cin>>x;
+		change(1,n,1,x,x,1);
+	}
+	total = n;
+	while(q--)
+	{
+		int k;
+		cin>>k;
+		if(k > 0)
+		{
+			change(1,n,1,k,k,1);
+			total ++;
+		}
+		else
+		{
+			k = abs(k);
+			int pos = query(1,n,1,k);
+			change(1,n,1,pos,pos,-1);
+			total--;
+		}
+	}
+	if(total == 0)
+	{
+		cout<<0<<'\n';
+		return;
+	}
+	cout<<query(1,n,1,total)<<'\n';
+	return ;
+}
+int main()
+{
+	ios::sync_with_stdio(false);
+    cin.tie(nullptr); 
+	int t = 1;
+	while(t--)	
+	{
+		solve();
+	}
+
+	return 0;
+}
